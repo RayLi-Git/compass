@@ -1,0 +1,77 @@
+# PRD Alignment Tracking Table (prd-checklist.md)
+
+> Compass §3.2 / §11 M-007 — item-by-item tracking table to prevent "in the PRD but not done" and "done but drifted".
+> <!-- Pre-flight: break out every item from the PRD; backfill status the moment a slice is done (Twelve Principles §3 done means compare). -->
+
+---
+
+## Granularity iron rule: 1 PRD item = 1 row (no aggregation)
+
+Every **smallest independently-verifiable unit** in the PRD must occupy its own row. **No merging, no summarizing.**
+
+- ❌ Wrong (aggregated): `User CRUD API` → glossed over in one row
+- ✅ Right (split out): `POST /users`, `GET /users/:id`, `PATCH /users/:id`, `DELETE /users/:id` each get a row
+
+**Why**: aggregation makes "3 of 4 endpoints done" look like "✅ done", and the missing one never gets found. One row per item leaves gaps nowhere to hide.
+
+**Deciding the smallest unit** (by PRD section type):
+- endpoint granularity → one HTTP method + path = one row
+- table granularity → one table = one row (drill down into field rows when there are many columns)
+- field granularity → one field (incl. type / required / constraints) = one row
+- page granularity → one screen / route = one row
+
+---
+
+## Status legend
+
+| Symbol | Meaning |
+|---|---|
+| ⬜ | Not started |
+| 🟡 | In progress / partially done |
+| ✅ | Done and aligned with PRD |
+
+> `verified-in-codebase?` column: whether actually confirmed in the codebase (not from memory). Fill in `yes (file:line)` / `no` / `⚠️speculation`.
+
+---
+
+## Tracking table (grouped by PRD section)
+
+### §<X.Y> <section title, e.g. User Account API>
+<!-- endpoint granularity example -->
+
+| Status | PRD §ref | Item (smallest unit) | verified-in-codebase? |
+|---|---|---|---|
+| ✅ | §<X.Y> | `POST /api/users` create account | yes (routes/users.ts:42) |
+| 🟡 | §<X.Y> | `GET /api/users/:id` fetch single | no (route exists, permission check not done) |
+| ⬜ | §<X.Y> | `DELETE /api/users/:id` soft delete | no |
+
+### §<X.Z> <section title, e.g. Data Model>
+<!-- table / field granularity example -->
+
+| Status | PRD §ref | Item (smallest unit) | verified-in-codebase? |
+|---|---|---|---|
+| ✅ | §<X.Z> | `users` table exists | yes (migrations/001_users.sql) |
+| ✅ | §<X.Z> | `users.email` UNIQUE NOT NULL | yes (migrations/001_users.sql:5) |
+| 🟡 | §<X.Z> | `users.deleted_at` soft-delete column | ⚠️speculation (migration not confirmed) |
+
+### §<X.W> <section title, e.g. Frontend Screens>
+<!-- page granularity example -->
+
+| Status | PRD §ref | Item (smallest unit) | verified-in-codebase? |
+|---|---|---|---|
+| ⬜ | §<X.W> | `/login` login page | no |
+| ⬜ | §<X.W> | `/settings/profile` profile page | no |
+
+---
+
+## Auto-expand (optional)
+
+Splitting the PRD item by item by hand is tedious and error-prone. Use `scripts/expand_checklist.example.py` to auto-generate this table's skeleton from the PRD:
+
+```bash
+python scripts/expand_checklist.example.py <path/to/PRD.md> > prd-checklist.md
+```
+
+It scans PRD sections, extracts endpoint / table / field / page level smallest units, and emits a to-fill table **one item per row** (status defaults to ⬜, `verified-in-codebase?` defaults to `no`). After generation, still review manually: auto-splitting may miss requirements scattered in prose paragraphs.
+
+<!-- Maintenance reminder: when the PRD is revised, re-expand and diff; add rows for new items, annotate deleted ones, don't overwrite existing status outright. -->

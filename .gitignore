@@ -1,0 +1,23 @@
+# Sentinel 執行時在使用者專案內產生的病歷檔與本地設定，不應進入本 repo
+.claude/
+
+# 作業系統 / 編輯器雜物
+.DS_Store
+Thumbs.db
+*.swp
+*~
+.idea/
+.vscode/
+
+# 打包產物（若在本地打包 .skill 可忽略）
+*.skill
+sentinel.zip
+
+# 暫存
+*.tmp
+*.log
+
+# 臨時驗證檔（驗證用，不入庫）
+_*.txt
+_*.py
+_*.md

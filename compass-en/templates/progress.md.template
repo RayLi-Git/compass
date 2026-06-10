@@ -1,0 +1,55 @@
+# Project Progress
+
+<!-- Compass §3.2 progress tracking doc. Read this first every time you start work; before any interruption you MUST update "In Progress" and "Break Point". -->
+<!-- Rule: write major decisions here, don't rely on conversation memory; on contradiction, the written record wins. -->
+
+---
+
+## In Progress
+
+<!-- §9.3 handoff indicator: only put "the current block + next action" here. A new session picks up seamlessly with just this doc. -->
+
+- **Current block**: <current-block — e.g. PRD §4.2 Login API>
+- **Next action**: <next-action — one sentence, concrete enough to act on directly, e.g. add token-expiry test>
+- **Status marker**: <status — e.g. 🟡in progress / 🔴stuck / ⏸awaiting user acceptance>
+
+---
+
+## Done
+
+<!-- Checklist of completed blocks. Each block should map to a commit (§5 commit per block). -->
+
+- [x] <done-block-1 — e.g. PRD §4.1 Data model> · commit `<short-sha>`
+- [x] <done-block-2>
+- [ ] <move anything unchecked to "To Do">
+
+---
+
+## To Do
+
+<!-- Not-yet-started, known blocks. Order by PRD section or priority. -->
+
+- [ ] <todo-block-1 — e.g. PRD §4.3 Authorization middleware>
+- [ ] <todo-block-2>
+- [ ] <todo-block-3>
+
+---
+
+## Awaiting Ruling
+
+<!-- §5 items awaiting the user's ruling. Stop, record, wait for reply; don't decide on your own. Tag each of the three tracks. -->
+
+- ⚠ **[vague-resolved]** <ambiguous-item — the vague PRD spot + the more concrete side you picked + why>
+- ⚠ **[PRD bug]** <prd-bug-item — contradiction/error found, logged, awaiting ruling, don't unilaterally change the PRD>
+- ⚠ **[gap enhancement]** <enhancement-item — point not in the PRD but better in implementation, keep the implementation, record, await ruling>
+
+---
+
+## Break Point
+
+<!-- §9.3 handoff anchor: the last commit + where to pick up. MUST fill before context fills up / switching sessions. -->
+
+- **Last commit**: `<short-sha>` <commit-message>
+- **Working tree state**: <working-tree — e.g. clean / uncommitted changes in path/to/file>
+- **Resume from**: <resume-pointer — one sentence on the first thing to do after returning, aligned with "In Progress → Next action">
+- **Re-anchor note**: <anchor-note — any drift from the original goal? if so, where's the gap?>

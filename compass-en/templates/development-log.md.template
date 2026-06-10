@@ -1,0 +1,78 @@
+# Development Log
+
+> Compass §3.2 / §5 tracking doc. Append every time you finish a slice, make a decision, or hit a PRD problem.
+> Example entries are greyed with `>`. Just fill in the blank template below.
+
+---
+
+## Decision Record
+
+> Record major technical/design decisions made during development (date / decision / rationale).
+
+> **Example (greyed example, do not keep)**
+> - **2026-06-09** — Use SQLite instead of PostgreSQL
+>   - Rationale: single-machine deployment, no concurrent-write need, saves DB server ops cost; can migrate later.
+
+- **<date YYYY-MM-DD>** — <decision>
+  - Rationale: <why this choice; note trade-offs if any>
+
+---
+
+## PRD Ambiguity (§5.1.1 record of taking the more specific side)
+
+> When the PRD is ambiguous: take "the more specific side" and keep writing, note it here, and re-verify later.
+
+> **Example (greyed example)**
+> - **§3.4 login timeout** — PRD only says "re-login on timeout", doesn't define the number of seconds.
+>   - Adopted: log out after 30 min idle (aligns with existing session config).
+>   - Pending: <await user confirmation of this value>
+
+- **<§section + topic>** — <description of the PRD ambiguity>
+  - Adopted: <the specific interpretation I chose>
+  - Pending: <point needing user confirmation>
+
+---
+
+## PRD Issues (§5.1.2 [SKIPPED-PRD] bugs awaiting ruling)
+
+> The PRD itself has a bug / self-contradiction: stop, log, await user ruling, **do not edit the PRD yourself**.
+
+> **Example (greyed example)**
+> - `[SKIPPED-PRD]` **§4.2 vs §6.1 conflict** — §4.2 says amount can be negative, §6.1 says amount ≥ 0.
+>   - Status: await ruling
+>   - Impact: payment validation logic temporarily uses §6.1 (≥ 0) as a stopgap, fix after ruling.
+
+- `[SKIPPED-PRD]` **<§section + conflict description>** — <bug content>
+  - Status: await ruling
+  - Impact: <how it's handled for now / what's blocked>
+
+---
+
+## PRD Gaps (§5.1.3 gap enhancement awaiting ruling)
+
+> Not in the PRD, but during implementation you find "adding it would be better": keep the implementation, log, await ruling.
+> **Don't just apply YAGNI and cut it** — leave it to the user to decide.
+
+> **Example (greyed example)**
+> - **Export missing field** — PRD export doesn't include "created time", which reports commonly need.
+>   - Implemented: temporarily added `created_at` field to export CSV.
+>   - Status: await ruling (keep / remove)
+
+- **<topic>** — <the PRD gap and why adding it is better>
+  - Implemented: <what I did>
+  - Status: await ruling (keep / remove)
+
+---
+
+## Break Points
+
+> Must fill before context fills up / switching sessions: current progress, todos, where to pick up next.
+
+> **Example (greyed example)**
+> - **2026-06-09 18:30** — Finished §3 login module (with tests); §4 payment validation half done.
+>   - Todo: add §4 boundary tests, apply the fix after the PRD Issue above is ruled on.
+>   - Next: resume from the negative-amount branch in `payment/validator.ts`.
+
+- **<date time>** — <where I got to>
+  - Todo: <what's left>
+  - Next: <which file / which line to resume from>
