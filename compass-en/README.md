@@ -9,7 +9,7 @@
 ![license](https://img.shields.io/badge/license-MIT-blue)
 ![companion](https://img.shields.io/badge/companion-Sentinel-purple)
 
-> §1–§11 all modules have content; bilingual (English + 繁體中文) ready. Full roadmap in [docs/SCOPE.md](./docs/SCOPE.md).
+> §1–§11 all modules have content; bilingual (English + 繁體中文) ready. Coverage boundaries and future directions in [docs/SCOPE.md](./docs/SCOPE.md).
 
 ---
 

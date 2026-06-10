@@ -10,7 +10,7 @@
 ![license](https://img.shields.io/badge/license-MIT-blue)
 ![companion](https://img.shields.io/badge/companion-Sentinel-purple)
 
-> §1–§11 全模組已有內容、中英雙語齊備。完整路線圖見 [docs/SCOPE.zh-TW.md](./docs/SCOPE.zh-TW.md)。
+> §1–§11 全模組已有內容、中英雙語齊備。涵蓋邊界與未來方向見 [docs/SCOPE.zh-TW.md](./docs/SCOPE.zh-TW.md)。
 
 ---
 
