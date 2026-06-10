@@ -6,6 +6,7 @@
 
 > A Claude Code skill that acts as "the compass between PRD and implementation" — making sure you build to spec, don't drift, and don't drop items. Pairs with the [Sentinel](https://github.com/RayLi-Git/sentinel) thinking OS to form a complete toolkit: Sentinel watches "how you think," Compass watches "how you execute to spec."
 
+![status](https://img.shields.io/badge/status-active-success)
 ![license](https://img.shields.io/badge/license-MIT-blue)
 ![companion](https://img.shields.io/badge/companion-Sentinel-purple)
 

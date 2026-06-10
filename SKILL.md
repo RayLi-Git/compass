@@ -135,5 +135,5 @@ Compass 跟 Sentinel 共用 `.claude/` 病歷檔。當 Compass 遇到的「PRD b
 
 ---
 
-**Version**: v0.9.0 (Phase 1-4 完成 — §1–§11 全模組 + 可執行腳本 + 模板)
-**Status**: feature-complete — §1–§11 + 工具腳本 + INSTALL/DESIGN + 中英雙語
+**Version**: v1.0.0
+**Status**: feature-complete — §1–§11 全模組 + 可執行腳本 + 模板 + INSTALL/DESIGN + 中英雙語

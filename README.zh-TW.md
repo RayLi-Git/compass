@@ -6,7 +6,7 @@
 
 > 一個 Claude Code skill，扮演「PRD 與實作之間的羅盤」——確保你照著規格蓋、不偏航、不漏項。配 [Sentinel](https://github.com/RayLi-Git/sentinel) 思考 OS 形成完整工具組：Sentinel 看「怎麼想」，Compass 看「怎麼照規格執行」。
 
-![status](https://img.shields.io/badge/status-WIP%20v0.5.0-orange)
+![status](https://img.shields.io/badge/status-active-success)
 ![license](https://img.shields.io/badge/license-MIT-blue)
 ![companion](https://img.shields.io/badge/companion-Sentinel-purple)
 

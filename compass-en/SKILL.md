@@ -135,5 +135,5 @@ Compass shares the `.claude/` casebook files with Sentinel. When a "PRD bug / va
 
 ---
 
-**Version**: v0.9.0 (Phase 1-4 complete — §1–§11 all modules + executable scripts + templates)
-**Status**: feature-complete — §1–§11 + tool scripts + INSTALL/DESIGN + EN/ZH bilingual
+**Version**: v1.0.0
+**Status**: feature-complete — §1–§11 all modules + tool scripts + templates + INSTALL/DESIGN + EN/ZH bilingual
