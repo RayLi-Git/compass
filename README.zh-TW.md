@@ -1,6 +1,6 @@
 <!-- LANG SWITCH -->
 
-**繁體中文**（English version coming in Phase 5）
+[English](./README.md) | **繁體中文**
 
 # Compass — PRD 紀律的羅盤
 
@@ -10,7 +10,7 @@
 ![license](https://img.shields.io/badge/license-MIT-blue)
 ![companion](https://img.shields.io/badge/companion-Sentinel-purple)
 
-> ⚠️ **目前在 v0.5.0 階段** — §1–§8、§11 已有內容（Phase 1+2 完成）；§9/§10 與英文化待補。完整路線圖見 [docs/SCOPE.zh-TW.md](./docs/SCOPE.zh-TW.md)。
+> §1–§11 全模組已有內容、中英雙語齊備。完整路線圖見 [docs/SCOPE.zh-TW.md](./docs/SCOPE.zh-TW.md)。
 
 ---
 

@@ -1,6 +1,6 @@
 <!-- LANG SWITCH -->
 
-**繁體中文**（English version coming in Phase 5）
+[English](./SCOPE.md) | **繁體中文**
 
 # Compass 範圍邊界 (Scope)
 

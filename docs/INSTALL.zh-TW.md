@@ -1,6 +1,6 @@
 <!-- LANG SWITCH -->
 
-**繁體中文**（English version coming in Phase 5）
+[English](./INSTALL.md) | **繁體中文**
 
 # 安裝指南 (Installation Guide)
 
