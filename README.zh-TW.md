@@ -61,12 +61,18 @@ Compass 用**紀律 + 工具強制** 防住這三點。
 
 兩個常一起用。完整分工見 [docs/SCOPE.zh-TW.md](./docs/SCOPE.zh-TW.md)。
 
-## 安裝（等內容齊全後再正式 publish）
+## 安裝
 
 ```bash
-# v0.5.0：§1–§8、§11 已有內容，可實際載入試用
-# 完整安裝指南會在 Phase 5 提供（見路線圖）
+# 安裝為使用者層級 skill（所有專案生效）
+mkdir -p ~/.claude/skills/compass
+cp -r SKILL.md references ~/.claude/skills/compass/
+
+# 驗證結構
+ls ~/.claude/skills/compass   # → SKILL.md  references
 ```
+
+完整安裝指南（skill + 工具腳本 + 範本）見 [docs/INSTALL.zh-TW.md](./docs/INSTALL.zh-TW.md)。
 
 ## 範圍邊界
 
@@ -75,19 +81,7 @@ Compass 用**紀律 + 工具強制** 防住這三點。
 
 ## 設計理念
 
-完整設計決策與取捨會在 v0.5.0 收錄於 `docs/DESIGN.zh-TW.md`（🚧 撰寫中）。
-
-## 路線圖
-
-| 版本 | 內容 | 狀態 |
-|---|---|---|
-| v0.1.0-skeleton | 架構、命名、骨架 | ✅ |
-| v0.2.0 | 既有 SOP 整理（Phase 1）| ✅ |
-| v0.5.0 | Critical 缺口填補（Phase 2）| ✅ 目前 |
-| v0.8.0 | Nice-to-have 填補（Phase 3）| 🚧 下一階段 |
-| v1.0.0 | Ship | ⏸ |
-
-完整路線圖見 [docs/SCOPE.zh-TW.md](./docs/SCOPE.zh-TW.md)。
+完整的設計決策與取捨記錄在 **[docs/DESIGN.zh-TW.md](./docs/DESIGN.zh-TW.md)**。
 
 ## 授權
 

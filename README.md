@@ -80,7 +80,7 @@ See [docs/INSTALL.md](./docs/INSTALL.md) for the full guide (skill + tool script
 
 ## Design philosophy
 
-Full design decisions and trade-offs will be collected in `docs/DESIGN.md` (🚧 in progress).
+Read the full set of design decisions and trade-offs in **[docs/DESIGN.md](./docs/DESIGN.md)**.
 
 ## License
 

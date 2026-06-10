@@ -52,7 +52,7 @@ I'm a **paired skill** with [Sentinel](https://github.com/RayLi-Git/sentinel) �
 
 ## 🗺️ 11 topic modules (load the matching references/ on demand)
 
-> §1–§11 all modules have content (v0.9.0 / Phase 1-4 delivered, incl. §6.6 SLA + §11 executable scripts). Remaining: English translation, INSTALL/DESIGN docs (Phase 5). See the roadmap in [docs/SCOPE.md](./docs/SCOPE.md).
+> §1–§11 all modules + §6.6 SLA + §11 executable scripts + INSTALL/DESIGN docs + EN/ZH bilingual — all delivered. Coverage boundaries and future directions in [docs/SCOPE.md](./docs/SCOPE.md).
 
 ### §1 Foundations — five phases + core principles
 - Load: `references/01_foundations/`
@@ -129,11 +129,11 @@ Compass shares the `.claude/` casebook files with Sentinel. When a "PRD bug / va
 ## 📖 Further reading
 
 - [docs/SCOPE.md](./docs/SCOPE.md) — what this skill covers / doesn't cover (**read first**)
-- docs/DESIGN.md — design decisions and tradeoffs (🚧 being written in Phase 5)
+- [docs/DESIGN.md](./docs/DESIGN.md) — design decisions and trade-offs
 - [docs/INSTALL.md](./docs/INSTALL.md) — installation guide
-- [README.md](./README.md) — project overview (English README.md 🚧 Phase 5)
+- [README.md](./README.md) — project overview
 
 ---
 
 **Version**: v0.9.0 (Phase 1-4 complete — §1–§11 all modules + executable scripts + templates)
-**Status**: 🚧 WIP — English translation, INSTALL/DESIGN docs (Phase 5) pending
+**Status**: feature-complete — §1–§11 + tool scripts + INSTALL/DESIGN + EN/ZH bilingual
