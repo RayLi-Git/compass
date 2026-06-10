@@ -35,19 +35,17 @@ Compass 用**紀律 + 工具強制** 防住這三點。
 
 ```
 §1 Foundations             — 五階段 + 核心原則
-§2 Definition of Ready     — 開工前的 PRD 健檢 ⭐ 新
+§2 Definition of Ready     — 開工前的 PRD 健檢
 §3 Implementation          — 開工中的 SOP
 §4 Quality Gates           — 驗收 / 自檢 / 工具強制
 §5 Conflict Handling       — PRD 衝突處置：靜態三類（模糊/bug/缺漏）+ 動態類（中途變更/跨文件/多PRD），皆已交付
-§6 Non-Functional (NFR)    — 效能/觀測性/安全/a11y ⭐ 新
-§7 Operations              — Migration / Rollback / Deployment ⭐ 新
-§8 Brownfield              — 既有 codebase 工作 ⭐ 新
-§9 Collaboration           — 跨人/跨 AI ⭐ 新
-§10 Testing Strategy        — unit/integration/e2e 分工 ⭐ 新
+§6 Non-Functional (NFR)    — 效能/觀測性/安全/a11y
+§7 Operations              — Migration / Rollback / Deployment
+§8 Brownfield              — 既有 codebase 工作
+§9 Collaboration           — 跨人/跨 AI
+§10 Testing Strategy        — unit/integration/e2e 分工
 §11 Tooling                — M-007~M-010 工具強制 + 通用腳本
 ```
-
-⭐ 標的章節是相對既有 SOP **全新撰寫**的。
 
 ## 跟 Sentinel 的關係
 

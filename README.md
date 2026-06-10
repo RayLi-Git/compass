@@ -34,19 +34,17 @@ Compass blocks all three with **discipline + tool enforcement**.
 
 ```
 §1 Foundations             — five phases + core principles
-§2 Definition of Ready     — pre-flight PRD health check ⭐ new
+§2 Definition of Ready     — pre-flight PRD health check
 §3 Implementation          — in-flight SOP
 §4 Quality Gates           — acceptance / self-review / tool enforcement
 §5 Conflict Handling       — PRD conflicts: static three-track (vague/bug/gap) + dynamic (mid-flight change/cross-document/multi-PRD), all shipped
-§6 Non-Functional (NFR)    — performance/observability/security/a11y/SLA ⭐ new
-§7 Operations              — Migration / Rollback / Deployment ⭐ new
-§8 Brownfield              — working in an existing codebase ⭐ new
-§9 Collaboration           — cross-person / cross-AI ⭐ new
-§10 Testing Strategy        — unit/integration/e2e split ⭐ new
+§6 Non-Functional (NFR)    — performance/observability/security/a11y/SLA
+§7 Operations              — Migration / Rollback / Deployment
+§8 Brownfield              — working in an existing codebase
+§9 Collaboration           — cross-person / cross-AI
+§10 Testing Strategy        — unit/integration/e2e split
 §11 Tooling                — M-007~M-010 tool enforcement + general scripts
 ```
-
-⭐ marks chapters written **from scratch** relative to the existing SOP.
 
 ## Relationship to Sentinel
 
