@@ -16,13 +16,11 @@
 - **Greenfield**——全新專案，從零依 PRD 蓋
 - **Brownfield**——既有 codebase 加功能、修 bug、重構（§8 專門處理，已交付）
 - **單一 AI + 單一使用者協作**——主流情境
-- **多 stakeholder 協作**——§9 涵蓋「誰決定什麼」的路由（🚧 Phase 3）
+- **多 stakeholder 協作**——§9 涵蓋「誰決定什麼」的路由（已交付）
 - **任何後端 / 前端語言**——範例會用 FastAPI / TypeScript，但原則語言中立
 - **長期專案**（多 session、跨日跨週）——中斷恢復協議（見 [§3.2 追蹤文件](../references/03_implementation/02_tracking_docs.md)）
 
 ### 涵蓋的決策類型
-
-> 📍 標 🚧 者為後續 Phase 才交付的章節，目前僅在路線圖中；未標者已可用。
 
 - 拿到 PRD 後如何吸收（§3.1，已交付）
 - PRD 寫得不清楚怎辦（§5.1.1，已交付）
@@ -36,7 +34,7 @@
 - 出事後的 rollback 怎做（§7.2，已交付）
 - 加功能到既有 codebase 怎開始（§8.4，已交付）
 - 沒有正式 PRD 但需要紀律時的最小做法（§8.5，已交付）
-- AI session 之間怎麼交接（§9，🚧 Phase 3）
+- AI session 之間怎麼交接（§9.3，已交付）
 
 ---
 
@@ -85,29 +83,22 @@ Compass 跟 Sentinel 是**配對 skill**，職責互補：
 
 ---
 
-## 🗺️ 開發路線圖（versioning roadmap）
+## 🧭 設計邊界與未來方向 (Scope & Future Work)
 
-Compass 是迭代開發的。**目前在 v0.5.0 階段**（Phase 1+2 完成：§1–§8、§11 有內容）。
+> 以下不是待辦清單——Compass 目前版本（§1–§11 全模組 + 可執行工具腳本 + 中英雙語）已完整且可用，並已上架 [GitHub](https://github.com/RayLi-Git/compass)。這一節記錄的是「這個設計目前的邊界在哪，以及若要再進化可以往哪走」，是一份刻意的反思，而非缺漏。
 
-### 進度
+### 目前刻意畫下的邊界
 
-| Phase | 內容 | 狀態 | 對應版本 |
-|---|---|---|---|
-| 0 | 架構決定、命名、SKILL.md skeleton、SCOPE | ✅ 完成 | v0.1.0-skeleton |
-| 1 | 既有 SOP 移植（§1 原則、§3 實作、§4.1 DoD、§5.1 衝突、§11 工具）| ✅ 完成 | v0.2.0 |
-| 2 | Critical 缺口（§2 DoR、§5.2-5.4 動態衝突、§6 NFR、§7 Operations、§8 Brownfield）| ✅ 完成 | v0.5.0 |
-| 3 | Nice-to-have（§9 Collaboration、§10 Testing Strategy、§4 補 code review）| ⏸ 待開始 | v0.8.0 |
-| 4 | 工具範例 & 拋光（M-007/8/10 通用骨架、SLA 專章、交叉引用對齊）| ⏸ 待開始 | v0.9.0 |
-| 5 | 精簡 SKILL.md 最終版 + DESIGN/INSTALL + 中英雙語化 | ⏸ 待開始 | v1.0.0-rc |
-| 6 | 上架 GitHub、ship | ⏸ 待開始 | v1.0.0 |
+- **偏重型紀律**：Compass 假設你願意花時間建追蹤文件、跑 audit、寫 checklist。輕量情境用 Sentinel 即可——這是刻意取捨，不是侷限（詳見下方「設計取捨」）。
+- **語言中立、但範例集中**：原則語言中立，可執行範例以 Python/FastAPI + TypeScript/React 為主。其他技術棧需自行改寫腳本的 regex。
+- **單一文字 PRD 為核心假設**：目前以「一份文字 PRD」為主軸；OpenAPI / ERD 等結構化規格目前仍靠人轉成 checklist。
 
-每階段完成都會 tag 對應版本，並更新本文件「進度」表。
+### 若要再進化可以往哪走（非保證）
 
-### 未來可能延伸（非保證）
-
-- **多 PRD 模板**：除了單純文字 PRD，加入「OpenAPI spec → checklist 自動展開」「ERD → schema audit」等模板
-- **跨 repo 工具**：scripts/ 裡的通用腳本如果成熟，獨立成 PyPI / npm package
-- **更多語言範例**：目前以 Python/FastAPI + TypeScript/React 為主，未來可加 Go / Rust / Ruby
+- **結構化規格自動轉換**：加入「OpenAPI spec → checklist 自動展開」「ERD → schema audit」等模板，讓 §2 DoR / §11 反向稽核能直接吃結構化 spec。
+- **工具獨立化**：`scripts/` 的通用腳本若成熟，可抽出成 PyPI / npm package 跨 repo 共用。
+- **更多語言範例**：在 Python/TS 之外補 Go / Rust / Ruby 的範例。
+- **DESIGN 設計決策記錄**：補一份「為什麼這樣設計」的決策敘事，與 Sentinel 的 `DESIGN.md` 對齊（目前 README 已預留連結）。
 
 ---
 

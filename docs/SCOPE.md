@@ -16,13 +16,11 @@
 - **Greenfield**—brand-new project, built from scratch per PRD
 - **Brownfield**—adding features, fixing bugs, refactoring on an existing codebase (§8 handles this specifically, shipped)
 - **Single AI + single user collaboration**—the mainstream case
-- **Multi-stakeholder collaboration**—§9 covers "who decides what" routing (🚧 Phase 3)
+- **Multi-stakeholder collaboration**—§9 covers "who decides what" routing (delivered)
 - **Any backend / frontend language**—examples use FastAPI / TypeScript, but the principles are language-neutral
 - **Long-running projects** (multi-session, spanning days/weeks)—interrupt-recovery protocol (see [§3.2 tracking docs](../compass-en/references/03_implementation/02_tracking_docs.md))
 
 ### Decision types covered
-
-> 📍 Sections marked 🚧 ship in a later Phase and currently exist only in the roadmap; unmarked ones are available.
 
 - How to absorb a PRD once you receive it (§3.1, shipped)
 - What to do when the PRD is unclear (§5.1.1, shipped)
@@ -36,7 +34,7 @@
 - How to do rollback after an incident (§7.2, shipped)
 - How to start adding features to an existing codebase (§8.4, shipped)
 - The minimal approach when there's no formal PRD but you still need discipline (§8.5, shipped)
-- How to hand off between AI sessions (§9, 🚧 Phase 3)
+- How to hand off between AI sessions (§9.3, delivered)
 
 ---
 
@@ -85,29 +83,22 @@ Compass and Sentinel are **paired skills** with complementary responsibilities:
 
 ---
 
-## 🗺️ Versioning roadmap
+## 🧭 Scope & Future Work
 
-Compass is developed iteratively. **Currently at the v0.5.0 stage** (Phase 1+2 complete: §1–§8, §11 have content).
+> The list below is not a TODO. The current Compass (all modules §1–§11 + runnable tool scripts + EN/ZH bilingual) is complete and usable, and is published on [GitHub](https://github.com/RayLi-Git/compass). This section records where the design's boundaries currently sit and what directions further evolution could take — a deliberate reflection, not a gap.
 
-### Progress
+### Boundaries deliberately drawn
 
-| Phase | Content | Status | Version |
-|---|---|---|---|
-| 0 | Architecture decisions, naming, SKILL.md skeleton, SCOPE | ✅ Done | v0.1.0-skeleton |
-| 1 | Port existing SOP (§1 principles, §3 implementation, §4.1 DoD, §5.1 conflicts, §11 tools) | ✅ Done | v0.2.0 |
-| 2 | Critical gaps (§2 DoR, §5.2-5.4 dynamic conflicts, §6 NFR, §7 Operations, §8 Brownfield) | ✅ Done | v0.5.0 |
-| 3 | Nice-to-have (§9 Collaboration, §10 Testing Strategy, §4 add code review) | ⏸ Not started | v0.8.0 |
-| 4 | Tool examples & polish (M-007/8/10 generic skeleton, dedicated SLA chapter, cross-reference alignment) | ⏸ Not started | v0.9.0 |
-| 5 | Final trimmed SKILL.md + DESIGN/INSTALL + EN/ZH bilingual | ⏸ Not started | v1.0.0-rc |
-| 6 | Publish to GitHub, ship | ⏸ Not started | v1.0.0 |
+- **Leans heavy-discipline**: Compass assumes you're willing to spend time building tracking docs, running audits, writing checklists. For lightweight situations, use Sentinel — this is a deliberate trade-off, not a limitation (see "Design trade-offs" below).
+- **Language-neutral, but examples concentrated**: the principles are language-neutral; the runnable examples center on Python/FastAPI + TypeScript/React. Other stacks require you to adapt the scripts' regexes.
+- **Single text PRD as the core assumption**: currently built around "one text PRD"; structured specs like OpenAPI / ERD still rely on a human to turn them into a checklist.
 
-Each completed phase gets tagged with its version and updates the "Progress" table in this document.
+### Where it could evolve (not guaranteed)
 
-### Possible future extensions (not guaranteed)
-
-- **More PRD templates**: beyond plain-text PRDs, add templates like "OpenAPI spec → checklist auto-expand" and "ERD → schema audit"
-- **Cross-repo tooling**: if the generic scripts in scripts/ mature, spin them out into a standalone PyPI / npm package
-- **More language examples**: currently centered on Python/FastAPI + TypeScript/React; could add Go / Rust / Ruby later
+- **Structured-spec auto-conversion**: add templates like "OpenAPI spec → checklist auto-expand" and "ERD → schema audit" so §2 DoR / §11 reverse audit can consume structured specs directly.
+- **Tooling spin-out**: if the generic scripts in `scripts/` mature, extract them into a standalone PyPI / npm package for cross-repo reuse.
+- **More language examples**: add Go / Rust / Ruby examples beyond Python/TS.
+- **DESIGN decision record**: add a "why it's designed this way" decision narrative to align with Sentinel's `DESIGN.md` (the README already reserves the link).
 
 ---
 
