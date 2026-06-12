@@ -1,0 +1,55 @@
+# Self-Check Failure Report: <block name>
+
+<!-- Fill when Compass §3.4 automated self-check loop (max 3 rounds) is exhausted, or stuck mid-way, and hand to the user for a ruling. -->
+<!-- Each round must also append an entry to development-log.md (§3.4 rule); this file is the summary for the user. -->
+
+---
+
+## Case A: 3 rounds run, still failing
+
+### Round 1
+- Failure: Test X — <error message>
+- Fix: <action taken>
+
+### Round 2
+- Failure: Test Y — <error message>
+- Fix: <action taken>
+
+### Round 3
+- Failure: Test Z — <error message>
+- Fix attempted: <list> — still failing
+
+---
+
+## Case B: aborted before 3 rounds (hit a blocker)
+
+> Stuck on something "retrying won't solve" (awaiting PRD ruling, missing external dependency, missing permission) → don't pad to 3 rounds, stop now.
+
+- Stuck at round N: <why retrying is pointless>
+- Recorded in development-log.md: <[SKIPPED-PRD] or blocker description>
+
+---
+
+## Diagnosis (invoke Sentinel diagnostic mode — don't just report "can't fix it")
+
+> Enter diagnostic mode: list 2-3 hypotheses, don't latch onto one. (Sentinel `self_check.md`)
+
+- Possible root cause A: <…> (verification cost / plausibility)
+- Possible root cause B: <…>
+- Possible root cause C: <…>
+
+## Ask the user to rule (give options, don't decide for them)
+
+- Proposed fix 1: <…>
+- Proposed fix 2: <…>
+- Proposed fix 3: <…>
+- My lean: <which + why> (mark evidence level 🟢 verified / 🟡 reviewed / 🔴 speculative)
+
+---
+
+## 🔗 Related
+- [§3.4 Compare-Fix Loop](../references/03_implementation/04_compare_fix_loop.md) — the 3-round rule and failure decision tree
+- Sentinel `self_check.md` — diagnostic mode 6 steps + graded-escalation failure threshold
+
+## 📝 Status
+v0.3.0 (ported from prior SOP T6, + Case B early abort + Sentinel diagnostic-mode wiring + dev-log reminder).

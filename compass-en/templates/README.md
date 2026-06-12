@@ -11,6 +11,8 @@
 | `progress.md.template` | [§3.2](../references/03_implementation/02_tracking_docs.md) | Progress + todo + in-progress (the §9.3 handoff recovery indicator) |
 | `development-log.md.template` | [§3.2](../references/03_implementation/02_tracking_docs.md) / [§5](../references/05_conflict_handling/_index.md) | Decisions + PRD Ambiguity / Issues / Gaps log |
 | `prd-checklist.md.template` | [§3.2](../references/03_implementation/02_tracking_docs.md) / [§11 M-007](../references/11_tooling/01_m007_to_m010.md) | PRD section ↔ implementation mapping (one line per item, no aggregation) |
+| `test-guide.md.template` | [§3.4 §3.3](../references/03_implementation/04_compare_fix_loop.md) | Test guide for the User Acceptance Gate (de-privatized + manual tests + masking guard) |
+| `selfcheck-fail.md.template` | [§3.4](../references/03_implementation/04_compare_fix_loop.md) | Ruling summary when 3 self-check rounds fail / blocked mid-way (links Sentinel diagnostic mode) |
 | `audit-config.example.json` | [§11 M-008](../references/11_tooling/01_m007_to_m010.md) | Config example for the reverse-audit script `audit_prd_vs_code.example.py` |
 
 > 📌 No template yet for cross-session permanent memory (auto memory) — for now, build it manually following the "cross-session memory" note at the end of [§3.2 Tracking Docs](../references/03_implementation/02_tracking_docs.md).
@@ -23,6 +25,8 @@
 cp templates/progress.md.template .claude/progress.md
 cp templates/development-log.md.template .claude/development-log.md
 cp templates/prd-checklist.md.template .claude/prd-checklist.md
+cp templates/test-guide.md.template .claude/test-guide.md          # fill one per acceptable block
+cp templates/selfcheck-fail.md.template .claude/selfcheck-fail.md   # use when self-check fails and needs ruling
 cp templates/audit-config.example.json compass-audit.json   # edit to match your PRD/code structure
 ```
 

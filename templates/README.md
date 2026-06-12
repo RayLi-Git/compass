@@ -11,6 +11,8 @@
 | `progress.md.template` | [§3.2](../references/03_implementation/02_tracking_docs.md) | 進度 + 待辦 + 進行中（§9.3 交接的恢復指標） |
 | `development-log.md.template` | [§3.2](../references/03_implementation/02_tracking_docs.md) / [§5](../references/05_conflict_handling/_index.md) | 決策 + PRD Ambiguity / Issues / Gaps 紀錄 |
 | `prd-checklist.md.template` | [§3.2](../references/03_implementation/02_tracking_docs.md) / [§11 M-007](../references/11_tooling/01_m007_to_m010.md) | PRD 章節 ↔ 實作對照（一行一條，禁聚合） |
+| `test-guide.md.template` | [§3.4 §3.3](../references/03_implementation/04_compare_fix_loop.md) | 使用者驗收 Gate 的測試指引（去專屬 + 手動測試 + 遮罩護欄） |
+| `selfcheck-fail.md.template` | [§3.4](../references/03_implementation/04_compare_fix_loop.md) | 自檢 3 輪失敗 / 中途卡死的裁決彙整（接 Sentinel 診斷模式） |
 | `audit-config.example.json` | [§11 M-008](../references/11_tooling/01_m007_to_m010.md) | 反向稽核腳本 `audit_prd_vs_code.example.py` 的設定範例 |
 
 > 📌 跨 session 永久記憶（auto memory）的範本尚未提供——目前請參考 [§3.2 追蹤文件](../references/03_implementation/02_tracking_docs.md) 末段的「跨 session 記憶」說明手動建立。
@@ -23,6 +25,8 @@
 cp templates/progress.md.template .claude/progress.md
 cp templates/development-log.md.template .claude/development-log.md
 cp templates/prd-checklist.md.template .claude/prd-checklist.md
+cp templates/test-guide.md.template .claude/test-guide.md          # 每個可驗收的塊填一份
+cp templates/selfcheck-fail.md.template .claude/selfcheck-fail.md   # 自檢失敗交裁決時用
 cp templates/audit-config.example.json compass-audit.json   # 改成你的 PRD/code 結構
 ```
 

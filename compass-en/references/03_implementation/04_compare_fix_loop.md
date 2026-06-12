@@ -47,6 +47,9 @@ If any of the following occurs, it counts as violating the compare-fix loop and 
 
 ## 3. Stage Acceptance: User Test Gate (User Acceptance Gate)
 
+> 📌 Terminology: "stage" here = one independently-acceptable "block / unit". Ship in small slices (encouraged),
+> but every block passes full acceptance with no half-finished work (echoing "done means done"). Smaller block, lighter test guide.
+
 After completing each stage (= one item in the "implementation order table") and passing DoD:
 
 1. **Stop**, do not proactively move to the next stage
@@ -75,6 +78,15 @@ The following cases may skip the Gate and go straight to the next block:
 
 > When skipping, note in the development log: "Skipped user test — reason: …".
 
+### 3.3 Test Guide Writing — 4 Norms (template: [templates/test-guide.md.template](../../templates/test-guide.md.template))
+
+1. **Independently runnable**: each step depends on no memory of the prior step; the user can paste and run.
+2. **Explicit commands**: give the full pasteable command, not "run some script".
+3. **Concrete expected results**: "returns 200 + contains field X" rather than "succeeds".
+4. **Clear failure criteria**: "if Y appears → it means Z", so the user can judge what went wrong themselves.
+
+> When the 3 self-check rounds are exhausted or you hit a blocker mid-way, use [templates/selfcheck-fail.md.template](../../templates/selfcheck-fail.md.template) to summarize for ruling — round 3 must invoke Sentinel's diagnostic mode to list 2-3 hypotheses, not just report "can't fix it".
+
 ---
 
 ## 4. Decision Tree When the Loop Fails
@@ -97,4 +109,4 @@ The following cases may skip the Gate and go straight to the next block:
 - [§3 Implementation](../03_implementation/_index.md) — message format and granularity for the step 10 git commit (commit convention)
 
 ## 📝 Status
-v0.2.0 (Phase 1: ported from prior SOP, generalized and de-privatized).
+v0.3.0 (+ §3.3 test-guide 4 norms + test-guide / selfcheck-fail templates + block vs stage terminology).

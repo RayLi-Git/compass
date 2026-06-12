@@ -1,0 +1,71 @@
+# Test Guide: <block name>
+
+<!-- Pasteable template for Compass §3.4 User Acceptance Gate. Fill one per "block with acceptable behavior" and hand to the user. -->
+<!-- The 4 writing norms are in §3.4 §3.3; this is just a fill-in shell, rules are not repeated here. -->
+
+> ⚖️ **Scale to the block**: a small block needs only 1-2 Tests; only a large block expands fully.
+> Pure docs / typo / intermediate refactors covered by later verification → take the §3.4 §3.2 skip exception, **no need to fill this**.
+
+---
+
+## Items completed in this block
+
+| File / module | PRD ref | prd-checklist item |
+|---|---|---|
+| <file A> | §X.Y | <prd-checklist item N> |
+
+---
+
+## Environment setup
+
+> List the state that must be ready before running tests (runtime, required config / env vars, seed data). Write neutrally, no language lock-in.
+
+1. <command to enter project / start runtime>
+2. <confirm required env vars are loaded (do NOT paste real values here)>
+
+---
+
+## Automated test steps
+
+> Each Test is independently runnable, the command is directly pasteable, the expected result is concrete, the failure criterion is clear (4 norms in §3.4 §3.3).
+
+#### Test 1: <test name>　→ prd-checklist item N
+- **Command**: `<full pasteable command>`
+- **Expected**: <concrete enough to eyeball, e.g. returns 200 + body contains field X; no ERROR>
+- **Failure criterion**: <if Y appears → it means Z>
+
+#### Test 2: …
+
+---
+
+## Manual / visual tests (need human judgment)
+
+> UI experience, layout, interaction feel — anything automation can't test, list here for the user to eyeball.
+
+- <step + what should be seen>
+
+---
+
+## Boundary / exception tests
+
+- <empty input → expected…>
+- <unauthorized / missing required field → expected…>
+
+---
+
+## Reporting format
+
+> ⚠️ **Mask** tokens / passwords / PII before pasting output or screenshots.
+
+- ✅ All pass: "<block> OK" + (optional) minor observations
+- 🟡 Partial: "Test M passed, Test K stuck" + the stuck actual output
+- ❌ Fail: "Test M failed" + actual output (masked)
+
+---
+
+## 🔗 Related Compass sections
+- [§3.4 Compare-Fix Loop](../references/03_implementation/04_compare_fix_loop.md) — the Acceptance Gate this template belongs to, and the 4 writing norms
+- [§4.1 DoD](../references/04_quality_gates/01_dod.md) — the hard gate to pass before filling this template
+
+## 📝 Status
+v0.3.0 (ported from prior SOP T5, de-privatized + manual tests / checklist tracing / masking guard added).

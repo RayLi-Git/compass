@@ -47,6 +47,9 @@
 
 ## 3. 階段驗收：使用者測試 Gate（User Acceptance Gate）
 
+> 📌 用詞：本節「階段」= 一個可獨立驗收的「塊 / unit」。分小塊交付（鼓勵），
+> 但每塊都要過完整驗收、不留半成品（呼應「完成就是完成」）。塊越小，測試指引越輕。
+
 每完成一個階段（=「實作順序表」一個項目）且通過 DoD 後：
 
 1. **停下來**，不主動進入下一階段
@@ -75,6 +78,15 @@
 
 > 跳過時須在 development log 註明：「跳過使用者測試 — 理由：…」。
 
+### 3.3 測試指引撰寫 4 規範（範本見 [templates/test-guide.md.template](../../templates/test-guide.md.template)）
+
+1. **可獨立執行**：每步不依賴上一步的記憶，使用者照貼即可。
+2. **明確指令**：給完整可貼上的指令，不寫「執行某個腳本」。
+3. **預期結果具體**：「回傳 200 + 含 X 欄位」而非「成功」。
+4. **失敗判定明確**：「若出現 Y → 表示 Z」，讓使用者自己就能判斷哪裡錯。
+
+> 自檢 3 輪用盡或中途撞 blocker 時，用 [templates/selfcheck-fail.md.template](../../templates/selfcheck-fail.md.template) 彙整交裁決——第 3 輪須調用 Sentinel 診斷模式列 2-3 個假說，不只報「修不好」。
+
 ---
 
 ## 4. 循環失敗時的決策樹
@@ -97,4 +109,4 @@
 - [§3 Implementation](../03_implementation/_index.md) — 第 10 步 git commit 的訊息格式與顆粒度（commit convention）
 
 ## 📝 Status
-v0.2.0 (Phase 1: ported from prior SOP, generalized and de-privatized).
+v0.3.0 (+ §3.3 測試指引 4 規範 + test-guide / selfcheck-fail 範本接線 + 塊 vs 階段 用詞校正).
