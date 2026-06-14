@@ -121,6 +121,12 @@ Compass and Sentinel share the `.claude/` case-history files (`debug-log.md` / `
 
 ---
 
+## Resident layer (optional)
+
+Want the three-skill resident routing (`~/.claude/CLAUDE.md`, so Claude auto-routes each task to the right skill)? Use [sentinel's `CLAUDE.md.example`](https://github.com/RayLi-Git/sentinel/blob/main/CLAUDE.md.example) (it already supports compass / cartographer as optional) — copy it to `~/.claude/CLAUDE.md`. The whole toolchain needs only this **one** shared resident file; to create the PRD from scratch see [cartographer](https://github.com/RayLi-Git/cartographer).
+
+---
+
 ## Troubleshooting
 
 | Symptom | Likely cause | Fix |

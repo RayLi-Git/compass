@@ -4,11 +4,11 @@
 
 # Compass — PRD 紀律的羅盤
 
-> 一個 Claude Code skill，扮演「PRD 與實作之間的羅盤」——確保你照著規格蓋、不偏航、不漏項。配 [Sentinel](https://github.com/RayLi-Git/sentinel) 思考 OS 形成完整工具組：Sentinel 看「怎麼想」，Compass 看「怎麼照規格執行」。
+> 一個 Claude Code skill，扮演「PRD 與實作之間的羅盤」——確保你照著規格蓋、不偏航、不漏項。三件式工具鏈的一環，配 [Cartographer](https://github.com/RayLi-Git/cartographer) 與 [Sentinel](https://github.com/RayLi-Git/sentinel)：**Cartographer 畫地圖 → Compass 照圖走 → Sentinel 站哨。**
 
 ![status](https://img.shields.io/badge/status-active-success)
 ![license](https://img.shields.io/badge/license-MIT-blue)
-![companion](https://img.shields.io/badge/companion-Sentinel-purple)
+![companion](https://img.shields.io/badge/companion-Cartographer%20%2B%20Sentinel-purple)
 
 > §1–§11 全模組已有內容、中英雙語齊備。涵蓋邊界與未來方向見 [docs/SCOPE.zh-TW.md](./docs/SCOPE.zh-TW.md)。
 
@@ -59,6 +59,18 @@ Compass 用**紀律 + 工具強制** 防住這三點。
 
 兩個常一起用。完整分工見 [docs/SCOPE.zh-TW.md](./docs/SCOPE.zh-TW.md)。
 
+## 🗺️ 完整工具鏈（三件一起）
+
+> **Cartographer 畫出地圖（生 PRD）→ Compass 照圖施工（不偏航）→ Sentinel 全程站哨（怎麼想、防資安僥倖）。**
+
+| skill | 角色 | 一句話 |
+|---|---|---|
+| [Cartographer](https://github.com/RayLi-Git/cartographer) | 製圖師 | 把模糊想法逐節逼成合格軟體 PRD |
+| **Compass** | 羅盤 | 照 PRD 蓋、不偏航、不漏項 |
+| [Sentinel](https://github.com/RayLi-Git/sentinel) | 哨兵 | 五階段全程思考把關、防資安僥倖 |
+
+Cartographer 是 Compass 的**上游配對**：它生出 Compass 要照著蓋的那份 PRD（其 `§14` 交棒會輸出 Compass 能吃的 checklist）。
+
 ## 安裝
 
 ```bash
@@ -74,7 +86,7 @@ ls ~/.claude/skills/compass   # → SKILL.md  references
 
 ## 範圍邊界
 
-**Compass 不涵蓋**：PRD 撰寫 / 產品探索 / PM 工具 / 純探索性原型 / 純改文案。
+**Compass 不涵蓋**：PRD 撰寫（→ 交給 [Cartographer](https://github.com/RayLi-Git/cartographer)）/ 產品探索 / PM 工具 / 純探索性原型 / 純改文案。
 **詳細涵蓋與不涵蓋清單**：見 [docs/SCOPE.zh-TW.md](./docs/SCOPE.zh-TW.md)
 
 ## 設計理念

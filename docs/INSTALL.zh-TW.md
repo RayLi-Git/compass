@@ -121,6 +121,12 @@ Compass 與 Sentinel 共用 `.claude/` 病歷檔（`debug-log.md` / `patterns.md
 
 ---
 
+## 常駐層（選用）
+
+想要三件式的常駐分工（`~/.claude/CLAUDE.md`，讓 Claude 自動按任務路由到對的 skill）？用 [sentinel 的 `CLAUDE.md.example`](https://github.com/RayLi-Git/sentinel/blob/main/CLAUDE.md.example)（已支援 compass / cartographer 選用），複製到 `~/.claude/CLAUDE.md` 即可。整條工具鏈只需這**一份**共用常駐檔；PRD 要從零生出來見 [cartographer](https://github.com/RayLi-Git/cartographer)。
+
+---
+
 ## 疑難排解
 
 | 症狀 | 可能原因 | 解法 |

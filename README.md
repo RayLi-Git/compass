@@ -4,11 +4,11 @@
 
 # Compass — The Compass of PRD Discipline
 
-> A Claude Code skill that acts as "the compass between PRD and implementation" — making sure you build to spec, don't drift, and don't drop items. Pairs with the [Sentinel](https://github.com/RayLi-Git/sentinel) thinking OS to form a complete toolkit: Sentinel watches "how you think," Compass watches "how you execute to spec."
+> A Claude Code skill that acts as "the compass between PRD and implementation" — making sure you build to spec, don't drift, and don't drop items. Part of a three-skill toolchain with [Cartographer](https://github.com/RayLi-Git/cartographer) and [Sentinel](https://github.com/RayLi-Git/sentinel): **Cartographer draws the map → Compass builds to it → Sentinel stands guard.**
 
 ![status](https://img.shields.io/badge/status-active-success)
 ![license](https://img.shields.io/badge/license-MIT-blue)
-![companion](https://img.shields.io/badge/companion-Sentinel-purple)
+![companion](https://img.shields.io/badge/companion-Cartographer%20%2B%20Sentinel-purple)
 
 > §1–§11 all modules have content; bilingual (English + 繁體中文) ready. Coverage boundaries and future directions in [docs/SCOPE.md](./docs/SCOPE.md).
 
@@ -59,6 +59,18 @@ Compass blocks all three with **discipline + tool enforcement**.
 
 The two are often used together. Full split in [docs/SCOPE.md](./docs/SCOPE.md).
 
+## 🗺️ The full toolchain (three together)
+
+> **Cartographer draws the map (creates the PRD) → Compass builds to it (no drift) → Sentinel stands guard throughout (how to think, no security shortcuts).**
+
+| Skill | Role | One line |
+|---|---|---|
+| [Cartographer](https://github.com/RayLi-Git/cartographer) | the cartographer | forces a fuzzy idea into a solid software PRD, section by section |
+| **Compass** | the compass | build to spec, no drift, no dropped items |
+| [Sentinel](https://github.com/RayLi-Git/sentinel) | the sentinel | thinking & security guard across all five stages |
+
+Cartographer is Compass's **upstream companion**: it produces the very PRD that Compass then builds to (its `§14` handoff outputs a Compass-ready checklist).
+
 ## Install
 
 ```bash
@@ -74,7 +86,7 @@ See [docs/INSTALL.md](./docs/INSTALL.md) for the full guide (skill + tool script
 
 ## Scope boundaries
 
-**Compass does not cover**: PRD writing / product discovery / PM tooling / pure exploratory prototyping / pure copy edits.
+**Compass does not cover**: PRD writing (→ use [Cartographer](https://github.com/RayLi-Git/cartographer)) / product discovery / PM tooling / pure exploratory prototyping / pure copy edits.
 **Detailed covers and does-not-cover list**: see [docs/SCOPE.md](./docs/SCOPE.md)
 
 ## Design philosophy
