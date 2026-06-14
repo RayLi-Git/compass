@@ -113,7 +113,7 @@ I'm a **paired skill** with [Sentinel](https://github.com/RayLi-Git/sentinel) �
 
 ## 📂 Casebook integration
 
-Compass shares the `.claude/` casebook files with Sentinel. When a "PRD bug / vague handling / design tradeoff" Compass hits is painful enough, it also goes into `.claude/debug-log.md`, but tagged with a `[COMPASS]` prefix for easy retrieval.
+Compass shares the same **two-tier** casebook with Sentinel / Cartographer (global `~/.claude/` cross-project + project `<proj>/.claude/`). When a "PRD bug / vague handling / design tradeoff" Compass hits is painful enough, it goes into the matching tier's `debug-log.md`, tagged with a `[COMPASS]` prefix for easy retrieval (cross-project tradeoff → global, this-project-only → project). Engine and routing: see sentinel `debug_log_template.md`.
 
 ```
 .claude/
