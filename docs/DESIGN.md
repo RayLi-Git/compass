@@ -30,6 +30,8 @@ My SOP was packed with things that only held for me: a hardcoded FastAPI structu
 
 **Consequence**: the two skills share the `.claude/` case files, but Compass's entries get a `[COMPASS]` prefix for retrieval. One watches thinking, one watches the spec — together they form the complete "before-you-act + while-you-act" toolkit.
 
+> **Addendum (after Cartographer joined)**: this decision was originally a two-skill pairing (Sentinel + Compass); upstream [Cartographer](https://github.com/RayLi-Git/cartographer) (creates the PRD) was added later, forming a three-skill toolchain: **Cartographer draws the map → Compass builds to it → Sentinel stands guard**. The principle "separate skills, each its own job, triggered on demand" holds just as well for all three.
+
 ---
 
 ## Decision 2: DoR is the dual of DoD — adding an entry gate
@@ -131,4 +133,4 @@ The core principle matches Sentinel: **"pointers always on, detail on demand"** 
 
 ---
 
-> Compass isn't a silver bullet — it's a **precise tool for a specific situation**. Its companion piece [Sentinel](https://github.com/RayLi-Git/sentinel) explores "how to encode structured thinking into an AI coding partner"; Compass explores "how to encode the discipline of PRD-driven development into that partner's execution discipline."
+> Compass isn't a silver bullet — it's a **precise tool for a specific situation**. In the same toolchain, [Cartographer](https://github.com/RayLi-Git/cartographer) explores "forcing fuzzy ideas into a verifiable PRD" and [Sentinel](https://github.com/RayLi-Git/sentinel) explores "encoding structured thinking into an AI coding partner"; Compass explores "how to encode the discipline of PRD-driven development into that partner's execution discipline."

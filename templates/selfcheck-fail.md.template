@@ -49,7 +49,7 @@
 
 ## 🔗 Related
 - [§3.4 自動自檢循環](../references/03_implementation/04_compare_fix_loop.md) — 3 輪規則與失敗決策樹
-- Sentinel `self_check.md` — 診斷模式 6 步 + 分級漸進失敗門檻
+- Sentinel `self_check.md` — 診斷模式 6 步 + 同症狀報數＋第3次硬停門檻
 
 ## 📝 Status
 v0.3.0 (ported from prior SOP T6, + 情況B 提早中止 + Sentinel 診斷模式接線 + dev-log 提醒).

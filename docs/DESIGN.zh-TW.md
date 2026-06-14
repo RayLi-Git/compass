@@ -30,6 +30,8 @@ Compass 的原料不是憑空想的，而是一份我自己長期在用的「PRD
 
 **衍生**：兩個 skill 共用 `.claude/` 病歷檔，但 Compass 的案例加 `[COMPASS]` 前綴方便檢索。一個看思考、一個看規格，合起來才是完整的「動手前 + 動手中」工具組。
 
+> **後記（Cartographer 加入後）**：本決策當時是兩件式（Sentinel + Compass）；後來再加上游 [Cartographer](https://github.com/RayLi-Git/cartographer)（生 PRD），形成三件式工具鏈：**Cartographer 畫地圖 → Compass 照圖走 → Sentinel 站哨**。「獨立成 skill、各司其職、按需觸發」這條原則對三件同樣成立。
+
 ---
 
 ## 決策 2：DoR 是 DoD 的對偶——補上「入口閘門」
@@ -131,4 +133,4 @@ Compass 的 scope 比 Sentinel 複雜得多——「PRD 紀律」和「不是 PR
 
 ---
 
-> Compass 不是萬靈丹，是一把**特定情境下精準的工具**。它的配對作品 [Sentinel](https://github.com/RayLi-Git/sentinel) 探索「如何把結構化思考編碼成 AI 寫程式的夥伴」；Compass 探索的是「如何把 PRD 驅動開發的紀律，編碼成那個夥伴的執行紀律」。
+> Compass 不是萬靈丹，是一把**特定情境下精準的工具**。同一工具鏈裡，[Cartographer](https://github.com/RayLi-Git/cartographer) 探索「把模糊想法逼成可驗收的 PRD」、[Sentinel](https://github.com/RayLi-Git/sentinel) 探索「把結構化思考編碼成 AI 寫程式的夥伴」；Compass 探索的是「如何把 PRD 驅動開發的紀律，編碼成那個夥伴的執行紀律」。

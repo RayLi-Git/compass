@@ -63,7 +63,7 @@ Explicitly out of scope, to avoid misuse:
 
 ## 🤝 Division of labor with Sentinel
 
-Compass and Sentinel are **paired skills** with complementary responsibilities:
+Compass is the middle of a **three-skill toolchain** (Cartographer creates the PRD → Compass builds to it → Sentinel stands guard throughout); it complements Sentinel:
 
 | Dimension | Sentinel | Compass |
 |---|---|---|

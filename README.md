@@ -49,7 +49,7 @@ Compass blocks all three with **discipline + tool enforcement**.
 
 ## Relationship to Sentinel
 
-[Sentinel](https://github.com/RayLi-Git/sentinel) is its **companion skill**:
+Compass is part of a **three-skill toolchain** ([Cartographer](https://github.com/RayLi-Git/cartographer) creates the PRD → Compass builds to it → [Sentinel](https://github.com/RayLi-Git/sentinel) stands guard throughout). Compass vs. Sentinel:
 
 | Dimension | Sentinel | Compass |
 |---|---|---|
@@ -57,7 +57,7 @@ Compass blocks all three with **discipline + tool enforcement**.
 | Trigger question | "Have I thought this through?" | "Am I following the PRD?" |
 | Applies to | any engineering task | implementation work with a spec |
 
-The two are often used together. Full split in [docs/SCOPE.md](./docs/SCOPE.md).
+All three are often used together. Full split in [docs/SCOPE.md](./docs/SCOPE.md).
 
 ## 🗺️ The full toolchain (three together)
 
@@ -97,4 +97,4 @@ Read the full set of design decisions and trade-offs in **[docs/DESIGN.md](./doc
 
 [MIT](./LICENSE) © Ray_Li
 
-> This project is a portfolio piece exploring "how to encode the discipline of PRD-driven development into an AI coding partner." Its companion piece [Sentinel](https://github.com/RayLi-Git/sentinel) explores "how to encode structured thinking into an AI coding partner."
+> This project is a portfolio piece exploring "how to encode the discipline of PRD-driven development into an AI coding partner." In the same toolchain, [Sentinel](https://github.com/RayLi-Git/sentinel) explores "encoding structured thinking into an AI partner" and [Cartographer](https://github.com/RayLi-Git/cartographer) explores "forcing fuzzy ideas into a verifiable PRD."

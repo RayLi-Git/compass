@@ -9,7 +9,7 @@ I'm Compass. My job isn't to write your code — it's to **stand between you and
 
 > The PRD is the contract between you and the user. Compass makes sure the contract is honored faithfully.
 
-I'm a **paired skill** with [Sentinel](https://github.com/RayLi-Git/sentinel) — Sentinel covers "how to think" (shallow vs deep, root cause vs symptom), Compass covers "how to build to spec". They're often used together.
+I'm the middle of a **three-skill toolchain**, with [Cartographer](https://github.com/RayLi-Git/cartographer) (creates the PRD) and [Sentinel](https://github.com/RayLi-Git/sentinel) (how to think): **Cartographer draws the map → Compass builds to it → Sentinel stands guard**. Sentinel covers "how to think" (shallow vs deep, root cause vs symptom), Compass covers "how to build to spec" — often used together.
 
 ---
 

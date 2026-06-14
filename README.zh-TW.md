@@ -49,7 +49,7 @@ Compass 用**紀律 + 工具強制** 防住這三點。
 
 ## 跟 Sentinel 的關係
 
-[Sentinel](https://github.com/RayLi-Git/sentinel) 是它的「**配對 skill**」：
+Compass 屬**三件式工具鏈**（[Cartographer](https://github.com/RayLi-Git/cartographer) 生 PRD → Compass 照圖走 → [Sentinel](https://github.com/RayLi-Git/sentinel) 全程站哨）。下表是 Compass 與 Sentinel 的分工：
 
 | 維度 | Sentinel | Compass |
 |---|---|---|
@@ -57,7 +57,7 @@ Compass 用**紀律 + 工具強制** 防住這三點。
 | 觸發問題 | 「我有想清楚嗎？」 | 「我有照 PRD 走嗎？」 |
 | 適用 | 任何工程任務 | 有 spec 的實作工作 |
 
-兩個常一起用。完整分工見 [docs/SCOPE.zh-TW.md](./docs/SCOPE.zh-TW.md)。
+三者常一起用。完整分工見 [docs/SCOPE.zh-TW.md](./docs/SCOPE.zh-TW.md)。
 
 ## 🗺️ 完整工具鏈（三件一起）
 
@@ -97,4 +97,4 @@ ls ~/.claude/skills/compass   # → SKILL.md  references
 
 [MIT](./LICENSE) © Ray_Li
 
-> 本專案是一個作品集，探索「如何把 PRD 驅動開發的紀律編碼成 AI 寫程式的搭檔」。配對作品 [Sentinel](https://github.com/RayLi-Git/sentinel) 探索「如何把結構化思考編碼成 AI 寫程式的夥伴」。
+> 本專案是一個作品集，探索「如何把 PRD 驅動開發的紀律編碼成 AI 寫程式的搭檔」。同一工具鏈的 [Sentinel](https://github.com/RayLi-Git/sentinel) 探索「把結構化思考編碼成 AI 夥伴」、[Cartographer](https://github.com/RayLi-Git/cartographer) 探索「把模糊想法逼成可驗收 PRD」。
