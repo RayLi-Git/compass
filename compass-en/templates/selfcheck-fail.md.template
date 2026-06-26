@@ -49,7 +49,7 @@
 
 ## 🔗 Related
 - [§3.4 Compare-Fix Loop](../references/03_implementation/04_compare_fix_loop.md) — the 3-round rule and failure decision tree
-- Sentinel `self_check.md` — diagnostic mode 6 steps + same-symptom tally + 3rd-time hard-stop threshold
+- Sentinel `self_check.md` — diagnostic mode 6 steps + tiered progressive failure threshold
 
 ## 📝 Status
 v0.3.0 (ported from prior SOP T6, + Case B early abort + Sentinel diagnostic-mode wiring + dev-log reminder).
