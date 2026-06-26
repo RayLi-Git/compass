@@ -46,13 +46,17 @@ I'm the middle of a **three-skill toolchain**, with [Cartographer](https://githu
 | 🟡 medium | Add an endpoint / change a chunk of logic / integrate an API | Run quick-version DoR + complete-compare-correct |
 | 🔴 heavy | Implement a whole PRD block / migration / rollback / brownfield large feature | Run the full 11-section flow |
 
-⚠️ **What this skill covers / doesn't cover → see [docs/SCOPE.md](./docs/SCOPE.md)**
+⚠️ **What this skill covers / doesn't cover → load [`references/00_scope/`](./references/00_scope/_index.md)** (full design trade-offs in the GitHub repo's [`docs/SCOPE.md`](https://github.com/RayLi-Git/compass/blob/main/compass-en/docs/SCOPE.md))
 
 ---
 
-## 🗺️ 11 topic modules (load the matching references/ on demand)
+## 🗺️ Topic modules (load the matching references/ on demand)
 
-> §1–§11 all modules + §6.6 SLA + §11 executable scripts + INSTALL/DESIGN docs + EN/ZH bilingual — all delivered. Coverage boundaries and future directions in [docs/SCOPE.md](./docs/SCOPE.md).
+> §0 scope boundary + §1–§11 all modules + §6.6 SLA + §11 executable scripts + EN/ZH bilingual — all delivered. Full design trade-offs and future directions in the GitHub repo's [`docs/SCOPE.md`](https://github.com/RayLi-Git/compass/blob/main/compass-en/docs/SCOPE.md).
+
+### §0 Scope — confirm the boundary before you start
+- Load: `references/00_scope/`
+- When: unsure whether this task should use Compass (vs just using Sentinel)
 
 ### §1 Foundations — five phases + core principles
 - Load: `references/01_foundations/`
@@ -128,10 +132,13 @@ Compass shares the same **two-tier** casebook with Sentinel / Cartographer (glob
 
 ## 📖 Further reading
 
-- [docs/SCOPE.md](./docs/SCOPE.md) — what this skill covers / doesn't cover (**read first**)
-- [docs/DESIGN.md](./docs/DESIGN.md) — design decisions and trade-offs
-- [docs/INSTALL.md](./docs/INSTALL.md) — installation guide
-- [README.md](./README.md) — project overview
+- [`references/00_scope/`](./references/00_scope/_index.md) — what this skill covers / doesn't cover (**read first if unsure whether to use Compass**)
+
+The following are GitHub repo docs (per the official install method they don't end up in the local skill dir; links point to GitHub):
+- [docs/SCOPE.md](https://github.com/RayLi-Git/compass/blob/main/compass-en/docs/SCOPE.md) — full scope, design trade-offs and future directions
+- [docs/DESIGN.md](https://github.com/RayLi-Git/compass/blob/main/compass-en/docs/DESIGN.md) — design decisions and trade-offs
+- [docs/INSTALL.md](https://github.com/RayLi-Git/compass/blob/main/compass-en/docs/INSTALL.md) — installation guide
+- [README.md](https://github.com/RayLi-Git/compass/blob/main/compass-en/README.md) — project overview
 
 ---
 

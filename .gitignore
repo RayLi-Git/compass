@@ -21,3 +21,6 @@ sentinel.zip
 _*.txt
 _*.py
 _*.md
+# 例外：章節索引檔不是臨時驗證檔，必須入庫
+!_index.md
+!**/_index.md
