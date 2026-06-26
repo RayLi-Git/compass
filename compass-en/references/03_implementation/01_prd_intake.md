@@ -51,6 +51,21 @@ Break the PRD into individual **independently-shippable** feature items, as seed
 
 This checklist becomes the input to the PRD checklist in [§3.2 The three tracking docs](./02_tracking_docs.md). Compass recommends a **PRD-table expansion script** (behavior varies by config) to turn the PRD's feature/field/endpoint tables into checklist entries; whatever tool you use, the checklist must map back to PRD sections in reverse.
 
+> **🤝 Ingesting a Cartographer handoff**
+> If the PRD was produced by [Cartographer](https://github.com/RayLi-Git/cartographer), its §14 handoff ships a checklist bullet list, e.g.:
+> `- [ ] FR-PAY-01 create payment intent ｜P0｜AC: 200 with paymentId｜verify-by: integration test`
+> Map it directly onto the columns of `templates/prd-checklist.md.template` — **don't drop columns**:
+>
+> | Handoff bullet field | → checklist column |
+> |---|---|
+> | ID + description (`FR-PAY-01 create payment intent`) | Item (smallest unit) |
+> | the PRD section that ID maps to | PRD §ref |
+> | `P0` | Priority |
+> | `AC: …` + `verify-by: …` | AC / verify-by |
+> | (backfill after implementing) | Status / verified-in-codebase? |
+>
+> This way Cartographer's priority / AC / verify-by are not lost at the handoff (the old four-column compass table had no such columns and dropped this data at the seam).
+
 ### 4. Build an empty skeleton from the "directory structure" section first
 
 If the PRD defines a project directory structure or file-layout section:

@@ -51,6 +51,21 @@
 
 這份清單會成為 [§3.2 追蹤文件三件套](./02_tracking_docs.md) 中 PRD checklist 的輸入。Compass 推薦用一個**PRD-table 展開腳本**（功能依設定而異）把 PRD 的功能/欄位/端點表格轉成 checklist 條目；不論用什麼工具，清單必須能反向對映回 PRD 章節。
 
+> **🤝 接 Cartographer 交棒產物**
+> 若 PRD 由 [Cartographer](https://github.com/RayLi-Git/cartographer) 產出，它的 §14 交棒會附一份 checklist bullet，例如：
+> `- [ ] FR-PAY-01 建立付款意圖 ｜P0｜AC: 回200含paymentId｜驗收方式: 整合測試`
+> 直接映射到 `templates/prd-checklist.md.template` 的表格欄位，**不要丟欄**：
+>
+> | 交棒 bullet 欄位 | → checklist 欄 |
+> |---|---|
+> | 編號 + 描述（`FR-PAY-01 建立付款意圖`） | 項目（最小單位） |
+> | 該編號對應的 PRD 章節 | PRD §ref |
+> | `P0` | 優先級 |
+> | `AC: …` + `驗收方式: …` | AC/驗收方式 |
+> | （實作後回填） | 狀態 / verified-in-codebase? |
+>
+> 這樣 Cartographer 的優先級 / AC / 驗收方式在交棒時不會遺失（過去 compass 四欄表無這幾欄，會在交棒處掉資料）。
+
 ### 4. 依「目錄結構」章節先建空骨架
 
 如果 PRD 有定義專案目錄結構或檔案佈局章節：

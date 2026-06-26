@@ -4,7 +4,7 @@
 
 # Compass — PRD 紀律的羅盤
 
-> 一個 Claude Code skill，扮演「PRD 與實作之間的羅盤」——確保你照著規格蓋、不偏航、不漏項。三件式工具鏈的一環，配 [Cartographer](https://github.com/RayLi-Git/cartographer) 與 [Sentinel](https://github.com/RayLi-Git/sentinel)：**Cartographer 畫地圖 → Compass 照圖走 → Sentinel 站哨。**
+> 一個 Claude Code skill，扮演「PRD 與實作之間的羅盤」——確保你照著規格蓋、不偏航、不漏項。四件式工具鏈的一環，配 [Cartographer](https://github.com/RayLi-Git/cartographer)、[Sentinel](https://github.com/RayLi-Git/sentinel) 與 [Lookout](https://github.com/RayLi-Git/lookout)：**Cartographer 畫地圖 → Compass 照圖走 → Sentinel 站哨 → Lookout 瞭望。**
 
 ![status](https://img.shields.io/badge/status-active-success)
 ![license](https://img.shields.io/badge/license-MIT-blue)
@@ -49,7 +49,7 @@ Compass 用**紀律 + 工具強制** 防住這三點。
 
 ## 跟 Sentinel 的關係
 
-Compass 屬**三件式工具鏈**（[Cartographer](https://github.com/RayLi-Git/cartographer) 生 PRD → Compass 照圖走 → [Sentinel](https://github.com/RayLi-Git/sentinel) 全程站哨）。下表是 Compass 與 Sentinel 的分工：
+Compass 屬**四件式工具鏈**（[Cartographer](https://github.com/RayLi-Git/cartographer) 生 PRD → Compass 照圖走 → [Sentinel](https://github.com/RayLi-Git/sentinel) 全程站哨 → [Lookout](https://github.com/RayLi-Git/lookout) 段落完成獨立審）。下表是 Compass 與 Sentinel 的分工：
 
 | 維度 | Sentinel | Compass |
 |---|---|---|

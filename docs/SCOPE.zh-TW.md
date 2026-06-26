@@ -63,7 +63,7 @@
 
 ## 🤝 跟 Sentinel 的分工
 
-Compass 是**三件式工具鏈**的中段（Cartographer 生 PRD → Compass 照圖走 → Sentinel 全程站哨）；與 Sentinel 職責互補：
+Compass 是**四件式工具鏈**的中段（Cartographer 生 PRD → Compass 照圖走 → Sentinel 全程站哨 → Lookout 段落完成獨立審）；與 Sentinel 職責互補：
 
 | 維度 | Sentinel | Compass |
 |---|---|---|

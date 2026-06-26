@@ -29,10 +29,15 @@
 
 set -u
 
-# --- Tunable blacklist (case-insensitive, matched as standalone words/phrases where possible) ---
-# Each project should add/remove entries per its team's wording. Chinese words are matched as
-# plain substrings since they have no word boundaries.
-BANNED="complete completed done finished all-done one-shot full-set shipped"
+# --- Tunable blacklist (case-insensitive) -------------------------------------------------------
+# Each project should add/remove entries per its team's wording.
+#   * English terms are matched on WORD BOUNDARIES (grep -iqw) to avoid false positives on
+#     legit words like incomplete / unfinished / abandoned / completion.
+#     (Note: not -F, since some GNU grep builds crash when -F and -w are combined; the terms
+#      are plain alphanumerics with no regex metacharacters, so BRE is safe.)
+#   * CJK terms have no word boundaries, so match them as plain substrings (grep -Fq).
+EN_BANNED="complete completed done finished all-done one-shot full-set shipped"
+CJK_BANNED=""   # e.g. "完整 全部 一次到位 全套 已實作" for Chinese projects
 
 # git passes the commit message file path as the first argument
 MSG_FILE="${1:-}"
@@ -41,20 +46,22 @@ if [ -z "${MSG_FILE}" ] || [ ! -f "${MSG_FILE}" ]; then
 	exit 1
 fi
 
-# Lowercase the message for case-insensitive matching (English). Chinese is unaffected.
-MSG_LOWER="$(tr '[:upper:]' '[:lower:]' < "${MSG_FILE}")"
-
 RULE='Use concrete counts, e.g. 12/12 endpoints; flag omissions with ⚠ Known omission: ...'
 HITS=""
 
-for word in ${BANNED}; do
-	# "all done" is represented as all-done in the blacklist; restore the space when matching
-	probe="$(printf '%s' "${word}" | tr '-' ' ' | tr '[:upper:]' '[:lower:]')"
-	case "${MSG_LOWER}" in
-		*"${probe}"*)
-			HITS="${HITS} ${word}"
-			;;
-	esac
+# English: word boundary + case-insensitive (-iqw). "all done" is stored as all-done; restore the space.
+for word in ${EN_BANNED}; do
+	probe="$(printf '%s' "${word}" | tr '-' ' ')"
+	if grep -iqw -- "${probe}" "${MSG_FILE}"; then
+		HITS="${HITS} ${word}"
+	fi
+done
+
+# CJK: plain substring (-Fq); CJK has no word boundaries.
+for word in ${CJK_BANNED}; do
+	if grep -Fq -- "${word}" "${MSG_FILE}"; then
+		HITS="${HITS} ${word}"
+	fi
 done
 
 if [ -n "${HITS}" ]; then

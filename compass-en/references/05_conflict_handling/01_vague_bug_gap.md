@@ -15,7 +15,7 @@ In practice "the PRD differs from what I expected" is actually three different t
 
 The three sections below are the SOPs for these three tracks. §5.1.4 at the end gives you a cheat sheet.
 
-> 🚧 **This file currently covers the three categories of "static PRD" conflict** (vague / bug / gap). "Dynamic conflicts" — mid-stream PRD changes, cross-document conflict (PRD vs ADR vs API contract), multi-PRD dependencies — will be added in a later Phase as §5.2 ~ §5.4.
+> 📍 **This file covers the three categories of "static PRD" conflict** (vague / bug / gap). "Dynamic conflicts" — mid-stream PRD changes, cross-document conflict (PRD vs ADR vs API contract), multi-PRD dependencies — see [§5.2](02_prd_change.md), [§5.3](03_cross_document.md), [§5.4](04_multi_prd.md) (all delivered).
 
 ---
 

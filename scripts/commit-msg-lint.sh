@@ -27,9 +27,15 @@
 
 set -u
 
-# --- 可微調黑名單（case-insensitive，盡量比對成獨立詞/詞組）---------------
-# 各專案請依團隊用語增刪。中文詞不分詞邊界，直接子字串比對。
-BANNED="complete completed done finished all-done 完整 全部 一次到位 全套 已實作"
+# --- 可微調黑名單（case-insensitive）------------------------------------
+# 各專案請依團隊用語增刪。
+#   * 英文詞用「詞邊界」比對（grep -iqw），避免誤殺 incomplete / unfinished /
+#     abandoned / completion 等含子字串的合法字。
+#     （註：不用 -F，因部分 GNU grep 在 -F 與 -w 併用時會 crash；英文詞為純字
+#      母無 regex 元字元，BRE 安全。）
+#   * 中文詞無詞邊界，用子字串比對（grep -Fq）。
+EN_BANNED="complete completed done finished all-done"
+CJK_BANNED="完整 全部 一次到位 全套 已實作"
 
 # git 把 commit message 檔路徑當第一參數傳入
 MSG_FILE="${1:-}"
@@ -38,20 +44,22 @@ if [ -z "${MSG_FILE}" ] || [ ! -f "${MSG_FILE}" ]; then
 	exit 1
 fi
 
-# 轉小寫以便 case-insensitive 比對（英文）。中文不受影響。
-MSG_LOWER="$(tr '[:upper:]' '[:lower:]' < "${MSG_FILE}")"
-
 RULE='用具體計數，如 12/12 endpoints；漏項用 ⚠ 已知漏項：...'
 HITS=""
 
-for word in ${BANNED}; do
-	# "all done" 在黑名單以 all-done 表示，比對時還原成空白
-	probe="$(printf '%s' "${word}" | tr '-' ' ' | tr '[:upper:]' '[:lower:]')"
-	case "${MSG_LOWER}" in
-		*"${probe}"*)
-			HITS="${HITS} ${word}"
-			;;
-	esac
+# 英文：詞邊界 + 大小寫不敏感（-Fiqw）。"all done" 在黑名單以 all-done 表示，比對時還原空白。
+for word in ${EN_BANNED}; do
+	probe="$(printf '%s' "${word}" | tr '-' ' ')"
+	if grep -iqw -- "${probe}" "${MSG_FILE}"; then
+		HITS="${HITS} ${word}"
+	fi
+done
+
+# 中文：子字串比對（-Fq），中文無詞邊界。
+for word in ${CJK_BANNED}; do
+	if grep -Fq -- "${word}" "${MSG_FILE}"; then
+		HITS="${HITS} ${word}"
+	fi
 done
 
 if [ -n "${HITS}" ]; then

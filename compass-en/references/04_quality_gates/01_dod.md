@@ -32,6 +32,8 @@ These eight are the floor. Missing one (except the smoke library exemption) mean
 
 > 📌 **Conditional item #9**: once your project sets up a reverse-audit script (see the reverse-audit script in [§11 Tooling audit](../11_tooling/01_m007_to_m010.md)), **"reverse audit exit code 0" is promoted to Required** — having a mechanized check and not running it is the same as not building it.
 
+> 🔭 **Propose an independent review at section completion**: once a 🟡 / 🔴 logical unit / feature / module is done and DoD passes, **propose** running [Lookout](https://github.com/RayLi-Git/lookout) (`/lookout`) — an **independent-context** review (correctness bugs / duplicated-not-modularized code / security shortcuts) that covers the blind spots of inline self-review (the author and the reviewer share assumptions = shared blind spots). Only run it once the user agrees; don't start it unilaterally; skip it for 🟢 light tasks.
+
 ---
 
 ## 🟡 Recommended additions (strongly advised)

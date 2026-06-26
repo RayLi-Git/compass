@@ -15,7 +15,7 @@
 
 下面三節就是這三條軌道的 SOP。最後 §5.1.4 給你一張速查表。
 
-> 🚧 **本檔目前涵蓋「靜態 PRD」的三類衝突**（模糊 / bug / 缺漏）。PRD 中途變更、跨文件衝突（PRD vs ADR vs API contract）、多 PRD 依賴等「動態衝突」將在後續 Phase 補上 §5.2 ~ §5.4。
+> 📍 **本檔涵蓋「靜態 PRD」的三類衝突**（模糊 / bug / 缺漏）。PRD 中途變更、跨文件衝突（PRD vs ADR vs API contract）、多 PRD 依賴等「動態衝突」見 [§5.2](02_prd_change.md)、[§5.3](03_cross_document.md)、[§5.4](04_multi_prd.md)（皆已交付）。
 
 ---
 

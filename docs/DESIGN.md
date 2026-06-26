@@ -30,7 +30,7 @@ My SOP was packed with things that only held for me: a hardcoded FastAPI structu
 
 **Consequence**: the two skills share the `.claude/` case files, but Compass's entries get a `[COMPASS]` prefix for retrieval. One watches thinking, one watches the spec — together they form the complete "before-you-act + while-you-act" toolkit.
 
-> **Addendum (after Cartographer joined)**: this decision was originally a two-skill pairing (Sentinel + Compass); upstream [Cartographer](https://github.com/RayLi-Git/cartographer) (creates the PRD) was added later, forming a three-skill toolchain: **Cartographer draws the map → Compass builds to it → Sentinel stands guard**. The principle "separate skills, each its own job, triggered on demand" holds just as well for all three.
+> **Addendum (toolchain evolution)**: this decision was originally a two-skill pairing (Sentinel + Compass); upstream [Cartographer](https://github.com/RayLi-Git/cartographer) (creates the PRD) was added later, then downstream [Lookout](https://github.com/RayLi-Git/lookout) (independent review at section completion), forming a four-skill toolchain: **Cartographer draws the map → Compass builds to it → Sentinel stands guard → Lookout watches from the masthead**. The principle "separate skills, each its own job, triggered on demand" holds just as well for all four.
 
 ---
 

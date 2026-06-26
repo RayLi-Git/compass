@@ -20,6 +20,13 @@ audit_prd_vs_code.example.py — Compass M-008 反向稽核（reverse audit）
   也可用 --config 指定路徑。設定檔用 JSON（走 stdlib json，不依賴 pyyaml）。
   Schema 範例見下方 CONFIG_EXAMPLE。
 
+【已知限制 / LIMITATION】
+  CONFIG_EXAMPLE 的 endpoint check 只 capture「path」，不分辨 HTTP method：
+  PRD 的 `GET /users` 與 code 的 `POST /users` 會被當成同一項 → method 不符
+  「不會」被抓成缺口（假陰性）。若你的 PRD 需要 method 敏感度，請讓
+  prd_regex / code_regex 各自把「method + path」capture 成同一組可比對字串
+  （注意 code 端 method 多為小寫如 @app.post，需正規化大小寫後再比）。
+
 【如何執行 / HOW TO RUN】
   python3 audit_prd_vs_code.example.py                 # 跑全部 checks
   python3 audit_prd_vs_code.example.py --section=tables # 只跑名為 tables 的 check

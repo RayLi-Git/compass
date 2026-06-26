@@ -34,6 +34,8 @@ python3 scripts/audit_prd_vs_code.example.py --section=endpoints
 - `checks[]` — 每個 check 一組：`name` / `prd_regex`（從 PRD 抓項目）/ `code_glob`（掃哪些 code 檔）/ `code_regex`（從 code 抓實作）
 
 > 範例 regex 是針對 FastAPI + SQL migration 的佈局；換你的技術棧要改 regex。
+>
+> ⚠️ **已知限制**：範例的 endpoint check 只比對 path、不分辨 HTTP method（`GET /users` 與 `POST /users` 視為同一項，method 不符不會被抓出）。需 method 敏感度請讓 regex capture「method + path」成一組（code 端 method 大小寫需正規化）。
 
 ## M-007 反聚合 checklist 展開
 

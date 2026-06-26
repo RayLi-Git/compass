@@ -63,7 +63,7 @@ Explicitly out of scope, to avoid misuse:
 
 ## 🤝 Division of labor with Sentinel
 
-Compass is the middle of a **three-skill toolchain** (Cartographer creates the PRD → Compass builds to it → Sentinel stands guard throughout); it complements Sentinel:
+Compass is the middle of a **four-skill toolchain** (Cartographer creates the PRD → Compass builds to it → Sentinel stands guard throughout → Lookout independently reviews at section completion); it complements Sentinel:
 
 | Dimension | Sentinel | Compass |
 |---|---|---|

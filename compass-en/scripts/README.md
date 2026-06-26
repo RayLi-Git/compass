@@ -34,6 +34,8 @@ Config file fields (see [`../templates/audit-config.example.json`](../templates/
 - `checks[]` — one group per check: `name` / `prd_regex` (pull items from the PRD) / `code_glob` (which code files to scan) / `code_regex` (pull implementations from the code)
 
 > The example regex targets a FastAPI + SQL migration layout; switch to your stack and you must change the regex.
+>
+> ⚠️ **Known limitation**: the example endpoint check matches the path only and does not distinguish the HTTP method (`GET /users` and `POST /users` are treated as the same item, so a method mismatch is not flagged). For method sensitivity, have the regex capture "method + path" as one string (normalize the code-side method case).
 
 ## M-007 anti-aggregation checklist expansion
 

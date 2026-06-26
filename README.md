@@ -4,7 +4,7 @@
 
 # Compass — The Compass of PRD Discipline
 
-> A Claude Code skill that acts as "the compass between PRD and implementation" — making sure you build to spec, don't drift, and don't drop items. Part of a three-skill toolchain with [Cartographer](https://github.com/RayLi-Git/cartographer) and [Sentinel](https://github.com/RayLi-Git/sentinel): **Cartographer draws the map → Compass builds to it → Sentinel stands guard.**
+> A Claude Code skill that acts as "the compass between PRD and implementation" — making sure you build to spec, don't drift, and don't drop items. Part of a four-skill toolchain with [Cartographer](https://github.com/RayLi-Git/cartographer), [Sentinel](https://github.com/RayLi-Git/sentinel), and [Lookout](https://github.com/RayLi-Git/lookout): **Cartographer draws the map → Compass builds to it → Sentinel stands guard → Lookout watches from the masthead.**
 
 ![status](https://img.shields.io/badge/status-active-success)
 ![license](https://img.shields.io/badge/license-MIT-blue)
@@ -49,7 +49,7 @@ Compass blocks all three with **discipline + tool enforcement**.
 
 ## Relationship to Sentinel
 
-Compass is part of a **three-skill toolchain** ([Cartographer](https://github.com/RayLi-Git/cartographer) creates the PRD → Compass builds to it → [Sentinel](https://github.com/RayLi-Git/sentinel) stands guard throughout). Compass vs. Sentinel:
+Compass is part of a **four-skill toolchain** ([Cartographer](https://github.com/RayLi-Git/cartographer) creates the PRD → Compass builds to it → [Sentinel](https://github.com/RayLi-Git/sentinel) stands guard throughout → [Lookout](https://github.com/RayLi-Git/lookout) independently reviews at section completion). Compass vs. Sentinel:
 
 | Dimension | Sentinel | Compass |
 |---|---|---|

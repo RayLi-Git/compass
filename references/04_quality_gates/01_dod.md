@@ -32,6 +32,8 @@
 
 > 📌 **條件式第 9 項**：一旦你的專案建立了反向稽核腳本（見 [§11 工具化稽核](../11_tooling/01_m007_to_m010.md) 的 reverse-audit script），**「反向稽核 exit code 0」即升為 Required**——機械化檢查存在卻不跑，等於白建。
 
+> 🔭 **段落完成提議獨立審查**：🟡 / 🔴 的一個邏輯單元 / 功能 / 模組做完、DoD 過關後，**提議**跑 [Lookout](https://github.com/RayLi-Git/lookout)（`/lookout`）開**獨立 context** 的審查（正確性 bug / 重複沒模組化 / 資安僥倖）——補 inline 自審的盲點（寫的人和審的人共用假設＝共用盲點）。使用者按了才跑，不擅自啟動；🟢 輕級不提。
+
 ---
 
 ## 🟡 Recommended additions（強烈建議補上）

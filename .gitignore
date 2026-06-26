@@ -17,6 +17,10 @@ sentinel.zip
 *.tmp
 *.log
 
+# Python 建置產物（不入庫）
+__pycache__/
+*.pyc
+
 # 臨時驗證檔（驗證用，不入庫）
 _*.txt
 _*.py

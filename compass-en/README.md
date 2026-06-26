@@ -83,6 +83,6 @@ Read the full set of design decisions and trade-offs in **[docs/DESIGN.md](./doc
 
 ## License
 
-[MIT](./LICENSE) © Ray_Li
+[MIT](../LICENSE) © Ray_Li
 
 > This project is a portfolio piece exploring "how to encode the discipline of PRD-driven development into an AI coding partner." Its companion piece [Sentinel](https://github.com/RayLi-Git/sentinel) explores "how to encode structured thinking into an AI coding partner."

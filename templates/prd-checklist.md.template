@@ -31,6 +31,9 @@ PRD 裡每一個**可獨立驗證的最小單位**，都必須單獨佔一列，
 | ✅ | 完成且已對齊 PRD |
 
 > `verified-in-codebase?` 欄位：是否實際在 codebase 確認過（非靠記憶）。填 `是 (檔案:行)` / `否` / `⚠️推測`。
+>
+> `優先級` 欄：P0 / P1 / P2…（承接 PRD 或 [Cartographer](https://github.com/RayLi-Git/cartographer) 交棒的優先級）。
+> `AC/驗收方式` 欄：這條的驗收標準 + 驗法（單元 / 整合 / 安全 / 手動）——對應 [§10](../references/10_testing_strategy/_index.md)「每條驗收要能指到測試」。
 
 ---
 
@@ -39,39 +42,39 @@ PRD 裡每一個**可獨立驗證的最小單位**，都必須單獨佔一列，
 ### §<X.Y> <章節標題，例：使用者帳號 API>
 <!-- endpoint 顆粒度範例 -->
 
-| 狀態 | PRD §ref | 項目（最小單位） | verified-in-codebase? |
-|---|---|---|---|
-| ✅ | §<X.Y> | `POST /api/users` 建立帳號 | 是 (routes/users.ts:42) |
-| 🟡 | §<X.Y> | `GET /api/users/:id` 查單筆 | 否（route 有、權限檢查未做） |
-| ⬜ | §<X.Y> | `DELETE /api/users/:id` 軟刪除 | 否 |
+| 狀態 | PRD §ref | 項目（最小單位） | 優先級 | AC/驗收方式 | verified-in-codebase? |
+|---|---|---|---|---|---|
+| ✅ | §<X.Y> | `POST /api/users` 建立帳號 | P0 | 回 201 含 id；整合測試 | 是 (routes/users.ts:42) |
+| 🟡 | §<X.Y> | `GET /api/users/:id` 查單筆 | P0 | 回 200/404；整合測試 | 否（route 有、權限檢查未做） |
+| ⬜ | §<X.Y> | `DELETE /api/users/:id` 軟刪除 | P1 | deleted_at 設值；整合測試 | 否 |
 
 ### §<X.Z> <章節標題，例：資料模型>
 <!-- table / field 顆粒度範例 -->
 
-| 狀態 | PRD §ref | 項目（最小單位） | verified-in-codebase? |
-|---|---|---|---|
-| ✅ | §<X.Z> | `users` 表存在 | 是 (migrations/001_users.sql) |
-| ✅ | §<X.Z> | `users.email` UNIQUE NOT NULL | 是 (migrations/001_users.sql:5) |
-| 🟡 | §<X.Z> | `users.deleted_at` 軟刪除欄位 | ⚠️推測（migration 未確認） |
+| 狀態 | PRD §ref | 項目（最小單位） | 優先級 | AC/驗收方式 | verified-in-codebase? |
+|---|---|---|---|---|---|
+| ✅ | §<X.Z> | `users` 表存在 | P0 | migration 套用無誤；遷移測試 | 是 (migrations/001_users.sql) |
+| ✅ | §<X.Z> | `users.email` UNIQUE NOT NULL | P0 | 重複 email 插入失敗；單元測試 | 是 (migrations/001_users.sql:5) |
+| 🟡 | §<X.Z> | `users.deleted_at` 軟刪除欄位 | P1 | 欄位存在且可為 null；遷移測試 | ⚠️推測（migration 未確認） |
 
 ### §<X.W> <章節標題，例：前端畫面>
 <!-- page 顆粒度範例 -->
 
-| 狀態 | PRD §ref | 項目（最小單位） | verified-in-codebase? |
-|---|---|---|---|
-| ⬜ | §<X.W> | `/login` 登入頁 | 否 |
-| ⬜ | §<X.W> | `/settings/profile` 個人資料頁 | 否 |
+| 狀態 | PRD §ref | 項目（最小單位） | 優先級 | AC/驗收方式 | verified-in-codebase? |
+|---|---|---|---|---|---|
+| ⬜ | §<X.W> | `/login` 登入頁 | P0 | 表單可送出、錯誤顯示；手動 + e2e | 否 |
+| ⬜ | §<X.W> | `/settings/profile` 個人資料頁 | P2 | 顯示/儲存個資；手動 | 否 |
 
 ---
 
 ## 自動展開（選用）
 
-逐項手動拆 PRD 很累且易漏。可用 `scripts/expand_checklist.example.py` 從 PRD 自動生成本表骨架：
+逐項手動拆 PRD 很累且易漏。可用 `scripts/expand_checklist.example.py` 從 PRD 表格產出**一項一列的 checkbox 起點清單**（注意：它產的是 bullet 種子，不是本表的完整欄位）：
 
 ```bash
-python scripts/expand_checklist.example.py <path/to/PRD.md> > prd-checklist.md
+python scripts/expand_checklist.example.py <path/to/PRD.md> > checklist-seed.md
 ```
 
-它會掃描 PRD 章節、抓出 endpoint / table / field / page 級的最小單位，**一項一列**地產出待填表格（狀態預設 ⬜，`verified-in-codebase?` 預設 `否`）。生成後仍須人工複核：自動拆分可能漏掉散落在敘述段落裡的需求。
+它會掃 PRD 表格、把每列攤成 `- [ ] <章節> | <最小單位>` 的 bullet（避免人手抄漏行）。接著把這些 bullet **排進上面的表格**，補上 `優先級` / `AC/驗收方式`（從 PRD 或 Cartographer 交棒取得），`狀態` 預設 ⬜、`verified-in-codebase?` 預設 `否`。自動拆分可能漏掉散落在敘述段落裡的需求，仍須人工複核。
 
 <!-- 維護提醒：PRD 改版時重新展開並 diff，新增項補列、刪除項標註，勿直接覆蓋既有狀態。 -->

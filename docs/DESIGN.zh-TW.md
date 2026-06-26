@@ -30,7 +30,7 @@ Compass 的原料不是憑空想的，而是一份我自己長期在用的「PRD
 
 **衍生**：兩個 skill 共用 `.claude/` 病歷檔，但 Compass 的案例加 `[COMPASS]` 前綴方便檢索。一個看思考、一個看規格，合起來才是完整的「動手前 + 動手中」工具組。
 
-> **後記（Cartographer 加入後）**：本決策當時是兩件式（Sentinel + Compass）；後來再加上游 [Cartographer](https://github.com/RayLi-Git/cartographer)（生 PRD），形成三件式工具鏈：**Cartographer 畫地圖 → Compass 照圖走 → Sentinel 站哨**。「獨立成 skill、各司其職、按需觸發」這條原則對三件同樣成立。
+> **後記（工具鏈演進）**：本決策當時是兩件式（Sentinel + Compass）；後來加上游 [Cartographer](https://github.com/RayLi-Git/cartographer)（生 PRD），再加下游 [Lookout](https://github.com/RayLi-Git/lookout)（段落完成的獨立審查），形成四件式工具鏈：**Cartographer 畫地圖 → Compass 照圖走 → Sentinel 站哨 → Lookout 瞭望**。「獨立成 skill、各司其職、按需觸發」這條原則對四件同樣成立。
 
 ---
 

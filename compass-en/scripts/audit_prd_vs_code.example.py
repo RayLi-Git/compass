@@ -20,6 +20,14 @@ audit_prd_vs_code.example.py — Compass M-008 reverse audit
   or you can specify the path with --config. The config file uses JSON (via stdlib json, no pyyaml dependency).
   See CONFIG_EXAMPLE below for a schema example.
 
+[LIMITATION]
+  The endpoint check in CONFIG_EXAMPLE captures the PATH only and does not
+  distinguish the HTTP method: a PRD `GET /users` and a code `POST /users`
+  are treated as the same item, so a method mismatch is NOT flagged as a gap
+  (false negative). If your PRD needs method sensitivity, have prd_regex /
+  code_regex capture "method + path" as one comparable string (note the code
+  side is usually lowercase, e.g. @app.post, so normalize case before comparing).
+
 [HOW TO RUN]
   python3 audit_prd_vs_code.example.py                 # run all checks
   python3 audit_prd_vs_code.example.py --section=tables # run only the check named tables
