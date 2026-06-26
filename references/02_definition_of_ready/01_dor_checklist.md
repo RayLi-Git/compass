@@ -1,138 +1,138 @@
-# §2.1 Definition of Ready：PRD 可實作性健檢清單
+# §2.1 Definition of Ready: PRD Implementability Health Check Checklist
 
 > Part of [Compass](../../SKILL.md) §2 — Definition of Ready.
-> 動手寫第一行 code 前，先健檢 PRD 本身是否「可被實作」——DoR 是 DoD 的對偶。
+> Before writing the first line of code, health-check whether the PRD itself is "implementable" — DoR is the dual of DoD.
 
 ---
 
-## 0. 為什麼需要 DoR
+## 0. Why DoR
 
-DoD（[§4.1](../04_quality_gates/01_dod.md)）守的是「**做完沒**」；DoR 守的是「**這份規格能不能開始做**」。兩者是對偶關係：DoD 在出口、DoR 在入口。
+DoD ([§4.1](../04_quality_gates/01_dod.md)) guards "**is it done**"; DoR guards "**can this spec even be started**". They're duals: DoD at the exit, DoR at the entrance.
 
-模糊的 PRD **不會主動跳出來提醒你它模糊**。它在你寫到第三個檔案、要拼一個你以為早就定義好的回傳格式時才爆——那時你已經做了一堆假設、寫了一堆耦合在這些假設上的 code。改一個入口的歧義，遠比改半條實作鏈便宜。
+A vague PRD **won't proactively pop up and warn you it's vague**. It blows up when you're on your third file, trying to assemble a return format you assumed was defined long ago — by then you've made a pile of assumptions and written a pile of code coupled to them. Fixing one ambiguity at the entrance is far cheaper than fixing half an implementation chain.
 
-> 核心精神：**一個壞 PRD 會無聲地毒化下游所有東西**。DoR = 在寫第一行 code 前抓到它，而不是在中途。
+> Core spirit: **a bad PRD silently poisons everything downstream**. DoR = catch it before the first line of code, not midway.
 
-DoR 的產物不是「規格變漂亮」，而是一份**未通過項清單**——每一項未通過 = 一個 PRD 缺口／歧義，全部在開工前走 [§5 Conflict Handling](../05_conflict_handling/_index.md)，不是寫到一半才回頭。
+DoR's product isn't "the spec looks prettier" — it's a **list of failed items**, where each failure = a PRD gap/ambiguity, all routed through [§5 Conflict Handling](../05_conflict_handling/_index.md) before work starts, not revisited halfway through.
 
 ---
 
-## 1. 三級制：快檢 vs 全檢
+## 1. Three-tier: quick check vs full check
 
-DoR 跟著任務份量縮放（對齊 [§1.2 三級制](../01_foundations/02_three_tiers.md)）：
+DoR scales with task weight (aligned with [§1.2 three-tier](../01_foundations/02_three_tiers.md)):
 
-| 級別 | 觸發 | 跑哪些區塊 |
+| Tier | Trigger | Which blocks to run |
 |---|---|---|
-| 🟡 快檢（medium） | 加一個函式 / 一個端點 / 一段邏輯 | §2 端點、§2 認證歸屬、§2 驗收標準（三個必跑） |
-| 🔴 全檢（heavy） | 實作整份 PRD / 跨多端點 / 動資料模型 / 安全模組 | §2 全部六個區塊，逐項打勾 |
+| 🟡 quick check (medium) | add a function / one endpoint / a piece of logic | §2 endpoints, §2 auth attribution, §2 acceptance criteria (the three musts) |
+| 🔴 full check (heavy) | implement a whole PRD / span multiple endpoints / touch the data model / security module | all six blocks in §2, item by item |
 
-> 🟢 輕級（改錯字、調樣式）不跑 DoR。
-> 鐵律同三級制：**只能升不能降**。看起來 medium 但牽動資料模型或認證 → 升 🔴 全檢。
-
----
-
-## 2. 核心健檢清單
-
-每一項問的是「PRD 有沒有**明確寫**」，不是「我能不能憑經驗補」。能憑經驗補的，正是最危險的——那是你在替使用者做未經授權的決定。
-
-### 🔌 端點 / API 可實作性（逐端點）
-
-- [ ] **method**？（GET / POST / PUT / PATCH / DELETE 講清楚）
-- [ ] **path**？（含路徑參數命名，如 `/orders/{order_id}`）
-- [ ] **認證 / 授權需求**？（公開？需登入？需特定角色？）
-- [ ] **request schema**？（欄位、型別、必填 / 選填、驗證規則）
-- [ ] **response schema**？（成功回傳的形狀與欄位）
-- [ ] **錯誤碼**？（400 / 401 / 403 / 404 / 409 / 422 各對應什麼情況）
-- [ ] **冪等性**？（重送同一請求會不會重複建單 / 重複扣款）
-
-> 範例（FastAPI）：PRD 只寫「建立訂單 API」，但沒寫「同一 idempotency key 重送要回既有訂單」——這不是細節，是會在 production 變成重複扣款的洞。未寫 → 標缺口。
-
-### 🗄️ 資料模型可實作性（逐表 / 逐實體）
-
-- [ ] **主鍵（PK）**？（用什麼當 PK，UUID / 自增 / 複合鍵）
-- [ ] **外鍵（FK）**？（指向誰，刪除行為 cascade / restrict / set null）
-- [ ] **唯一 / check 約束**？（哪些欄位組合不可重複，值域限制）
-- [ ] **nullable**？（每個欄位可不可為 null，講清楚別猜）
-- [ ] **預設值（default）**？（建立時沒給值要填什麼）
-- [ ] **索引**？（查詢熱路徑有沒有提到要建 index）
-
-> 「nullable 沒寫」是最常見的無聲毒：你猜 `nullable=True`，半年後有人靠這欄位做必填邏輯，資料早就髒了。
-
-### 🔐 認證授權歸屬
-
-- [ ] **誰能呼叫什麼**？（每個受保護端點的呼叫者身分要求）
-- [ ] **「有登入」夠不夠，還是要驗「是不是本人」**？（IDOR：`GET /orders/{id}` 只驗登入就會讓 A 看到 B 的訂單）
-- [ ] **角色定義清楚**？（admin / user / guest 各能做什麼，邊界在哪）
-
-> 這區塊在 🟡 快檢也必跑。授權歸屬是最容易被「先讓它能動」跳過、又最貴的洞。
-> 安全模組（Auth / 權限 / PII）若 PRD 沒明確授權規則 → 直接視為缺口，**不要憑直覺補規則**。
-
-### 📐 非功能需求是否提及（連結 §6 NFR）
-
-- [ ] **效能目標**？（延遲 / 吞吐 / 資料量級有沒有給數字）
-- [ ] **可觀測性**？（要不要 log / metric / trace，記什麼）
-- [ ] **資安基線**？（傳輸加密、輸入驗證、敏感資料處理有沒有要求）
-
-> 規則：NFR **缺席就標旗，不要無聲假設**。PRD 沒寫效能目標 ≠ 沒有效能目標——可能是漏寫。把「未提及」當成一個待裁決項丟回 §5，別自己塞一個 SLA 進去，也別假設「不用管」。NFR 細節見 [§6 Non-Functional](../06_non_functional/_index.md)。
-
-### 🧨 邊界與錯誤行為
-
-- [ ] **壞輸入**？（型別錯、格式錯、超出值域時回什麼）
-- [ ] **空值**？（空字串 / 空陣列 / 缺欄位的行為）
-- [ ] **超大輸入**？（分頁上限、檔案大小、字串長度）
-- [ ] **併發**？（兩個請求同時改同一筆，誰贏 / 鎖 / 樂觀併發）
-
-> PRD 通常只寫 happy path。邊界行為「沒寫」幾乎是常態——所以這區塊的產物往往是一串 §5 待裁決項，這很正常。
-
-### ✅ 驗收標準
-
-- [ ] **每個功能有沒有一條可測的驗收標準**？
-
-這是 DoR 與 DoD 對偶最直接的一條：**沒有可測的驗收標準，你就 DoD 不了它**。如果一個功能的「完成」無法寫成一條會 pass/fail 的斷言，那它根本還沒 ready。
-
-> 範例：PRD 寫「搜尋要快」→ 不可測。要求改寫成「p95 < 200ms / 1 萬筆資料」→ 可測，可 DoD。前者是缺口，走 §5。
+> 🟢 light (typo fix, style tweak) doesn't run DoR.
+> Same iron rule as the three-tier system: **escalate only, never downgrade**. Looks medium but touches the data model or auth → escalate to 🔴 full check.
 
 ---
 
-## 3. 一項未通過 = 一個衝突，開工前處理
+## 2. Core health check checklist
 
-DoR 不是「填滿就好」的形式。每個未打勾的框，都對應 [§5 Conflict Handling](../05_conflict_handling/_index.md) 的一類靜態衝突：
+Each item asks "did the PRD **explicitly write** this", not "can I fill it in from experience". What you *can* fill from experience is exactly the most dangerous — that's you making an unauthorized decision on the user's behalf.
 
-| DoR 未通過的樣態 | 歸類 | 去哪 |
+### 🔌 Endpoint / API implementability (per endpoint)
+
+- [ ] **method**? (GET / POST / PUT / PATCH / DELETE spelled out)
+- [ ] **path**? (including path-param naming, e.g. `/orders/{order_id}`)
+- [ ] **authn / authz requirements**? (public? login required? specific role required?)
+- [ ] **request schema**? (fields, types, required / optional, validation rules)
+- [ ] **response schema**? (shape and fields of the success return)
+- [ ] **error codes**? (400 / 401 / 403 / 404 / 409 / 422 — which maps to which situation)
+- [ ] **idempotency**? (does resending the same request create a duplicate order / double-charge)
+
+> Example (FastAPI): the PRD only says "create-order API" but doesn't say "resending with the same idempotency key returns the existing order" — that's not a detail, it's a hole that becomes a double-charge in production. Not written → flag as a gap.
+
+### 🗄️ Data model implementability (per table / per entity)
+
+- [ ] **primary key (PK)**? (what serves as PK — UUID / auto-increment / composite)
+- [ ] **foreign key (FK)**? (points to whom, delete behavior cascade / restrict / set null)
+- [ ] **unique / check constraints**? (which field combos can't repeat, value-range limits)
+- [ ] **nullable**? (can each field be null — spell it out, don't guess)
+- [ ] **default**? (what to fill when no value is given on create)
+- [ ] **indexes**? (does any hot query path mention building an index)
+
+> "nullable not written" is the most common silent poison: you guess `nullable=True`, half a year later someone builds required-field logic on it, and the data is already dirty.
+
+### 🔐 Authn/authz attribution
+
+- [ ] **who can call what**? (caller identity requirement for each protected endpoint)
+- [ ] **is "logged in" enough, or must you verify "is it really them"**? (IDOR: `GET /orders/{id}` checking only login lets A see B's order)
+- [ ] **roles clearly defined**? (what admin / user / guest can each do, where the boundaries are)
+
+> This block also runs in 🟡 quick check. Authz attribution is the easiest hole to skip with "just make it work" and the most expensive.
+> For security modules (Auth / permissions / PII), if the PRD has no explicit authz rules → treat directly as a gap, **do not fill in rules from intuition**.
+
+### 📐 Non-functional requirements mentioned? (links §6 NFR)
+
+- [ ] **performance targets**? (latency / throughput / data scale — are numbers given)
+- [ ] **observability**? (need log / metric / trace, recording what)
+- [ ] **security baseline**? (transport encryption, input validation, sensitive-data handling — any requirement)
+
+> Rule: **if an NFR is absent, flag it — don't silently assume**. PRD not writing a performance target ≠ there's no performance target — it may be an omission. Treat "not mentioned" as an item to await ruling and throw it back to §5; don't slip in an SLA yourself, and don't assume "doesn't matter". NFR details in [§6 Non-Functional](../06_non_functional/_index.md).
+
+### 🧨 Boundary and error behavior
+
+- [ ] **bad input**? (what to return on wrong type, wrong format, out of value range)
+- [ ] **empty values**? (behavior for empty string / empty array / missing field)
+- [ ] **oversized input**? (pagination cap, file size, string length)
+- [ ] **concurrency**? (two requests modifying the same record — who wins / lock / optimistic concurrency)
+
+> A PRD usually writes only the happy path. Boundary behavior being "not written" is nearly the norm — so this block's product is often a string of §5 await-ruling items, and that's normal.
+
+### ✅ Acceptance criteria
+
+- [ ] **does every feature have one testable acceptance criterion**?
+
+This is the most direct expression of the DoR/DoD duality: **with no testable acceptance criterion, you can't DoD it**. If a feature's "done" can't be written as a pass/fail assertion, it simply isn't ready.
+
+> Example: PRD says "search must be fast" → not testable. Demand a rewrite to "p95 < 200ms / 10k rows" → testable, can DoD. The former is a gap, route to §5.
+
+---
+
+## 3. One failed item = one conflict, handle before work starts
+
+DoR isn't a "fill it in and you're fine" formality. Every unchecked box maps to a class of static conflict in [§5 Conflict Handling](../05_conflict_handling/_index.md):
+
+| DoR failure shape | Class | Where to go |
 |---|---|---|
-| PRD 寫了但有兩種讀法 | 模糊 | [§5.1 模糊](../05_conflict_handling/01_vague_bug_gap.md) 模糊流程 |
-| PRD 寫的東西邏輯上不可能 / 自相矛盾 | PRD bug | [§5.1](../05_conflict_handling/01_vague_bug_gap.md) bug 流程，等裁決 |
-| PRD 完全沒提，但實作上必須有 | 缺漏 | [§5.1](../05_conflict_handling/01_vague_bug_gap.md) 缺漏流程；**不要直接套 YAGNI 砍**（見 [§3.5](../03_implementation/05_yagni.md)） |
+| PRD wrote it but there are two readings | vague | [§5.1 vague](../05_conflict_handling/01_vague_bug_gap.md) vague flow |
+| What the PRD wrote is logically impossible / self-contradictory | PRD bug | [§5.1](../05_conflict_handling/01_vague_bug_gap.md) bug flow, await ruling |
+| PRD never mentions it, but implementation must have it | gap | [§5.1](../05_conflict_handling/01_vague_bug_gap.md) gap flow; **don't just cut it with YAGNI** (see [§3.5](../03_implementation/05_yagni.md)) |
 
-**鐵律：在 coding 之前處理，不是 coding 之中。**
+**Iron rule: handle before coding, not during coding.**
 
-DoR 之所以擺在入口，就是因為 [§3.4 完成-比對-修正循環](../03_implementation/04_compare_fix_loop.md) 那種「寫到一半才發現 PRD 模糊」的成本，正是 DoR 要消滅的東西。compare-fix loop 是**做的時候**回頭比對的安全網；DoR 是**還沒做**就先把規格本身擋下來的閘。兩個都過，偏差才真的無處可藏。
+DoR sits at the entrance precisely because the "discover mid-write that the PRD is vague" cost from [§3.4 compare-fix loop](../03_implementation/04_compare_fix_loop.md) is exactly what DoR is meant to eliminate. The compare-fix loop is the safety net for re-comparing **while doing**; DoR is the gate that stops the spec itself **before doing**. With both passed, deviation has nowhere left to hide.
 
-> 例外（缺漏不一定全擋）：若是「PRD 沒寫但顯然不影響本塊」的純缺漏，可記錄後續推進；但凡缺漏會改變你**現在這塊**的 schema / 授權 / 回傳形狀，就必須先裁決，否則你是在已知歧義上疊 code——典型 Sentinel 的「在錯誤上疊補丁」反模式。
+> Exception (gaps aren't always fully blocked): if it's a pure gap that's "not in the PRD but clearly doesn't affect this block", you may record it and push on later. But the moment a gap would change the schema / authz / return shape of **this current block**, you must get a ruling first — otherwise you're stacking code on a known ambiguity, the classic Sentinel "patching on top of an error" anti-pattern.
 
 ---
 
-## 4. 最小化儀式
+## 4. Minimize the ceremony
 
-DoR 不該變成阻礙。實務節奏：
+DoR shouldn't become an obstacle. Practical rhythm:
 
-1. 開工前，對著本塊涉及的端點 / 表，跑對應區塊（🟡 三個必跑 / 🔴 全六個）。
-2. 未通過項一次列成清單，**一次丟回使用者裁決**（別一項一項問，也別邊寫邊問）。
-3. 裁決回來的決定寫進追蹤文件（見 [§3.2 追蹤文件](../03_implementation/02_tracking_docs.md)），不靠對話記憶。
-4. 全部 ready → 才進 [§3.3 實作順序](../03_implementation/03_implementation_order.md) 開始排序動手。
+1. Before work, run the matching blocks against the endpoints / tables this block touches (🟡 the three musts / 🔴 all six).
+2. List failed items as a list at once and **throw them back to the user for ruling at once** (don't ask one by one, don't ask while writing).
+3. Write the returned decisions into the tracking docs (see [§3.2 tracking docs](../03_implementation/02_tracking_docs.md)), not relying on conversation memory.
+4. All ready → only then enter [§3.3 implementation order](../03_implementation/03_implementation_order.md) and start sequencing the work.
 
-> 一句話收尾：**DoR 通不過就別開工**。模糊的 PRD 你照寫，等於把使用者的決策權偷渡成你的猜測，而帳會在 production 結。
+> One-line closer: **if DoR doesn't pass, don't start**. Implementing a vague PRD as-is means smuggling the user's decision rights into your guesses — and the bill comes due in production.
 
 ---
 
 ## 🔗 Related Compass sections
-- [§4.1 DoD](../04_quality_gates/01_dod.md) — DoR 的對偶；出口 Gate，DoR 是入口 Gate
-- [§5.1 模糊 / bug / 缺漏](../05_conflict_handling/01_vague_bug_gap.md) — 任一 DoR 未通過項的裁決去向
-- [§3.4 完成-比對-修正循環](../03_implementation/04_compare_fix_loop.md) — 做的時候的比對安全網，與 DoR 互補
-- [§3.5 YAGNI](../03_implementation/05_yagni.md) — DoR 標出的「缺漏」不可直接用 YAGNI 砍
-- [§3.1 PRD 吸收](../03_implementation/01_prd_intake.md) — DoR 健檢前先吸收 PRD 對應章節
-- [§6 Non-Functional](../06_non_functional/_index.md) — NFR 區塊未提及項的延伸
-- [§1.2 三級制](../01_foundations/02_three_tiers.md) — 快檢 / 全檢的縮放依據
+- [§4.1 DoD](../04_quality_gates/01_dod.md) — DoR's dual; the exit Gate, DoR is the entrance Gate
+- [§5.1 vague / bug / gap](../05_conflict_handling/01_vague_bug_gap.md) — where any failed DoR item gets ruled
+- [§3.4 compare-fix loop](../03_implementation/04_compare_fix_loop.md) — the compare safety net while doing, complements DoR
+- [§3.5 YAGNI](../03_implementation/05_yagni.md) — a "gap" flagged by DoR can't be cut directly with YAGNI
+- [§3.1 PRD intake](../03_implementation/01_prd_intake.md) — absorb the matching PRD section before the DoR health check
+- [§6 Non-Functional](../06_non_functional/_index.md) — extension for not-mentioned items in the NFR block
+- [§1.2 three-tier](../01_foundations/02_three_tiers.md) — the scaling basis for quick check / full check
 
 ## 📝 Status
 v0.5.0 (Phase 2: original content).

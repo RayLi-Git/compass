@@ -1,135 +1,135 @@
-# §5.2 PRD 中途變更
+# §5.2 Mid-Flight PRD Changes
 
 > Part of [Compass](../../SKILL.md) §5 — Conflict Handling.
-> SOP 假設 PRD 是靜態合約；現實是你寫到一半，PRD 升到 v2/v3。這是最高頻的真實衝突，Compass 必須能接。
+> The SOP assumes the PRD is a static contract; reality is that halfway through, the PRD bumps to v2/v3. This is the most frequent real-world conflict, and Compass has to handle it.
 
 ---
 
-## 0. 為什麼這比靜態衝突更危險
+## 0. Why this is more dangerous than static conflict
 
-§5.1 處理的三類衝突（模糊／bug／缺漏）都假設 **PRD 不動**，你只是在讀它時發現問題。本檔處理的是 **PRD 本身在動**。
+The three conflict types in §5.1 (vague / bug / gap) all assume the **PRD doesn't move** — you just hit problems while reading it. This file handles the case where **the PRD itself is moving**.
 
-> SCOPE：**PRD 不是 Compass 的敵人，PRD 中途改才是。**
+> SCOPE: **The PRD isn't Compass's enemy — the PRD changing mid-flight is.**
 
-PRD 中途變更的三個致命點：
+The three fatal points of a mid-flight PRD change:
 
-- **已完成模組可能變錯**：你照 v1 寫完並 commit 的東西，在 v2 下可能行為錯誤、欄位錯誤、甚至整個功能被砍。它不會報錯——它只是默默地不符合新合約。
-- **checklist 失同步**：prd-checklist.md 還停在 v1 的行。你打的勾現在可能是假的勾。
-- **靜默漂移（silent drift）**：最糟的情況是你「順手」吸收了部分變更、漏了另一部分，結果 code 半個 v1、半個 v2，沒有任何一處記錄哪邊是哪邊。三週後沒人能還原當初的決策。
+- **Completed modules may turn wrong**: what you built and committed against v1 may now behave wrong, use wrong fields, or even be a feature that got cut under v2. It won't throw an error — it just silently fails to match the new contract.
+- **Checklist falls out of sync**: prd-checklist.md is still frozen on the v1 rows. The checkmarks you ticked may now be fake checkmarks.
+- **Silent drift**: the worst case is that you "casually" absorbed part of the change and missed another part, leaving code that's half v1, half v2, with nothing recording which is which. Three weeks later nobody can reconstruct the original decision.
 
-**鐵律**：發現 PRD 變更 → 立刻停止當前實作，先跑下面的協定，不要邊改 code 邊「順便」吸收。
+**Iron rule**: when you spot a PRD change → stop the current implementation immediately, run the protocol below first, do not "casually" absorb it while editing code.
 
 ---
 
-## 1. PRD 變更協定（五步）
+## 1. PRD Change Protocol (five steps)
 
-### 步驟 1：凍結現況
+### Step 1: Freeze the current state
 
-動任何東西**之前**先 commit 當前 working tree。
+**Before** touching anything, commit the current working tree.
 
 ```
 git add -A
 git commit -m "freeze: pre-PRD-v2 state (clean retreat point)"
 ```
 
-理由：這是 Sentinel 的安全網「撤退路線」。一旦你開始按 v2 回改，若發現方向錯，必須能乾淨地退回到 v1 的最後狀態。**髒 working tree 上疊 PRD 變更 = 自殺。**
+Reason: this is Sentinel's safety net "retreat route." Once you start reworking toward v2, if you find the direction is wrong, you must be able to cleanly roll back to v1's last state. **Stacking a PRD change on a dirty working tree = suicide.**
 
-### 步驟 2：Diff PRD（舊 vs 新）
+### Step 2: Diff the PRD (old vs new)
 
-逐章對比 old PRD 與 new PRD，把每一處差異歸成四類：
+Compare old PRD and new PRD section by section, and bucket every difference into four types:
 
-| 類型 | 定義 | 範例 |
+| Type | Definition | Example |
 |---|---|---|
-| 🆕 新增 | 全新功能 / 欄位 / 端點 | 「新增匯出 CSV」 |
-| ✏️ 修改 | 既有規格的行為 / 命名 / 邊界改了 | 「分頁 size 上限 50 → 100」 |
-| 🗑️ 刪除 | 砍掉既有功能 | 「移除匿名留言」 |
-| 💡 釐清 | 行為沒變，只是把原本模糊處寫清楚 | 「逾時定義為 30s」 |
+| 🆕 Added | Brand-new feature / field / endpoint | "Add CSV export" |
+| ✏️ Modified | Behavior / naming / boundary of an existing spec changed | "Pagination size cap 50 → 100" |
+| 🗑️ Deleted | Existing feature cut | "Remove anonymous comments" |
+| 💡 Clarified | Behavior unchanged, just an originally-vague point spelled out | "Timeout defined as 30s" |
 
-> 釐清類最容易被誤判成修改。判準：**若舊實作仍符合新文字，就是釐清；若必須改 code 才符合，就是修改。**
+> Clarifications are the easiest to misjudge as modifications. The test: **if the old implementation still satisfies the new text, it's a clarification; if you must change code to satisfy it, it's a modification.**
 
-### 步驟 3：逐項影響分析
+### Step 3: Per-item impact analysis
 
-對**每一處**變更，問兩個問題：碰到哪些「已完成」模組？碰到哪些「未完成」模組？
+For **each** change, ask two questions: which "completed" modules does it touch? Which "uncompleted" modules does it touch?
 
-- **影響已完成模組** → 評估「回改成本 vs 影響範圍」。可能需要重開一個已標 ✅ 的模組——**這是正常的，總比出貨一個錯的好**。把它從 checklist 退回 🔄，不要假裝它還是對的。
-- **只影響未完成模組** → 最輕。更新 checklist 與實作順序表，繼續往下寫，按新規格做。
-- **刪除的功能** → 若該 code 已經寫好，**不要自動刪**。先跟使用者確認（可能有依賴、可能只是暫時隱藏）。確認後才動手，並在 development log 記錄刪了什麼、為什麼。
+- **Touches a completed module** → weigh "rework cost vs blast radius." You may have to reopen a module already marked ✅ — **this is normal, and beats shipping a wrong one.** Roll it back to 🔄 on the checklist; don't pretend it's still correct.
+- **Only touches uncompleted modules** → lightest. Update the checklist and implementation order table, keep going, build to the new spec.
+- **Deleted features** → if the code is already written, **do not auto-delete.** Confirm with the user first (there may be dependencies; it may just be temporarily hidden). Only act after confirmation, and record in the development log what was deleted and why.
 
-> 「重開已完成模組」聽起來很痛，但這正是 Compass 存在的理由：默默出貨符合 v1、違反 v2 的 code，是 silent drift 的根源。寧可退回重做。
+> "Reopen a completed module" sounds painful, but that's exactly why Compass exists: silently shipping code that matches v1 and violates v2 is the root of silent drift. Better to roll back and redo.
 
-### 步驟 4：重新對齊 prd-checklist.md
+### Step 4: Re-align prd-checklist.md
 
-把 checklist 拉回與新 PRD 同步（追蹤文件三件套見 [§3.2](../03_implementation/02_tracking_docs.md)）：
+Pull the checklist back in sync with the new PRD (the three tracking docs are in [§3.2](../03_implementation/02_tracking_docs.md)):
 
 ```markdown
-| PRD § | 模組 | 狀態 | 變更 |
+| PRD § | Module | Status | Change |
 |-------|------|------|------|
-| 3.1   | 登入 | ✅   | —    |
-| 3.2   | 分頁 | 🔄   | v2: size 上限 50→100，需回改 |   ← 修改，重開
-| 3.5   | 匯出 | ⬜   | v2 新增 |                             ← 新增，排進順序
-| 3.7   | 匿名留言 | 🗑️ | v2 刪除，已建，待使用者確認後移除 | ← 刪除，先別動
+| 3.1   | Login | ✅   | —    |
+| 3.2   | Pagination | 🔄   | v2: size cap 50→100, needs rework |   ← modified, reopen
+| 3.5   | Export | ⬜   | v2 added |                             ← added, schedule it
+| 3.7   | Anonymous comments | 🗑️ | v2 deleted, built, remove after user confirms | ← deleted, hands off
 ```
 
-- 🆕 新增 → 加新行，排進實作順序表。
-- ✏️ 修改 → 該行標 🔄，狀態從 ✅ 退回。
-- 🗑️ 刪除 → 該行標 🗑️，註明「待確認」，**不要直接刪行**（要留審計痕跡）。
+- 🆕 Added → add a new row, schedule it into the implementation order table.
+- ✏️ Modified → mark that row 🔄, roll status back from ✅.
+- 🗑️ Deleted → mark that row 🗑️, note "pending confirmation," **do not delete the row** (keep the audit trail).
 
-### 步驟 5：development log 記一筆
+### Step 5: Log it in the development log
 
-記錄 PRD 版本升級事件 + 每處變更你做的決定：
+Record the PRD version-bump event + the decision you made for each change:
 
 ```markdown
-## [日期] PRD v1 → v2
+## [Date] PRD v1 → v2
 
-| 變更 | 類型 | 影響 | 決定 |
+| Change | Type | Impact | Decision |
 |------|------|------|------|
-| 分頁 size 50→100 | ✏️ 修改 | 已完成模組 §3.2 | 重開回改 |
-| 匯出 CSV | 🆕 新增 | 未完成 | 排進順序表第 5 項 |
-| 匿名留言 | 🗑️ 刪除 | 已建 §3.7 | 待使用者確認再刪 |
+| Pagination size 50→100 | ✏️ Modified | Completed module §3.2 | Reopen and rework |
+| CSV export | 🆕 Added | Uncompleted | Scheduled as item 5 in order table |
+| Anonymous comments | 🗑️ Deleted | Built §3.7 | Delete after user confirms |
 ```
 
-這筆 log 是日後「為什麼這段 code 長這樣」的唯一可信來源——對話記憶會忘，log 不會。
+This log is the only trustworthy source for "why does this code look the way it does" later — conversation memory forgets, the log doesn't.
 
 ---
 
-## 2. 版本紀律
+## 2. Version discipline
 
-- **每個 commit tag PRD 版本**：commit 訊息帶上版本，例如 `[PRD v2 §3.2] 分頁：上限改 100`。
-- **絕不靜默混用 v1 與 v2 假設**：同一個 PR / 一段連續 commit 內，要嘛全 v1、要嘛全 v2。半新半舊且無記錄，就是 silent drift。
-- **變更分界點要有一個明確 commit**（步驟 1 的 freeze commit 就是它）。日後 `git log` 能一眼看出「這之後都是 v2」。
+- **Tag every commit with the PRD version**: put the version in the commit message, e.g. `[PRD v2 §3.2] Pagination: cap changed to 100`.
+- **Never silently mix v1 and v2 assumptions**: within one PR / a run of consecutive commits, it's either all v1 or all v2. Half-new, half-old with no record is silent drift.
+- **The change boundary needs one explicit commit** (the freeze commit from Step 1 is it). Later, `git log` shows at a glance "everything after this is v2."
 
 ---
 
-## 3. 決策表：變更類型 × 模組狀態 → 動作
+## 3. Decision table: change type × module status → action
 
-| 變更類型 | 已完成模組 | 未完成模組 |
+| Change type | Completed module | Uncompleted module |
 |---|---|---|
-| 🆕 新增 | （通常不適用）→ 當新模組排進順序表 | 加 checklist 行，排進實作順序 |
-| ✏️ 修改 | 退回 🔄，評估回改成本，重開回改 | 直接按新規格實作 |
-| 🗑️ 刪除 | 標 🗑️ 待確認，**問使用者**再刪 code | 從 checklist / 順序表移除即可 |
-| 💡 釐清 | 多半無需動 code；比對確認後留紀錄 | 按釐清後的明確規格實作 |
+| 🆕 Added | (usually N/A) → schedule as a new module in the order table | Add a checklist row, schedule into implementation order |
+| ✏️ Modified | Roll back to 🔄, weigh rework cost, reopen and rework | Build straight to the new spec |
+| 🗑️ Deleted | Mark 🗑️ pending confirmation, **ask the user** before deleting code | Just remove from checklist / order table |
+| 💡 Clarified | Mostly no code change; compare, confirm, log it | Build to the clarified, explicit spec |
 
-> 唯一需要「問使用者」才動手的格子：**刪除 × 已完成**。其餘可自行推進，但全部都要在 development log 留痕。
+> The only cell that requires "ask the user" before acting: **Deleted × Completed.** The rest you can push forward on your own, but all of them must leave a trace in the development log.
 
 ---
 
-## 4. 反模式（任一出現即停手）
+## 4. Anti-patterns (any one appears → stop)
 
-- ❌ 邊改 code 邊「順手」吸收 PRD 變更，沒先 freeze、沒做 diff。
-- ❌ 已完成模組明知被 v2 影響，卻不退回 ✅、假裝它還對。
-- ❌ 看到刪除就自動 `rm` code，不問使用者。
-- ❌ commit 不標版本，v1/v2 假設混在同一坨 working tree。
-- ❌ 把「修改」誤當「釐清」，跳過回改。
+- ❌ "Casually" absorbing PRD changes while editing code, with no freeze, no diff.
+- ❌ A completed module knowingly affected by v2, yet not rolled back from ✅, pretending it's still correct.
+- ❌ Seeing a deletion and auto-`rm`-ing code without asking the user.
+- ❌ Committing without tagging the version, mixing v1/v2 assumptions in the same working-tree blob.
+- ❌ Misjudging a "modification" as a "clarification," skipping the rework.
 
 ---
 
 ## 🔗 Related Compass sections
-- [§5.1 模糊／bug／缺漏](./01_vague_bug_gap.md) — 靜態 PRD 的三類衝突；本檔是「PRD 會動」的動態對偶
-- [§3.4 完成-比對-修正循環](../03_implementation/04_compare_fix_loop.md) — 每塊比對 PRD 的閉環；PRD 一變，比對基準就換成新版
-- [§3.2 追蹤文件三件套](../03_implementation/02_tracking_docs.md) — prd-checklist / development-log / progress 的格式，步驟 4、5 直接操作它們
-- [§3.3 實作順序](../03_implementation/03_implementation_order.md) — 新增模組要排進順序表
-- [§4.1 DoD](../04_quality_gates/01_dod.md) — 回改後的模組仍須重過 DoD 才算完成
-- [§5.4 多 PRD 衝突](./04_multi_prd.md) — 當變更來自另一份 PRD 而非同一份升版
+- [§5.1 Vague / bug / gap](./01_vague_bug_gap.md) — the three conflict types of a static PRD; this file is the dynamic dual, "the PRD moves"
+- [§3.4 Compare-fix loop](../03_implementation/04_compare_fix_loop.md) — the closed loop of comparing each slice against the PRD; once the PRD changes, the comparison baseline switches to the new version
+- [§3.2 The three tracking docs](../03_implementation/02_tracking_docs.md) — the formats of prd-checklist / development-log / progress; steps 4 and 5 operate on them directly
+- [§3.3 Implementation order](../03_implementation/03_implementation_order.md) — added modules must be scheduled into the order table
+- [§4.1 DoD](../04_quality_gates/01_dod.md) — a reworked module still has to re-pass DoD before it counts as done
+- [§5.4 Multi-PRD conflict](./04_multi_prd.md) — when the change comes from a different PRD rather than a version bump of the same one
 
 ## 📝 Status
 v0.5.0 (Phase 2: original content).

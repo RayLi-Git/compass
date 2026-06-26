@@ -1,116 +1,116 @@
-# §3.1 PRD 吸收
+# §3.1 PRD Intake
 
 > Part of [Compass](../../SKILL.md) §3 — Implementation.
-> 動手寫 code 前，先建立對 PRD 的完整心智模型，避免邊寫邊漏。
+> Before writing any code, build a complete mental model of the PRD so you don't drop items mid-implementation.
 
 ---
 
-## 目的
+## Purpose
 
-在進入任何實作動作之前，先**完整吸收 PRD**——把規格從「外部文件」變成「腦中可導航的地圖」。PRD 是合約，但合約沒讀完就動手，等於閉著眼簽字。這個階段的產出不是 code，而是**清單 + 骨架**：知道有哪些功能要寫、知道檔案要放哪。
+Before any implementation action, **fully absorb the PRD** — turn the spec from an "external document" into a "navigable map in your head". The PRD is a contract, but starting work without finishing the read is like signing with your eyes closed. The output of this stage isn't code — it's a **checklist + skeleton**: knowing which features need to be written, and knowing where files go.
 
-> 核心原則：**完成就是完成，不留半成品**；可分小塊交付，但不可半成品階段化。PRD 吸收做完，後續每一塊都應該能獨立完成、commit、驗收。
+> Core principle: **done means done, no half-finished work**; you may ship in small slices, but no half-finished phasing. Once PRD intake is done, every later slice should be independently completable, committable, and verifiable.
 
 ---
 
-## 步驟
+## Steps
 
-### 1. 量測 PRD 規模
+### 1. Measure the PRD's size
 
-先知道你面對的是什麼份量：
+First know what you're dealing with:
 
-- **行數**：整份 PRD 多少行？
-- **token 量**：估算是否一次能塞進 context？
-- **章節數**：有幾個主章節、幾個子章節？
-- **附錄/圖表**：有沒有 ER diagram、API schema、流程圖等需要額外吸收的內容？
+- **Line count**: how many lines is the whole PRD?
+- **Token volume**: estimate whether it fits into context in one pass.
+- **Section count**: how many top-level sections, how many sub-sections?
+- **Appendices/diagrams**: any ER diagrams, API schemas, flowcharts, etc. that need extra absorption?
 
-量測結果決定下一步的讀法：
+The measurement decides how you read next:
 
-| 規模 | 處理方式 |
+| Size | Approach |
 |---|---|
-| 小（< 300 行） | 一次讀完，做筆記 |
-| 中（300–800 行） | 分 2–3 段讀，每段讀完即整理該段功能清單 |
-| 大（> 800 行） | 分段讀，每段 ~500 行；每段讀完寫摘要 + 該段功能清單，避免後段把前段擠出 context |
+| Small (< 300 lines) | Read in one pass, take notes |
+| Medium (300–800 lines) | Read in 2–3 segments; after each, organize that segment's feature checklist |
+| Large (> 800 lines) | Read in segments of ~500 lines each; after each, write a summary + that segment's feature checklist, so later segments don't push earlier ones out of context |
 
-### 2. 分段讀完整份 PRD
+### 2. Read the entire PRD in segments
 
-- 不要跳讀。不要只讀「跟我要做的那塊有關」的章節——PRD 的章節之間常有隱含依賴（schema 影響 API、API 影響 UI、權限影響全部）。
-- 每讀完一段，**立即輸出該段的功能小清單與疑問**。不要等全部讀完才整理，那時細節已經模糊。
-- 邊讀邊標記三類東西：
-  - ✅ **明確規格**：可直接照做
-  - ⚠️ **模糊處**：需走衝突處理流程（見 [§5 衝突處理](../05_conflict_handling/_index.md)）
-  - ‼️ **缺漏處**：PRD 沒寫但實作一定會碰到的細節
+- Don't skim. Don't read only the sections "related to my slice" — PRD sections often have implicit dependencies (schema affects API, API affects UI, permissions affect everything).
+- After each segment, **immediately output that segment's mini feature checklist and open questions**. Don't wait until you've read everything to organize — by then the details are blurry.
+- While reading, mark three categories:
+  - ✅ **Clear spec**: can implement directly
+  - ⚠️ **Ambiguity**: needs the conflict-handling flow (see [§5 Conflict Handling](../05_conflict_handling/_index.md))
+  - ‼️ **Gap**: details the PRD doesn't write but implementation will definitely hit
 
-### 3. 建立功能清單
+### 3. Build the feature checklist
 
-把 PRD 拆解成一個個**可獨立交付**的功能項目，做為後續 checklist 的種子：
+Break the PRD into individual **independently-shippable** feature items, as seeds for the later checklist:
 
-- 每一項要小到可以一次寫完、一次 commit、一次驗收
-- 每一項標註其對應的 PRD 章節（合約映射）
-- 安全敏感模組（authn / authz / 個資 / 金流 / 密鑰處理）標記為 **test-first**
+- Each item should be small enough to write in one pass, commit in one pass, verify in one pass
+- Each item is tagged with its corresponding PRD section (contract mapping)
+- Security-sensitive modules (authn / authz / PII / payments / key handling) are tagged **test-first**
 
-這份清單會成為 [§3.2 追蹤文件三件套](./02_tracking_docs.md) 中 PRD checklist 的輸入。Compass 推薦用一個**PRD-table 展開腳本**（功能依設定而異）把 PRD 的功能/欄位/端點表格轉成 checklist 條目；不論用什麼工具，清單必須能反向對映回 PRD 章節。
+This checklist becomes the input to the PRD checklist in [§3.2 The three tracking docs](./02_tracking_docs.md). Compass recommends a **PRD-table expansion script** (behavior varies by config) to turn the PRD's feature/field/endpoint tables into checklist entries; whatever tool you use, the checklist must map back to PRD sections in reverse.
 
-> **🤝 接 Cartographer 交棒產物**
-> 若 PRD 由 [Cartographer](https://github.com/RayLi-Git/cartographer) 產出，它的 §14 交棒會附一份 checklist bullet，例如：
-> `- [ ] FR-PAY-01 建立付款意圖 ｜P0｜AC: 回200含paymentId｜驗收方式: 整合測試`
-> 直接映射到 `templates/prd-checklist.md.template` 的表格欄位，**不要丟欄**：
+> **🤝 Ingesting a Cartographer handoff**
+> If the PRD was produced by [Cartographer](https://github.com/RayLi-Git/cartographer), its §14 handoff ships a checklist bullet list, e.g.:
+> `- [ ] FR-PAY-01 create payment intent ｜P0｜AC: 200 with paymentId｜verify-by: integration test`
+> Map it directly onto the columns of `templates/prd-checklist.md.template` — **don't drop columns**:
 >
-> | 交棒 bullet 欄位 | → checklist 欄 |
+> | Handoff bullet field | → checklist column |
 > |---|---|
-> | 編號 + 描述（`FR-PAY-01 建立付款意圖`） | 項目（最小單位） |
-> | 該編號對應的 PRD 章節 | PRD §ref |
-> | `P0` | 優先級 |
-> | `AC: …` + `驗收方式: …` | AC/驗收方式 |
-> | （實作後回填） | 狀態 / verified-in-codebase? |
+> | ID + description (`FR-PAY-01 create payment intent`) | Item (smallest unit) |
+> | the PRD section that ID maps to | PRD §ref |
+> | `P0` | Priority |
+> | `AC: …` + `verify-by: …` | AC / verify-by |
+> | (backfill after implementing) | Status / verified-in-codebase? |
 >
-> 這樣 Cartographer 的優先級 / AC / 驗收方式在交棒時不會遺失（過去 compass 四欄表無這幾欄，會在交棒處掉資料）。
+> This way Cartographer's priority / AC / verify-by are not lost at the handoff (the old four-column compass table had no such columns and dropped this data at the seam).
 
-### 4. 依「目錄結構」章節先建空骨架
+### 4. Build an empty skeleton from the "directory structure" section first
 
-如果 PRD 有定義專案目錄結構或檔案佈局章節：
+If the PRD defines a project directory structure or file-layout section:
 
-- **先把整個目錄樹建出來**——資料夾 + 空檔案（或 placeholder 註解）
-- 不要寫任何邏輯
-- 目的是：讓後續每寫一塊功能，都有明確的「該放哪裡」的答案，避免邊寫邊喬位置、邊喬位置邊偏離 PRD
+- **Build the whole directory tree first** — folders + empty files (or placeholder comments)
+- Don't write any logic
+- The point: so every later feature slice has a clear answer to "where does this go", avoiding placing things ad hoc while writing, and drifting from the PRD while placing things ad hoc
 
-如果 PRD 沒有目錄結構章節：
-- 標記為 ‼️ 缺漏處，依專案慣例先擬一個草案目錄，後續走 [§5 衝突處理](../05_conflict_handling/_index.md) 的「PRD 缺漏」流程處理
+If the PRD has no directory-structure section:
+- Mark it as a ‼️ gap, draft a directory per project convention, then handle it via the "PRD gap" flow in [§5 Conflict Handling](../05_conflict_handling/_index.md)
 
-### 5. 排定實作順序
+### 5. Sequence the implementation order
 
-吸收完 PRD 後，排出**實作順序**——不是分階段半成品，而是**哪一塊先完成、哪一塊後完成**：
+After absorbing the PRD, lay out the **implementation order** — not phased half-finished work, but **which slice finishes first, which finishes later**:
 
-- **安全關鍵模組優先，且強制 test-first**
-- 被多處依賴的底層（schema、shared types、設定載入）先做
-- UI/外觀類最後做
+- **Security-critical modules first, and mandatory test-first**
+- Foundations depended on by many places (schema, shared types, config loading) first
+- UI/cosmetic last
 
-> **Example: 一般 Web App stack**
-> 典型順序可能是：schema → 設定/密鑰載入 → 認證/授權（test-first）→ 核心 domain 邏輯 → API 端點 → UI。**這只是範例，不是強制清單**——實際順序依你的 PRD 與技術棧而定。
+> **Example: a typical Web App stack**
+> A typical order might be: schema → config/key loading → authn/authz (test-first) → core domain logic → API endpoints → UI. **This is just an example, not a mandatory list** — the actual order depends on your PRD and stack.
 
 ---
 
-## 完成判準
+## Done criteria
 
-PRD 吸收階段做完，你應該能回答：
+Once PRD intake is done, you should be able to answer:
 
-- [ ] PRD 總共有幾個功能項目？（有清單）
-- [ ] 每個功能對應 PRD 哪一章節？（有映射）
-- [ ] 專案骨架目錄已建立？（有檔案樹）
-- [ ] 哪些是安全關鍵模組、需 test-first？（已標記）
-- [ ] 實作順序是什麼？（有排序）
-- [ ] PRD 中模糊 / 缺漏處清單？（已記錄，待走衝突處理）
+- [ ] How many feature items does the PRD have in total? (have a checklist)
+- [ ] Which PRD section does each feature map to? (have a mapping)
+- [ ] Is the project skeleton directory built? (have a file tree)
+- [ ] Which are security-critical modules needing test-first? (tagged)
+- [ ] What's the implementation order? (sequenced)
+- [ ] Checklist of ambiguities / gaps in the PRD? (recorded, pending conflict handling)
 
-任何一條答不出來——回去補，不要硬幹下一步。
+Can't answer any one of these — go back and fill it in, don't force the next step.
 
 ---
 
 ## 🔗 Related Compass sections
-- [§3.2 追蹤文件三件套](./02_tracking_docs.md) — 功能清單轉成可追蹤 checklist 的下一步
-- [§3.3 實作順序與依賴](./03_implementation_order.md) — 骨架建好後的實作排序
-- [§3.4 完成-比對-修正循環](./04_compare_fix_loop.md) — 每塊實作的收尾迴圈
-- [§5 Conflict Handling](../05_conflict_handling/_index.md) — 處理 PRD 模糊 / bug / 缺漏的流程
-- Sentinel 的動手前協定（pre-flight）— 動手前的通用檢查協定（Sentinel 思考 OS 概念，非 Compass 章節）
+- [§3.2 The three tracking docs](./02_tracking_docs.md) — the next step: turning the feature checklist into a trackable checklist
+- [§3.3 Implementation order and dependencies](./03_implementation_order.md) — sequencing implementation after the skeleton is built
+- [§3.4 The compare-fix loop](./04_compare_fix_loop.md) — the wrap-up loop for each implementation slice
+- [§5 Conflict Handling](../05_conflict_handling/_index.md) — the flow for handling PRD ambiguity / bug / gap
+- Sentinel's pre-flight protocol — the general pre-flight check protocol (a Sentinel thinking-OS concept, not a Compass section)
 
 ## 📝 Status
 v0.2.0 (Phase 1: ported from prior SOP, generalized and de-privatized).

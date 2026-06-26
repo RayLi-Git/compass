@@ -1,150 +1,150 @@
-# §10.1 測試金字塔與各層分工
+# §10.1 The Test Pyramid and Per-Layer Division of Labor
 > Part of [Compass](../../SKILL.md) §10 — Testing Strategy.
-> 決定「哪一層測什麼、測幾個」，避免把驗收成本壓在最慢最脆的那一層。
+> Decides "which layer tests what, and how many" — so you don't push acceptance cost onto the slowest, most fragile layer.
 
-測試不是越多越好，是**放對層**。同一條驗收標準，放錯層會讓你付十倍成本卻換來一半信心。本章給你分層規則與「PRD 驗收標準 → 測試層」的對照程序。
+More tests isn't better — **putting them in the right layer** is. The same acceptance criterion, placed in the wrong layer, costs you ten times as much for half the confidence. This chapter gives you the layering rules and the "PRD acceptance criterion → test layer" mapping procedure.
 
 ---
 
-## 🔺 經典金字塔
+## 🔺 The Classic Pyramid
 
 ```
-        ╱ E2E ╲          少（關鍵金流）— 慢、脆、貴
+        ╱ E2E ╲          few (critical money paths) — slow, fragile, expensive
       ╱─────────╲
-    ╱ Integration ╲      中（模組契約、DB、外部）
+    ╱ Integration ╲      medium (module contracts, DB, external)
   ╱─────────────────╲
- ╱       Unit        ╲   多（純邏輯、邊界）— 快、穩、便宜
+ ╱       Unit        ╲   many (pure logic, boundaries) — fast, stable, cheap
 ╱─────────────────────╲
 ```
 
-底層快、穩、便宜 → 寫最多；上層慢、脆、貴 → 寫最少但測最關鍵的路徑。**比例不是教條，是成本曲線的結果**。
+Bottom layer is fast, stable, cheap → write the most; top layer is slow, fragile, expensive → write the fewest but test the most critical paths. **The ratio isn't dogma — it's the result of the cost curve.**
 
 ---
 
-## 📊 各層分工表
+## 📊 Per-Layer Division of Labor
 
-| 層 | 抓什麼 bug | 成本 / 速度 | 數量級 | 不該由它抓 |
+| Layer | Catches what bug | Cost / speed | Order of magnitude | Should NOT catch |
 |---|---|---|---|---|
-| **Unit** | 純函式邏輯、邊界值、分支、錯誤分類 | 毫秒級、隔離、零 I/O | 最多（百～千） | 模組間是否接得上 |
-| **Integration** | 模組契約、SQL/ORM、外部 API 形狀、序列化、交易邊界 | 秒級、需 DB/容器 | 中（數十～百） | UI 流程是否走得通 |
-| **E2E** | 真實使用者旅程跑得通、端到端組裝正確 | 分鐘級、脆、會 flaky | 極少（個位數～十幾） | 個別邏輯分支 |
+| **Unit** | Pure-function logic, boundary values, branches, error classification | Millisecond, isolated, zero I/O | Most (hundreds–thousands) | Whether modules connect |
+| **Integration** | Module contracts, SQL/ORM, external API shape, serialization, transaction boundaries | Second-scale, needs DB/container | Medium (tens–hundreds) | Whether UI flow works end-to-end |
+| **E2E** | Real user journeys work, end-to-end assembly is correct | Minute-scale, fragile, will be flaky | Very few (single digits–teens) | Individual logic branches |
 
-判斷歸屬一句話：**這個 bug 不靠跨進程也能重現嗎？** 能 → 往下層放。
+One-line test for placement: **can this bug be reproduced without crossing process boundaries?** If yes → push it down a layer.
 
 ---
 
-## 🍦 反模式
+## 🍦 Anti-Patterns
 
-**冰淇淋甜筒（倒金字塔）— 最常見的死法：**
-- E2E 過多 → CI 跑 40 分鐘、三不五時紅、沒人信任、最後被 `skip` 掉
-- 一個按鈕邏輯的 bug 要靠開瀏覽器才測得到 → 反饋迴圈以分鐘計
-- 症狀：「測試又掛了，重跑一次就好」成為團隊口頭禪 → 等於沒測試
+**Ice-cream cone (inverted pyramid) — the most common way to die:**
+- Too many E2E → CI runs 40 minutes, goes red constantly, nobody trusts it, eventually gets `skip`ped
+- A button-logic bug that can only be tested by opening a browser → feedback loop measured in minutes
+- Symptom: "the tests broke again, just rerun it" becomes the team's catchphrase → equivalent to having no tests
 
-**測實作而非行為：**
+**Testing implementation instead of behavior:**
 ```js
-// ❌ 測實作：改方法名就紅，重構寸步難行
+// ❌ Testing implementation: rename the method and it goes red, refactoring grinds to a halt
 expect(svc._buildQuery).toHaveBeenCalledWith('SELECT ...')
 
-// ✅ 測行為：輸入→輸出契約，內部怎麼換都不影響
+// ✅ Testing behavior: input→output contract, internals can change freely
 expect(await repo.findActiveUsers()).toEqual([{ id: 1, status: 'active' }])
 ```
-> 鐵則：斷言「對外可觀察的行為」（回傳值、狀態變化、對協作者的呼叫），不斷言私有步驟。私有方法、呼叫順序、內部欄位都不該進斷言。
+> Iron rule: assert "externally observable behavior" (return values, state changes, calls to collaborators), not private steps. Private methods, call order, and internal fields should never enter assertions.
 
-其他紅旗：mock 到只剩 mock 在跟 mock 對話；測試名叫 `test1`；一個測試斷言 10 件事。
+Other red flags: mocking down to where only mocks talk to mocks; a test named `test1`; one test asserting 10 things.
 
 ---
 
-## 🔄 什麼時候該倒過來
+## 🔄 When To Flip It
 
-金字塔是**預設**，不是律法。下列情境合理上移重心：
+The pyramid is the **default**, not law. The following situations reasonably shift the center of gravity upward:
 
-| 情境 | 調整 | 理由 |
+| Situation | Adjustment | Reason |
 |---|---|---|
-| 薄 CRUD / BFF（幾乎無邏輯，全是組裝） | 加重 integration，unit 反而沒東西可測 | 邏輯都在邊界上，純函式測了是假覆蓋 |
-| 膠水 / 編排層（串多個服務） | integration 為主 | 風險在「接得上嗎」不在「算得對嗎」 |
-| 重演算法 / 計費 / 規則引擎 | unit 爆量、E2E 一條 | 風險在分支正確性，組合爆炸只有 unit 扛得住 |
-| Legacy 無測試、要動刀 | 先補 E2E/特徵測試當安全網，再往下補 | 還不懂內部前，端到端是唯一可信的網（見 ../08_brownfield/03_refactor.md） |
+| Thin CRUD / BFF (almost no logic, all assembly) | Lean into integration; unit has nothing to test anyway | Logic lives at the boundaries; testing pure functions is fake coverage |
+| Glue / orchestration layer (chains multiple services) | Integration-centric | Risk is "does it connect," not "does it compute correctly" |
+| Heavy algorithm / billing / rules engine | Unit explodes, one E2E | Risk is branch correctness; only unit can handle combinatorial explosion |
+| Legacy with no tests, about to cut into it | First add E2E/characterization tests as a safety net, then fill downward | Before you understand the internals, end-to-end is the only trustworthy net (see ../08_brownfield/03_refactor.md) |
 
-判準：**風險集中在哪一層，測試重心就移去哪一層**。沒邏輯的層別硬湊 unit。
+Criterion: **wherever the risk concentrates, that's where the test center of gravity moves**. Don't force fake units onto a layer with no logic.
 
 ---
 
-## 🎯 E2E 要幾個才「夠」
+## 🎯 How Many E2E Is "Enough"
 
-不是「覆蓋全部」，是**覆蓋金流（money paths）**。
+It's not "cover everything," it's **cover the money paths**.
 
-E2E 入選清單（全部滿足才放 E2E）：
-- [ ] 壞掉會直接損失營收 / 違反法遵 / 鎖死使用者（登入、結帳、付款、送出訂單）
-- [ ] 跨越 ≥3 個系統的真實組裝，下層測不出整條走通
-- [ ] 是「快樂路徑」主幹，不是第 7 種錯誤分支
+E2E inclusion checklist (must satisfy ALL to qualify for E2E):
+- [ ] Breaking it directly loses revenue / violates compliance / locks out users (login, checkout, payment, order submission)
+- [ ] Real assembly crossing ≥3 systems, where lower layers can't prove the whole path works
+- [ ] It's the "happy path" trunk, not the 7th error branch
 
-**範例（電商）**：
+**Example (e-commerce):**
 
-| 旅程 | E2E？ | 放哪 |
+| Journey | E2E? | Goes where |
 |---|---|---|
-| 註冊→登入→下單→付款成功 | ✅ 是 | E2E（核心金流） |
-| 折扣碼計算規則（滿千折百、疊加上限） | ❌ | unit（純邏輯，分支多） |
-| 庫存不足時 API 回 409 | ❌ | integration（契約） |
-| 付款 gateway timeout 的重試 | ❌ | integration（用假 gateway） |
-| 忘記密碼 email 流程 | ⚠️ 視營收影響 | 多半 integration 足夠 |
+| Register → login → place order → payment success | ✅ Yes | E2E (core money path) |
+| Discount-code calculation rules (spend-1000-save-100, stacking caps) | ❌ | unit (pure logic, many branches) |
+| API returns 409 when stock insufficient | ❌ | integration (contract) |
+| Retry on payment gateway timeout | ❌ | integration (with a fake gateway) |
+| Forgot-password email flow | ⚠️ Depends on revenue impact | mostly integration suffices |
 
-一個中型產品的健康 E2E 數通常是 **5～15 條**，不是 50 條。每加一條 E2E 都在加 CI 時間與 flaky 機率，要付得起才加。
+A healthy E2E count for a mid-size product is typically **5–15**, not 50. Every E2E you add adds CI time and flaky probability — only add it if you can afford it.
 
 ---
 
-## 🗺️ PRD 驗收標準 → 測試層（對照程序）
+## 🗺️ PRD Acceptance Criteria → Test Layer (Mapping Procedure)
 
-逐條讀 PRD 的驗收標準（acceptance criteria），套這套決策：
+Read the PRD's acceptance criteria one by one and apply this decision:
 
-1. **這條是純運算 / 規則 / 邊界？** → Unit
-2. **這條描述模組間或對外的契約（DB、API、訊息格式、交易）？** → Integration
-3. **這條描述一段完整使用者旅程且屬金流？** → E2E
-4. **這條講效能 / 安全 / 可用性？** → 不放功能金字塔，走專屬測試型別（見下節）
+1. **Is this pure computation / a rule / a boundary?** → Unit
+2. **Does this describe a contract between modules or to the outside (DB, API, message format, transaction)?** → Integration
+3. **Does this describe a complete user journey that is a money path?** → E2E
+4. **Does this talk about performance / security / availability?** → Not in the functional pyramid; goes to its dedicated test type (see next section)
 
-**範例（PRD 驗收標準對照）**：
+**Example (PRD acceptance criteria mapping):**
 
-| PRD 驗收標準 | 層 |
+| PRD acceptance criterion | Layer |
 |---|---|
-| 「金額 > 0 且 ≤ 上限才接受」 | Unit |
-| 「重複提交同一筆訂單不應建立兩筆」（冪等） | Integration（打 DB 驗唯一性 / upsert） |
-| 「使用者完成結帳後收到確認頁」 | E2E |
-| 「列表查詢 p95 < 200ms」 | 效能測試（§6.2，非 unit/e2e） |
-| 「未授權使用者不能讀他人訂單」 | 安全測試 + integration（§6.4，先寫測試） |
+| "Accept only if amount > 0 and ≤ cap" | Unit |
+| "Submitting the same order twice should not create two rows" (idempotency) | Integration (hit DB, verify uniqueness / upsert) |
+| "User receives confirmation page after completing checkout" | E2E |
+| "List query p95 < 200ms" | Performance test (§6.2, not unit/e2e) |
+| "Unauthorized user cannot read another's orders" | Security test + integration (§6.4, test-first) |
 
-> 每條驗收標準都要能指到**至少一個**測試。指不到的標準 = 沒被驗收 = DoD 不算過（../04_quality_gates/01_dod.md）。
-
----
-
-## 🚧 NFR 不在這座金字塔裡
-
-效能、安全、可觀測性、可及性有**各自的測試型別**，別硬塞進 unit/integration/e2e：
-
-- 效能 → 負載 / 壓力 / p95 門檻測試（../06_non_functional/02_performance.md）
-- 安全 → authz/IDOR 測試、注入測試，且**先寫測試再寫實作**（../06_non_functional/04_security.md）
-- 邊界與 test-first 規則 → ./02_test_first_boundary.md
-
-把效能 SLA 寫成一條 e2e 斷言是典型錯置：e2e 環境抖動大，量不準也擋不住回歸。
+> Every acceptance criterion must point to **at least one** test. A criterion that points to nothing = not accepted = DoD does not pass (../04_quality_gates/01_dod.md).
 
 ---
 
-## ✅ 自檢清單
+## 🚧 NFRs Are Not In This Pyramid
 
-- [ ] 每條 PRD 驗收標準都對應到明確一層的測試
-- [ ] E2E 只覆蓋金流，數量在個位～十幾，每條都付得起
-- [ ] 沒有把純邏輯 bug 推到 e2e 才抓
-- [ ] 斷言的是行為（輸入→輸出 / 狀態），不是私有實作步驟
-- [ ] 薄組裝層沒硬湊假 unit；風險集中層測試有加重
-- [ ] NFR 走專屬測試型別，沒塞進功能金字塔
-- [ ] CI 全綠且穩定，沒有靠重跑掩蓋的 flaky e2e
+Performance, security, observability, and accessibility have **their own test types** — don't cram them into unit/integration/e2e:
+
+- Performance → load / stress / p95-threshold tests (../06_non_functional/02_performance.md)
+- Security → authz/IDOR tests, injection tests, and **write the test before the implementation** (../06_non_functional/04_security.md)
+- Boundary and test-first rules → ./02_test_first_boundary.md
+
+Writing a performance SLA as one e2e assertion is the classic misplacement: e2e environments jitter heavily, so it measures inaccurately and can't block regressions either.
+
+---
+
+## ✅ Self-Check Checklist
+
+- [ ] Every PRD acceptance criterion maps to a test at a clearly defined layer
+- [ ] E2E covers only money paths, count in the single digits to teens, every one affordable
+- [ ] No pure-logic bug pushed up to e2e to catch
+- [ ] Assertions are on behavior (input→output / state), not private implementation steps
+- [ ] No fake units forced onto thin assembly layers; tests are heavier at the risk-concentrated layer
+- [ ] NFRs go to their dedicated test types, not crammed into the functional pyramid
+- [ ] CI is all-green and stable, no flaky e2e papered over by reruns
 
 ---
 
 ## 🔗 Related Compass sections
 
-- [§10 Testing Strategy（本模組）](./_index.md)
-- [§10.2 測試先行的邊界](./02_test_first_boundary.md)
+- [§10 Testing Strategy (this module)](./_index.md)
+- [§10.2 The Test-First Boundary](./02_test_first_boundary.md)
 - [§4.1 Definition of Done](../04_quality_gates/01_dod.md)
-- [§6.1 NFR 總覽](../06_non_functional/01_nfr_overview.md)
+- [§6.1 NFR Overview](../06_non_functional/01_nfr_overview.md)
 
 ## 📝 Status
 v0.8.0 (Phase 3: original content)

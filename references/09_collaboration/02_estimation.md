@@ -1,163 +1,163 @@
-# §9.2 PRD → 工時估算
+# §9.2 PRD → Effort Estimation
 
 > Part of [Compass](../../SKILL.md) §9 — Collaboration & Handoff.
-> 把一份 PRD 轉成可信的工時範圍：數 checklist、抓未知、分清「已知工作」與「研究探針」。
+> Turn a PRD into a credible effort range: count the checklist, surface unknowns, separate "known work" from "research spikes."
 
 ---
 
-## 🎯 核心立場
+## 🎯 Core stance
 
-估算是**規劃輔助**，不是**合約**。
+Estimation is a **planning aid**, not a **contract**.
 
-- 合約是 PRD（§3.2 的 checklist），不是你給的數字。
-- 估算的價值在於「暴露未知」，不在於「猜中時數」。
-- 一個誠實的 p50/p90 範圍 > 一個自信的單點數字。
+- The contract is the PRD (the §3.2 checklist), not the number you give.
+- The value of estimation is "exposing unknowns," not "guessing the right hours."
+- An honest p50/p90 range > a confident single-point number.
 
-> 若你被要求「給我一個準確的數字」，那是要求你假裝沒有不確定性。拒絕。給範圍 + 列假設。
+> If you're asked to "give me an exact number," that's a demand to pretend there's no uncertainty. Refuse. Give a range + list assumptions.
 
 ---
 
-## 📐 估算流程（五步）
+## 📐 Estimation flow (five steps)
 
-| 步 | 動作 | 產出 |
+| Step | Action | Output |
 |---|---|---|
-| 1 | 數 checklist 項數（§3.2 顆粒度） | N 個可驗收項 |
-| 2 | 每項標複雜度權重 | 加權工時基數 |
-| 3 | 標出未知 → 拆成「已知工作」vs「研究探針」 | 兩個清單 |
-| 4 | 套真實乘數（NFR/遷移/測試/review） | 調整後基數 |
-| 5 | 給 p50/p90 範圍，不給單點 | 估算交付 |
+| 1 | Count checklist items (§3.2 granularity) | N acceptance items |
+| 2 | Tag each with a complexity weight | Weighted effort base |
+| 3 | Surface unknowns → split into "known work" vs "research spikes" | Two lists |
+| 4 | Apply real-world multipliers (NFR/migration/tests/review) | Adjusted base |
+| 5 | Give a p50/p90 range, not a single point | Estimate delivery |
 
 ---
 
-## 1️⃣ 數 checklist × 複雜度權重
+## 1️⃣ Count checklist × complexity weight
 
-從 §3.2 的 checklist 出發，每項套一個複雜度權重，不要憑感覺給總數。
+Start from the §3.2 checklist, apply a complexity weight to each item. Don't pull a total out of thin air.
 
-| 權重 | 特徵 | 基準工時 |
+| Weight | Traits | Baseline effort |
 |---|---|---|
-| XS | 純 UI 文案、單一欄位、設定值 | 0.5 日 |
-| S | 單一函式、一個 endpoint、明確 CRUD | 1 日 |
-| M | 跨 2 模組、需新資料結構、有狀態 | 2–3 日 |
-| L | 跨層、新整合、有並發/一致性問題 | 拆！(見下) |
+| XS | Pure UI copy, single field, config value | 0.5 day |
+| S | Single function, one endpoint, clear CRUD | 1 day |
+| M | Spans 2 modules, needs new data structure, stateful | 2–3 days |
+| L | Cross-layer, new integration, has concurrency/consistency issues | Split! (see below) |
 
-**鐵律：L 不准進估算**。L = 你還沒拆夠。拆到每塊 ≤ 1 日的單位，否則那塊就是隱藏的未知。
+**Iron rule: L is not allowed into an estimate.** L = you haven't split enough. Split down to units of ≤ 1 day each, or that chunk is a hidden unknown.
 
-> **範例**
-> checklist 8 項：5×S(1日) + 2×M(2.5日) + 1×L
-> → L「支援離線同步」拆成：衝突偵測(M)、合併策略(M)、重試佇列(S) = 2.5+2.5+1 = 6 日
-> 已知工作 = 5×1 + 2×2.5 + 6 = 5 + 5 + 6 = 16 日（再套乘數）
+> **Example**
+> Checklist of 8 items: 5×S(1 day) + 2×M(2.5 days) + 1×L
+> → L "support offline sync" splits into: conflict detection(M), merge strategy(M), retry queue(S) = 2.5+2.5+1 = 6 days
+> Known work = 5×1 + 2×2.5 + 6 = 5 + 5 + 6 = 16 days (then apply multipliers)
 
 ---
 
-## 2️⃣ 抓未知：真正的風險在這
+## 2️⃣ Surface unknowns: the real risk lives here
 
-happy-path 工時誰都會數。估算炸掉永遠是因為**沒被數到的未知**。
+Anyone can count happy-path effort. Estimates blow up because of **unknowns that never got counted**.
 
-逐項問三句：
+Ask three questions per item:
 
-- [ ] 這塊我**做過一模一樣的**嗎？（沒有 → 至少 S→M）
-- [ ] 有沒有**我現在答不出來**的技術問題？（有 → 這是研究探針，不是工作）
-- [ ] 依賴的外部系統 / API，我**驗證過行為**了嗎？（沒有 → 標 ⚠️ 未驗證假設）
+- [ ] Have I **done exactly this before**? (No → at least S→M)
+- [ ] Is there a technical question I **can't answer right now**? (Yes → it's a research spike, not work)
+- [ ] The external system / API I depend on — have I **verified its behavior**? (No → tag ⚠️ unverified assumption)
 
-### 已知工作 vs 研究探針
+### Known work vs research spike
 
-| | 已知工作 | 研究探針 (spike) |
+| | Known work | Research spike |
 |---|---|---|
-| 你能估嗎 | 能，套權重 | **不能估時數** |
-| 怎麼處理 | 進 p50/p90 | 給**時間盒**（timebox），如「2 日內查清可行性」 |
-| 產出 | 功能 | 一個答案 + 重新估算 |
+| Can you estimate it | Yes, apply weights | **Can't estimate hours** |
+| How to handle | Goes into p50/p90 | Give a **timebox**, e.g. "figure out feasibility within 2 days" |
+| Output | A feature | An answer + a re-estimate |
 
-> 把研究探針偽裝成已知工作，是估算失準的頭號根因。探針的產出是「知道怎麼做」，不是「做完」。先 timebox 探針，再估後面的工作。
+> Disguising a research spike as known work is the #1 root cause of bad estimates. A spike's output is "knowing how to do it," not "having done it." Timebox the spike first, then estimate the work that follows.
 
 ---
 
-## 3️⃣ 估算陷阱：你忘了的不是 code
+## 3️⃣ Estimation traps: what you forgot isn't code
 
-只估 happy path，是最常見的塌方。下面這些**永遠**存在，卻**永遠**被漏：
+Estimating only the happy path is the most common collapse. The items below **always** exist yet **always** get missed:
 
-| 漏掉的成本 | 對應 Compass | 典型佔比 |
+| Missed cost | Maps to Compass | Typical share |
 |---|---|---|
-| NFR（效能 / 觀測性 / 資安 / a11y） | §6 NFR | +20~40% |
-| 資料遷移 / 回滾預案 | §7 Operations | +10~30% |
-| 測試（單元 + 整合） | §10 Testing | +30~50% |
-| Code review + 改 review 意見 | §4 DoD | +15% |
-| 部署 / 灰度 / 監控接線 | §7 Operations | +10% |
+| NFR (performance / observability / security / a11y) | §6 NFR | +20~40% |
+| Data migration / rollback plan | §7 Operations | +10~30% |
+| Tests (unit + integration) | §10 Testing | +30~50% |
+| Code review + addressing review comments | §4 DoD | +15% |
+| Deploy / canary / monitoring wiring | §7 Operations | +10% |
 
-### 真實乘數
+### Real-world multiplier
 
 ```
-真實工時 = 已知工作基數 × (1 + NFR + 遷移 + 測試 + review + 部署)
+real effort = known-work base × (1 + NFR + migration + tests + review + deploy)
 ```
 
-> **範例**
-> 已知工作 15.5 日，套：測試 +40%、NFR +25%、review +15%、部署 +10%
-> → 15.5 × 1.90 ≈ **29 日**
-> 若你報的是 15.5，你漏了快一半。
+> **Example**
+> Known work 15.5 days, apply: tests +40%, NFR +25%, review +15%, deploy +10%
+> → 15.5 × 1.90 ≈ **29 days**
+> If you report 15.5, you missed nearly half.
 
-別把乘數藏進「我抓寬一點」的直覺裡——**逐項列出來**，這樣 review 你估算的人能挑戰每一項。
+Don't bury multipliers in a "let me pad it a bit" gut feel — **list each one out** so whoever reviews your estimate can challenge each item.
 
 ---
 
-## 4️⃣ 給範圍，不給點：p50 / p90
+## 4️⃣ Give a range, not a point: p50 / p90
 
-單點估算在說謊。給兩個數：
+A single-point estimate is lying. Give two numbers:
 
-- **p50**：一半機率做得完（中位數，順的話）。
-- **p90**：九成機率不超過（含合理踩坑）。
+- **p50**: 50% chance you finish in this (median, if it goes smoothly).
+- **p90**: 90% chance you don't exceed it (includes reasonable hiccups).
 
-| 訊號 | p90 / p50 比值 | 解讀 |
+| Signal | p90 / p50 ratio | Reading |
 |---|---|---|
-| 全是已知工作、做過類似 | ~1.3 | 健康 |
-| 有 1~2 個研究探針 | ~2.0 | 先做探針再重估 |
-| PRD 未達 DoR | > 3 或「無法估」 | **停，先修 PRD** |
+| All known work, done similar before | ~1.3 | Healthy |
+| 1~2 research spikes | ~2.0 | Run the spikes first, then re-estimate |
+| PRD hasn't met DoR | > 3 or "can't estimate" | **Stop, fix the PRD first** |
 
-> p90/p50 比值就是你的「不確定性溫度計」。比值爆高 → 問題不在估算技巧，在輸入（PRD）爛。
-
----
-
-## 5️⃣ DoR 與「我估不了」
-
-爛 PRD 灌大不確定性。在 PRD 達 [DoR](../02_definition_of_ready/01_dor_checklist.md) 前估出來的數字，是把你的猜測偽裝成承諾。
-
-### 何時直接說「估不了」
-
-出現以下任一，回「PRD 達 DoR 前我無法估算」，並指出缺哪塊：
-
-- [ ] 驗收標準模糊 / 缺 checklist（§3.2 顆粒度不足）
-- [ ] 核心名詞沒定義（「即時」「大量」「安全」未量化）
-- [ ] NFR 完全沒提（→ 乘數無從套，見 §6）
-- [ ] 遷移 / 相容性策略空白（→ §7）
-- [ ] 超過一半項目其實是研究探針
-
-> 這不是擺爛。給一個你知道會錯的數字，比說「估不了」傷害更大——它會被當成承諾釘在排程上。
-
-### DoR 後**重新估算**
-
-PRD 修好、探針跑完 → **重估**。第一次估算是輸入爛時的快照，過期了就丟。
+> The p90/p50 ratio is your "uncertainty thermometer." Ratio blows up → the problem isn't estimation technique, it's that the input (PRD) is garbage.
 
 ---
 
-## ✅ 估算交付 checklist
+## 5️⃣ DoR and "I can't estimate"
 
-報估算前，逐項過：
+A garbage PRD pumps in huge uncertainty. A number produced before the PRD meets [DoR](../02_definition_of_ready/01_dor_checklist.md) disguises your guess as a commitment.
 
-- [ ] 從 §3.2 checklist 數出來，不是憑感覺
-- [ ] 每項標了複雜度權重，沒有 L 混進去
-- [ ] 已知工作 / 研究探針**分開列**
-- [ ] 探針給了 timebox，沒當成工作估
-- [ ] 真實乘數**逐項列出**（測試/NFR/遷移/review/部署）
-- [ ] 交付的是 p50/p90 範圍，不是單點
-- [ ] 列了 ⚠️ 未驗證假設清單
-- [ ] 明說「這是規劃輔助，不是承諾；PRD 變動就重估」
+### When to just say "can't estimate"
+
+If any of the following appear, reply "I can't estimate until the PRD meets DoR" and point out what's missing:
+
+- [ ] Acceptance criteria vague / no checklist (§3.2 granularity insufficient)
+- [ ] Core terms undefined ("real-time," "high-volume," "secure" not quantified)
+- [ ] NFR not mentioned at all (→ no basis to apply multipliers, see §6)
+- [ ] Migration / compatibility strategy blank (→ §7)
+- [ ] More than half the items are actually research spikes
+
+> This isn't slacking. Giving a number you know is wrong does more harm than saying "can't estimate" — it gets treated as a commitment and pinned to the schedule.
+
+### **Re-estimate** after DoR
+
+PRD fixed, spikes done → **re-estimate**. The first estimate was a snapshot taken when the input was garbage; once it's stale, throw it out.
+
+---
+
+## ✅ Estimate delivery checklist
+
+Before reporting an estimate, run each item:
+
+- [ ] Counted from the §3.2 checklist, not by feel
+- [ ] Each item tagged with a complexity weight, no L mixed in
+- [ ] Known work / research spikes **listed separately**
+- [ ] Spikes given a timebox, not estimated as work
+- [ ] Real-world multipliers **listed item by item** (tests/NFR/migration/review/deploy)
+- [ ] Delivered a p50/p90 range, not a single point
+- [ ] Listed the ⚠️ unverified assumptions
+- [ ] Stated explicitly "this is a planning aid, not a commitment; re-estimate when the PRD changes"
 
 ---
 
 ## 🔗 Related Compass sections
 
-- [§2.1 DoR Checklist](../02_definition_of_ready/01_dor_checklist.md) — 估算的輸入門檻；未達 DoR 不估
-- [§3.3 Implementation Order](../03_implementation/03_implementation_order.md) — 拆塊與排序，估算後的下一步
-- [§4.1 Definition of Done](../04_quality_gates/01_dod.md) — review/測試的收尾成本來源
-- [§9.1 Who Decides](./01_who_decides.md) — 估不了時，誰來裁決 PRD 補完
+- [§2.1 DoR Checklist](../02_definition_of_ready/01_dor_checklist.md) — the input gate for estimation; don't estimate before DoR
+- [§3.3 Implementation Order](../03_implementation/03_implementation_order.md) — splitting and sequencing, the next step after estimating
+- [§4.1 Definition of Done](../04_quality_gates/01_dod.md) — source of the review/test wrap-up cost
+- [§9.1 Who Decides](./01_who_decides.md) — when you can't estimate, who rules on completing the PRD
 
 ---
 

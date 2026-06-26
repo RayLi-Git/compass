@@ -1,161 +1,161 @@
 # §8.2 Bug Fix Workflow
 
 > Part of [Compass](../../SKILL.md) §8 — Brownfield.
-> 在既有 code 上修 bug：先重現、追根因、鎖行為、最小改、留回歸。
+> Fixing a bug in existing code: reproduce first, chase the root cause, lock the behavior, make a minimal change, leave a regression test.
 
-修 bug 不是「讓錯誤訊息消失」。錯誤訊息消失有兩種：bug 被修好，或 bug 被藏起來。
-這份流程的存在就是逼你走第一種。
+Fixing a bug is not "making the error message disappear." There are two ways an error message can disappear: the bug got fixed, or the bug got hidden.
+This workflow exists to force you into the first one.
 
 ---
 
-## 🚦 開工前：先確認這是不是 bug
+## 🚦 Before you start: confirm this is actually a bug
 
-「使用者覺得不對」≠「程式有 bug」。動手前先分類：
+"The user thinks it's wrong" ≠ "the program has a bug." Classify before you touch anything:
 
-| 情況 | 判準 | 去處 |
+| Situation | Criterion | Where to go |
 |---|---|---|
-| Code bug | spec 說 X，code 做 Y，X 才對 | 本流程繼續 |
-| PRD / spec mismatch | spec 說 X，code 做 Y，但**不確定哪個對** | 走 [§5.3 跨文件衝突](../05_conflict_handling/03_cross_document.md) 裁決 |
-| 規格沒講到 | spec 對這情境隻字未提 | 走 [§5.1 模糊/缺漏](../05_conflict_handling/01_vague_bug_gap.md) |
-| 使用者要的新行為 | spec 沒寫、現在也不報錯，只是不夠用 | 這是 feature，去 [§8.4 Add Feature](./04_add_feature.md) |
+| Code bug | spec says X, code does Y, X is correct | Continue this workflow |
+| PRD / spec mismatch | spec says X, code does Y, but **unsure which is right** | Go rule via [§5.3 Cross-document conflict](../05_conflict_handling/03_cross_document.md) |
+| Spec is silent | spec says nothing about this scenario | Go to [§5.1 Vague/gap](../05_conflict_handling/01_vague_bug_gap.md) |
+| New behavior the user wants | spec doesn't cover it and it doesn't error today, it's just insufficient | This is a feature — go to [§8.4 Add Feature](./04_add_feature.md) |
 
-**最常見的陷阱**：spec 說 X、code 做 Y，你直接把 code 改成 X——結果 X 才是過時的規格，Y 是上次正確的修正。
-→ spec 與 code 不一致時，先問「哪個是對的」，不要預設 code 一定錯。這一步走 §5.3，不要在 bug 流程裡擅自裁決。
+**The most common trap**: spec says X, code does Y, you change code straight to X — and it turns out X is the stale spec, Y was last time's correct fix.
+→ When spec and code disagree, first ask "which one is right," don't assume the code must be wrong. This step goes through §5.3 — don't rule on it yourself inside the bug workflow.
 
 ---
 
-## 1️⃣ 重現優先：No repro, no fix
+## 1️⃣ Reproduce first: No repro, no fix
 
-**沒有穩定重現步驟之前，不准動 production code。**
+**No touching production code until you have stable reproduction steps.**
 
-改一個你無法重現的 bug，你無法證明你修好了——你只是改了一段 code 然後祈禱。
+Fixing a bug you can't reproduce means you can't prove you fixed it — you just changed some code and prayed.
 
-重現清單：
+Reproduction checklist:
 
-- [ ] 寫下**精確**重現步驟（輸入、前置狀態、操作順序）
-- [ ] 至少跑 **2 次**確認穩定重現，不是偶發
-- [ ] 記下「預期 vs 實際」兩行對照
-- [ ] 確認重現環境（版本、資料、設定）與回報者一致
+- [ ] Write down **precise** reproduction steps (input, preconditions, order of operations)
+- [ ] Run it **at least twice** to confirm stable repro, not a fluke
+- [ ] Note the "expected vs actual" two-line comparison
+- [ ] Confirm the repro environment (version, data, config) matches the reporter's
 
-若**無法穩定重現**：
+If you **can't reproduce reliably**:
 
-| 狀況 | 動作 |
+| Situation | Action |
 |---|---|
-| 偶發、時有時無 | 先找出觸發條件（並發？時序？特定資料？），不要瞎改 |
-| 只在 prod 出現 | 補 log / trace 縮小範圍，這是 Sentinel 診斷階段的「加儀器」，不是亂槍 |
-| 完全重現不了 | 標記為「待補重現」，**不修**——降級為觀察任務 |
+| Intermittent, comes and goes | Find the trigger condition first (concurrency? timing? specific data?), don't flail |
+| Only happens in prod | Add log / trace to narrow the range — this is the "instrument" move of Sentinel's diagnosis phase, not buckshot |
+| Can't reproduce at all | Mark as "repro pending," **don't fix** — downgrade to an observation task |
 
-> ⚠️ 「加一堆 log 卻沒方向」是 Sentinel 的淺層紅旗。加 log 前先有假說，log 是為了證偽假說，不是撒網。
+> ⚠️ "Adding piles of logs with no direction" is a Sentinel shallow red flag. Have a hypothesis before adding logs; the log exists to falsify a hypothesis, not to cast a net.
 
 ---
 
-## 2️⃣ 根因，不是症狀
+## 2️⃣ Root cause, not symptom
 
-錯誤跳出來的地方，往往不是錯誤產生的地方。永遠往上游追一層。
+Where the error surfaces is often not where the error originates. Always chase one layer upstream.
 
-這是 Sentinel 診斷階段的核心。修 bug 前問：
+This is the core of Sentinel's diagnosis phase. Before fixing the bug, ask:
 
-1. **這個錯誤是症狀還是源頭？** 例如 `null pointer` 在 A，但 null 是 B 塞進來的，根因在 B。
-2. **為什麼這個壞值/壞狀態會到這裡？** 一路往回追到「第一個不該發生的事」。
-3. **同一個根因還會從哪冒出來？** 若只補當前這個點，其他入口仍會炸。
+1. **Is this error a symptom or the source?** E.g. the `null pointer` is at A, but the null was stuffed in by B — the root cause is at B.
+2. **Why did this bad value/bad state get here?** Trace all the way back to "the first thing that shouldn't have happened."
+3. **Where else can this same root cause surface?** If you only patch the current point, the other entry points will still blow up.
 
-### 繞過 ≠ 解決（紅旗）
+### Bypassing ≠ solving (red flag)
 
-以下都是「關掉警報」而非「滅火」，看到就停：
+The following all "turn off the alarm" rather than "put out the fire" — stop the moment you see them:
 
 ```text
-✗ try { risky() } catch { /* 吞掉，讓它過 */ }
-✗ if (x == null) return;        // 特例擋住症狀，沒問 x 為何是 null
-✗ value as any                  // 把型別錯誤壓下去
-✗ 加第 3 個特例 if 打補丁
+✗ try { risky() } catch { /* swallow it, let it pass */ }
+✗ if (x == null) return;        // special-case blocks the symptom, never asks why x is null
+✗ value as any                  // press the type error down
+✗ adding a 3rd special-case if as a patch
 ```
 
-> 想用 try/except 蓋錯誤、加第 3 個特例 if、改成 `any`——三者任一出現，退出改 code 模式，進 Sentinel 診斷模式。
+> Wanting to cover an error with try/except, adding a 3rd special-case if, casting to `any` — if any of the three shows up, exit code-changing mode and enter Sentinel's diagnosis mode.
 
 ---
 
-## 3️⃣ Characterization test：先鎖、後修
+## 3️⃣ Characterization test: lock first, fix second
 
-修既有 code 最大的風險是**改 A 壞 B**。防線是：在改任何邏輯前，先用測試把「現在的行為」釘住。
+The biggest risk in changing existing code is **fixing A breaks B**. The defense: before changing any logic, pin "the current behavior" with a test.
 
-順序很重要：
+Order matters:
 
 ```text
-① 寫 characterization test → 鎖住目前『正確』的相鄰行為（會綠）
-② 寫 failing test          → 表達 bug 該有的正確行為（現在會紅）
-③ 改 production code        → 讓 ② 變綠，且 ① 不能變紅
+① Write characterization test → lock the currently 'correct' adjacent behavior (goes green)
+② Write failing test          → express the correct behavior the bug should have (goes red now)
+③ Change production code       → make ② go green, and ① must not go red
 ```
 
-- **①** 不是測 bug，是測「這次改動絕不能弄壞的東西」。它一開始就是綠的——若它先紅，代表你對現狀的理解錯了，回到第 2 步。
-- **②** 是 bug 的 red test：精準對應第 1 步寫下的重現步驟。它紅，證明你真的重現了 bug。
-- 安全模組（Auth / 權限 / PII）的 bug **強制 test-first**，見 [§4.1 DoD](../04_quality_gates/01_dod.md)。
+- **①** is not testing the bug, it's testing "the thing this change absolutely must not break." It's green from the start — if it's red first, you misunderstood the current state, go back to step 2.
+- **②** is the bug's red test: precisely matching the reproduction steps you wrote in step 1. It being red proves you actually reproduced the bug.
+- Bugs in security modules (Auth / permissions / PII) are **mandatorily test-first**, see [§4.1 DoD](../04_quality_gates/01_dod.md).
 
-> **範例**（FastAPI，僅示意，非必須）
-> bug：折扣碼過期仍可用。
-> ① `test_valid_code_still_applies()` — 鎖住「未過期的碼照常生效」（綠）
-> ② `test_expired_code_rejected()` — 過期碼應回 400（現在紅，因為 bug）
-> ③ 修 `apply_discount()` 加過期判斷 → ② 轉綠、① 維持綠
+> **Example** (FastAPI, illustrative only, not required)
+> bug: an expired discount code still works.
+> ① `test_valid_code_still_applies()` — locks "an unexpired code applies as usual" (green)
+> ② `test_expired_code_rejected()` — an expired code should return 400 (red now, because of the bug)
+> ③ fix `apply_discount()` to add the expiry check → ② goes green, ① stays green
 
 ---
 
-## 4️⃣ 最小 diff 紀律
+## 4️⃣ Minimal diff discipline
 
-**修 bug 的 commit 只做一件事：修這個 bug。**
+**A bug-fix commit does one thing: fix this bug.**
 
-看到旁邊的爛 code 很想順手重構——忍住。理由：
+You'll see ugly code nearby and itch to refactor it on the side — resist. Reasons:
 
-- 重構混進 bug fix，review 時無法分辨「哪行是修 bug、哪行是手癢」。
-- 真的回歸時，`git bisect` / revert 會把你的修正和重構一起捲走。
-- 擴大 diff = 擴大「改 A 壞 B」的面積，正好違背第 3 步的防線。
+- A refactor mixed into a bug fix means review can't tell "which line is the fix, which line is the itch."
+- On a real regression, `git bisect` / revert will sweep away your fix and the refactor together.
+- Widening the diff = widening the "fixing A breaks B" surface, exactly violating step 3's defense.
 
-| 該做 | 不該做 |
+| Do | Don't |
 |---|---|
-| 改最少的行讓 ② 轉綠 | 順手改變數命名、調排版、抽函式 |
-| 重構欲望記成獨立 task | 在同一 commit 重構 |
-| commit：`[fix] 模組：根因一句話` | 一個 commit 混 fix + refactor + 格式化 |
+| Change the fewest lines to make ② go green | Rename variables, tweak formatting, extract functions on the side |
+| Record the refactor urge as a separate task | Refactor in the same commit |
+| commit: `[fix] module: root cause in one line` | One commit mixing fix + refactor + formatting |
 
-想重構是合理的——但它是**另一個 PR**，走 [§8.3 Refactor](./03_refactor.md)。
-
----
-
-## 5️⃣ 回歸測試是 DoD，不是加分
-
-第 3 步的 failing test（②）轉綠後**留在 codebase 裡**，它就是回歸測試——保證這個 bug 不會復活。
-
-收工前對齊 [§4.1 DoD](../04_quality_gates/01_dod.md)：
-
-- [ ] **重現步驟可重現** → 修完後照原步驟，bug 不再出現（🟢 已驗證，附實跑結果）
-- [ ] **failing test 現在綠** → 且把它留下當回歸測試
-- [ ] **characterization test 仍綠** → 證明沒弄壞相鄰行為
-- [ ] **lint / typecheck / 全測試** 通過
-- [ ] **diff 最小** → self-review 確認沒夾帶重構
-- [ ] **commit** 訊息點名根因，不只寫「fix bug」
-- [ ] 若屬「夠痛」案例（誤判過根因 / ≥2 假說被證偽 / 根因跨層）→ 寫進 Sentinel 病歷 `.claude/debug-log.md`
-
-> 🔬 宣稱「修好了」前標證據強度：🟢 已驗證（跑過、附證據）／🟡 已檢視（讀過邏輯沒跑）／🔴 推測。沒跑過絕不說「我跑過了」。
+The urge to refactor is reasonable — but it's **another PR**, go through [§8.3 Refactor](./03_refactor.md).
 
 ---
 
-## ✅ Bug fix 全流程速查
+## 5️⃣ The regression test is DoD, not bonus
+
+After step 3's failing test (②) goes green, **leave it in the codebase** — it is the regression test, guaranteeing this bug won't come back to life.
+
+Before wrapping up, align with [§4.1 DoD](../04_quality_gates/01_dod.md):
+
+- [ ] **Reproduction steps reproduce** → after the fix, follow the original steps, the bug no longer appears (🟢 verified, with actual run results attached)
+- [ ] **Failing test is now green** → and keep it as a regression test
+- [ ] **Characterization test still green** → proves adjacent behavior isn't broken
+- [ ] **lint / typecheck / full test suite** pass
+- [ ] **Diff is minimal** → self-review confirms no smuggled-in refactor
+- [ ] **commit** message names the root cause, not just "fix bug"
+- [ ] If it's a "painful enough" case (misjudged the root cause / ≥2 hypotheses falsified / root cause spans layers) → write it into the Sentinel log `.claude/debug-log.md`
+
+> 🔬 Before claiming "fixed," grade the evidence strength: 🟢 verified (ran it, evidence attached) / 🟡 reviewed (read the logic, didn't run) / 🔴 speculation. Never say "I ran it" without having run it.
+
+---
+
+## ✅ Bug fix full-workflow quick reference
 
 ```text
-1. 分類：code bug? 還是 spec mismatch?（mismatch → §5.3）
-2. 重現：穩定 repro，否則不修
-3. 根因：往上游追，別停在症狀
-4. 鎖行為：characterization test（綠）
-5. red test：表達正確行為（紅）
-6. 最小改：讓 red 轉綠、characterization 維持綠
-7. DoD：回歸測試留下、diff 乾淨、commit 點名根因
+1. Classify: code bug? or spec mismatch? (mismatch → §5.3)
+2. Reproduce: stable repro, otherwise don't fix
+3. Root cause: chase upstream, don't stop at the symptom
+4. Lock behavior: characterization test (green)
+5. red test: express the correct behavior (red)
+6. Minimal change: make red go green, characterization stays green
+7. DoD: leave the regression test, clean diff, commit names the root cause
 ```
 
 ---
 
 ## 🔗 Related Compass sections
 
-- [§5.3 跨文件衝突](../05_conflict_handling/03_cross_document.md) — spec 說 X、code 做 Y 時誰對誰錯
-- [§4.1 Definition of Done](../04_quality_gates/01_dod.md) — 回歸測試與收工門檻
-- [§8.3 Refactor Workflow](./03_refactor.md) — 把「順手重構」的衝動移到這裡
-- [§8 Brownfield 總覽](./_index.md) — 既有 code 的修改地圖
+- [§5.3 Cross-document conflict](../05_conflict_handling/03_cross_document.md) — who's right when spec says X, code does Y
+- [§4.1 Definition of Done](../04_quality_gates/01_dod.md) — regression tests and the wrap-up gate
+- [§8.3 Refactor Workflow](./03_refactor.md) — move the "refactor on the side" urge here
+- [§8 Brownfield overview](./_index.md) — the map for modifying existing code
 
 ---
 

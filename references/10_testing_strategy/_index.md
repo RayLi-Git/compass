@@ -1,19 +1,19 @@
 # §10 Testing Strategy
 
-> 把每條 PRD 驗收標準放對測試層，用對 test-first 與 coverage，避免假覆蓋與假安全感。
+> Maps each PRD acceptance criterion to the right test layer, and decides where test-first earns its keep vs. where it's ritual — so coverage proves something instead of padding a number.
 
-## 本章涵蓋
+## This chapter covers
 
-- [01_test_pyramid.md](01_test_pyramid.md) — 測試金字塔分層規則、各層分工與反模式，含「PRD 驗收標準 → 測試層」對照程序。
-- [02_test_first_boundary.md](02_test_first_boundary.md) — test-first 在哪回本／哪是 overhead，coverage 作為地板偵測器的正確用法，及 mutation testing 簡述。
+- [01_test_pyramid.md](01_test_pyramid.md) — Test pyramid and per-layer division of labor: which layer tests what, how many E2E is "enough," and how to map PRD acceptance criteria to unit/integration/E2E.
+- [02_test_first_boundary.md](02_test_first_boundary.md) — The real boundary of test-first beyond Auth/PII, where it's overhead, and why coverage is a floor detector — not a proof of quality (incl. mutation testing).
 
-## 何時載入
+## When to load
 
-- 拿到 PRD 要決定每條驗收標準該寫哪一層測試（unit / integration / e2e）。
-- 糾結要不要 test-first，或被「coverage 80%」當成過關證書綁住。
-- E2E 跑太慢太脆（冰淇淋甜筒），想把測試重心調回該在的層。
+- Planning a test suite for a PRD and deciding which layer each acceptance criterion belongs to.
+- Tempted to chase a global coverage percentage, or unsure whether to test-first a given module.
+- CI is slow/flaky from too many E2E, or "the tests broke again, just rerun it" has become the team catchphrase.
 
-## 🔗 相關
-- [§4 Quality Gates](../04_quality_gates/_index.md) — DoD／DoR 對 Auth/權限/PII 強制 test-first 的來源。
-- [§6 Non-Functional](../06_non_functional/_index.md) — 效能／安全等 NFR 走專屬測試型別，不塞進功能金字塔。
-- [§8 Brownfield](../08_brownfield/_index.md) — 修 bug 的 red test 與 legacy 特徵測試安全網。
+## 🔗 Related
+- [§4 Quality Gates](../04_quality_gates/_index.md) — source of mandatory test-first for Auth/PII and the DoD wrap-up gate.
+- [§6 Non-Functional Requirements](../06_non_functional/_index.md) — performance/security test types that live outside the functional pyramid.
+- [§8 Brownfield](../08_brownfield/_index.md) — characterization tests and red-test-first ordering for legacy code and bug fixes.

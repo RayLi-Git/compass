@@ -1,174 +1,174 @@
-# §3.2 追蹤文件三件套
+# §3.2 The Three Tracking Docs
 
 > Part of [Compass](../../SKILL.md) §3 — Implementation.
-> 介紹專案實作期間必備的三份追蹤文件，以及可選的跨 session 永久記憶擴充。
+> Introduces the three tracking docs every project implementation needs, plus an optional cross-session permanent-memory extension.
 
 ---
 
-## 為什麼需要追蹤文件
+## Why you need tracking docs
 
-對話視窗會被 context 壓縮、跨日重啟、開新 session。如果所有決策、進度、PRD 對照都只活在對話裡，下次回來就什麼都沒了。
+The conversation window gets context-compacted, restarted across days, reopened as a new session. If every decision, every bit of progress, every PRD cross-reference lives only in the conversation, next time you come back there's nothing left.
 
-追蹤文件的核心心法：**重大決定寫進檔案，不靠對話記憶；自相矛盾時以寫下來的為準。**
+The core principle of tracking docs: **write major decisions to a file, don't rely on conversation memory; when you contradict yourself, the written record wins.**
 
-這三份文件構成「日常工作載體」——每完成一塊就更新，下次開工先讀。
+These three docs form the "daily work carrier" — update after every slice you finish, read first when you start the next.
 
 ---
 
-## 三件套總覽
+## The three docs at a glance
 
-| 文件 | 用途 | 更新時機 |
+| Doc | Purpose | When to update |
 |---|---|---|
-| `progress.md` | 當前進度 + 待辦 | 每完成一塊立刻更新 |
-| `development-log.md` | 決策紀錄 + 偏差紀錄 | 每次做出決策或發現偏差時 append |
-| `prd-checklist.md` | PRD 章節 ↔ 實作對照表（200+ 條）| 每完成一條打勾；新增條目立刻補 |
+| `progress.md` | Current progress + todo | Update immediately after every slice |
+| `development-log.md` | Decision log + deviation log | Append on every decision or deviation found |
+| `prd-checklist.md` | PRD section ↔ implementation map (200+ items) | Check off every completed item; add new items immediately |
 
-三份文件壽命都是「專案期間」——專案結束可歸檔，但中途不可缺。
-
----
-
-## §3.2.1 `progress.md` — 當前進度 + 待辦
-
-**用途**：任何人（包含未來的你）打開這個檔案，30 秒內知道專案現在在哪、下一步要幹嘛、有沒有卡住。
-
-**核心區塊**：
-
-- **當前階段**：例如「PRD §X 實作中（第 3 塊 / 共 8 塊）」
-- **已完成**：列出已 commit 的塊（含 commit hash 或日期）
-- **進行中**：當前正在動的那一塊，附 PRD 章節錨點
-- **待辦**：接下來預計要做的塊（順序）
-- **卡關 / Blocker**：等待裁決、缺資料、外部依賴未到
-
-**更新節奏**：
-- 每完成一塊立刻更新「已完成」和「進行中」
-- 中斷前（context 將滿、切 session）必更新「進行中」——這是回錨關鍵
-- 不要把 `development-log.md` 的決策細節重複塞進來
+All three live for "the project's duration" — archive at project end, but never skip mid-project.
 
 ---
 
-## §3.2.2 `development-log.md` — 決策 + 偏差紀錄
+## §3.2.1 `progress.md` — current progress + todo
 
-**用途**：append-only 流水帳。記錄「為什麼這樣做」而非「做了什麼」。
+**Purpose**: anyone (including future you) opens this file and knows within 30 seconds where the project stands, what's next, and whether it's stuck.
 
-**必記事項**：
+**Core blocks**:
 
-| 類型 | 範例 |
+- **Current phase**: e.g. "implementing PRD §X (slice 3 / 8)"
+- **Done**: list committed slices (with commit hash or date)
+- **In progress**: the slice you're working on right now, with PRD section anchor
+- **Todo**: the slices planned next (in order)
+- **Blockers**: awaiting ruling, missing data, external dependency not yet available
+
+**Update cadence**:
+- Update "Done" and "In progress" immediately after every slice
+- Before any interruption (context about to fill, session switch) you MUST update "In progress" — this is the key to re-anchoring
+- Don't duplicate `development-log.md`'s decision details in here
+
+---
+
+## §3.2.2 `development-log.md` — decision + deviation log
+
+**Purpose**: append-only ledger. Records "why you did this" rather than "what you did".
+
+**Must record**:
+
+| Type | Example |
 |---|---|
-| 技術選型決策 | 「選 X 而非 Y，因為 ___」 |
-| PRD 模糊處的解讀 | 「PRD 沒寫清楚 A vs B，採較具體一方並標註」（見 [§5 衝突處理](../05_conflict_handling/_index.md) §5.1.1）|
-| PRD bug 標記 | 「PRD §X 與 §Y 矛盾，已 log 等裁決」（見 [§5 衝突處理](../05_conflict_handling/_index.md) §5.1.2）|
-| 缺漏補實作 | 「PRD 沒寫但實作了 Z，理由 ___，等裁決」（見 [§5 衝突處理](../05_conflict_handling/_index.md) §5.1.3）|
-| 偏差自我修正 | 「發現第 N 塊偏離 PRD §X.Y，已修正」 |
+| Tech-choice decision | "chose X over Y because ___" |
+| Interpretation of a vague PRD point | "PRD didn't spell out A vs B, took the more concrete side and flagged it" (see [§5 Conflict Handling](../05_conflict_handling/_index.md) §5.1.1) |
+| PRD bug flag | "PRD §X contradicts §Y, logged and awaiting ruling" (see [§5 Conflict Handling](../05_conflict_handling/_index.md) §5.1.2) |
+| Gap-fill implementation | "PRD didn't say it but implemented Z, rationale ___, awaiting ruling" (see [§5 Conflict Handling](../05_conflict_handling/_index.md) §5.1.3) |
+| Self-corrected deviation | "found slice N deviated from PRD §X.Y, corrected" |
 
-**寫作風格**：
-- Append-only，不改舊紀錄（要修正就 append 新紀錄指向舊紀錄）
-- 每條附日期 + PRD 錨點
-- 不寫「完成了 foo.py」這種進度——那是 `progress.md` 的事
+**Writing style**:
+- Append-only, never edit old entries (to correct, append a new entry pointing at the old one)
+- Each entry carries a date + PRD anchor
+- Don't write "finished foo.py" — that's progress, which belongs in `progress.md`
 
 ---
 
-## §3.2.3 `prd-checklist.md` — PRD ↔ 實作對照表
+## §3.2.3 `prd-checklist.md` — PRD ↔ implementation map
 
-**用途**：把 PRD 拆成 200+ 條可勾選的細項，逐條對應到實作。**這是「完成即比對」紀律的物理載體**。
+**Purpose**: break the PRD into 200+ checkable line items, each mapped to implementation. **This is the physical carrier of the "done means compare" discipline.**
 
-**為什麼要 200+ 條**：粗顆粒（例如「實作 API」一條）會讓你以為做完了，其實漏了一半。細顆粒強迫你逐條確認。
+**Why 200+ items**: coarse granularity (e.g. one "implement the API" line) makes you think you're done when you've actually missed half. Fine granularity forces you to confirm item by item.
 
-**典型欄位**：
+**Typical columns**:
 
-| 欄位 | 說明 |
+| Column | Description |
 |---|---|
-| PRD 章節 | §X.Y.Z 錨點 |
-| 條目描述 | 一句話可驗證的需求 |
-| 對應實作 | 檔案路徑 / 函式名 / commit hash |
-| 狀態 | ⬜ 未做 / 🟡 進行中 / 🟢 完成 / 🔴 [SKIPPED-PRD] |
-| 證據 | 測試 ID / 截圖 / 跑過的指令（見 Sentinel 的證據強度三級制） |
-| 備註 | 偏差、TODO、等裁決事項 |
+| PRD section | §X.Y.Z anchor |
+| Item description | A one-sentence verifiable requirement |
+| Implementation | File path / function name / commit hash |
+| Status | ⬜ not done / 🟡 in progress / 🟢 done / 🔴 [SKIPPED-PRD] |
+| Evidence | Test ID / screenshot / command run (see Sentinel's three-tier evidence grading) |
+| Notes | Deviation, TODO, items awaiting ruling |
 
-**顆粒度規則**：每條必須是「可驗證」的單一行為，不可包山包海。詳細顆粒度切分規則（每 ~30 行 PRD 對應 1 條、禁聚合條目）見 [§11.1 工具強制 M-007](../11_tooling/01_m007_to_m010.md)。
+**Granularity rule**: every item must be a single "verifiable" behavior, not a catch-all. For the detailed granularity-split rules (1 item per ~30 lines of PRD, anti-aggregation of items), see [§11.1 Tooling Enforcement M-007](../11_tooling/01_m007_to_m010.md).
 
-**工具輔助**：
-- 用一支 **PRD-table 展開腳本** 從 PRD markdown 自動產生初版 checklist 骨架，再人工細化
-- 用一支 **反向稽核腳本** 掃描程式碼庫（例如你的後端框架的 route 定義 / schema 定義），比對 checklist 有沒有漏條目——專治「實作了但 checklist 忘了加」
+**Tooling assist**:
+- Use a **PRD-table expansion script** to auto-generate a first-draft checklist skeleton from the PRD markdown, then refine by hand
+- Use a **reverse-audit script** to scan the codebase (e.g. your backend framework's route definitions / schema definitions) and compare against the checklist for missing items — this cures "implemented it but forgot to add it to the checklist"
 
-**核心規則**：
-- 每完成一條打勾 + 填證據欄
-- 沒勾完不算「PRD §X 實作完」
-- 反向稽核發現實作有但 checklist 沒——立刻補條目，不是補完就算
-- PRD 沒寫但實作了 → 走 [§5 衝突處理 §5.1.3](../05_conflict_handling/_index.md)
+**Core rules**:
+- Check off every completed item + fill the evidence column
+- Not all checked = "PRD §X implementation" is NOT done
+- Reverse audit finds implementation present but checklist missing — add the item immediately, not "fill it in once finished"
+- PRD didn't say it but you implemented it → go to [§5 Conflict Handling §5.1.3](../05_conflict_handling/_index.md)
 
 ---
 
-## 三份文件如何協作
+## How the three docs work together
 
 ```
               ┌──────────────────────┐
-              │   PRD（合約）         │
+              │   PRD (the contract)  │
               └──────────┬───────────┘
-                         │ 展開
+                         │ expand
                          ▼
               ┌──────────────────────┐
-              │  prd-checklist.md    │  ← 顆粒對照（200+ 條）
+              │  prd-checklist.md    │  ← granular map (200+ items)
               └──────────┬───────────┘
-                         │ 每塊完成
+                         │ each slice done
             ┌────────────┼────────────┐
             ▼            ▼            ▼
     progress.md   development-log.md  commit
-    （現在在哪） （為什麼這樣做）   （物理快照）
+    (where now)   (why this way)    (physical snapshot)
 ```
 
-- **`progress.md` 告訴你「現在」**
-- **`development-log.md` 告訴你「為什麼」**
-- **`prd-checklist.md` 告訴你「還剩什麼」**
+- **`progress.md` tells you "now"**
+- **`development-log.md` tells you "why"**
+- **`prd-checklist.md` tells you "what's left"**
 
-三份缺一不可。只有 `progress.md` 會在某個決策回頭時想不起來原因；只有 `development-log.md` 會迷失現在的位置；只有 `prd-checklist.md` 會不知道下一塊該動哪裡。
+You can't drop any of the three. With only `progress.md`, when you revisit a decision you won't remember why. With only `development-log.md`, you lose your current position. With only `prd-checklist.md`, you won't know which slice to work next.
 
 ---
 
-## APPENDIX — 可選擴充：跨 session 永久記憶
+## APPENDIX — optional extension: cross-session permanent memory
 
-三件套是「專案期間」的工作載體，但有些事實是**整個專案生命週期都不會變**的——例如專案 slug、核心架構決策、不可違反的領域約束。這類東西每次開新 session 都要重講一遍很浪費 context。
+The three docs are the "project-duration" work carrier, but some facts **never change across the whole project lifecycle** — e.g. the project slug, core architecture decisions, inviolable domain constraints. Re-explaining this stuff every new session wastes context.
 
-**機制**：許多 AI 編程環境提供 **跨 session 持久化記憶**（mechanism varies by setup——可能是 Claude Code 的 memory 目錄、IDE 外掛的 workspace memory、或自建的 prompt 注入層）。任何能在「開新對話時自動載入」的儲存層都算。
+**Mechanism**: many AI coding environments offer **cross-session persistent memory** (mechanism varies by setup — could be Claude Code's memory directory, an IDE plugin's workspace memory, or a self-built prompt-injection layer). Any storage layer that "auto-loads when a new conversation opens" counts.
 
-**何時寫入記憶**：
+**When to write to memory**:
 
-| 時機 | 動作 |
+| Trigger | Action |
 |---|---|
-| 專案啟動時 | 建立專案層級的 memory 檔，記下不變事實（slug / 核心架構 / 領域約束）|
-| 核心規則變更時 | 更新對應記憶區塊 |
-| 使用者明確說「記下來 / 別忘了」 | 立即寫入，不批次 |
-| 重大決策後（例如平台改變、PRD bug 採用 X 解法）| 更新「決策紀錄」區塊 |
-| 大階段完成 | 更新「進度狀態」區塊（一句話即可） |
+| Project kickoff | Create a project-level memory file recording the invariant facts (slug / core architecture / domain constraints) |
+| Core rule changes | Update the corresponding memory block |
+| User explicitly says "note this down / don't forget" | Write immediately, don't batch |
+| After a major decision (e.g. platform change, PRD bug resolved with solution X) | Update the "decision log" block |
+| Major phase complete | Update the "progress status" block (one line is enough) |
 
-**該寫什麼 / 不該寫什麼**：
+**What to write / what not to write**:
 
-- ✅ 該寫：不變的事實、核心架構決策、領域約束、專案識別
-- ❌ 不該寫：每日進度細節（那是 `progress.md` 的事）、決策的完整推理過程（那是 `development-log.md` 的事）、PRD 條目對照（那是 `prd-checklist.md` 的事）
+- ✅ Do write: invariant facts, core architecture decisions, domain constraints, project identity
+- ❌ Don't write: daily progress details (that's `progress.md`'s job), the full reasoning behind a decision (that's `development-log.md`'s job), PRD item mapping (that's `prd-checklist.md`'s job)
 
-**與三件套的分工**：
+**Division of labor with the three docs**:
 
-| 文件 | 壽命 | 用途 |
+| Doc | Lifespan | Purpose |
 |---|---|---|
-| 跨 session 記憶 | 跨 session 永存 | 啟動時必須知道的不變事實 |
-| `progress.md` | 專案期間 | 當前進度 + 待辦 |
-| `development-log.md` | 專案期間 | 決策 + 偏差紀錄 |
-| `prd-checklist.md` | 專案期間 | 顆粒對照 |
+| Cross-session memory | Persists across sessions | Invariant facts you must know at startup |
+| `progress.md` | Project duration | Current progress + todo |
+| `development-log.md` | Project duration | Decision + deviation log |
+| `prd-checklist.md` | Project duration | Granular map |
 
-> **核心心法**：記憶是「最頂層的脈絡」，三份追蹤文件是「日常工作載體」。記憶**指向**追蹤文件，**不取代**它們。
+> **Core principle**: memory is "the top-level context", the three tracking docs are "the daily work carrier". Memory **points to** the tracking docs, it **does not replace** them.
 
-**更新節奏**：
-- 不要每次小變動都改記憶（會和 `progress.md` 重複）
-- 但「大階段完成」必更新一次「進度狀態」
-- 更新時改「記錄日期」欄位
+**Update cadence**:
+- Don't touch memory on every small change (it'd duplicate `progress.md`)
+- But "major phase complete" must update "progress status" once
+- When updating, change the "record date" field
 
-如果你的環境沒有原生記憶機制，可以退而求其次：在專案根目錄維護一份 `PROJECT_CONTEXT.md`，並在每次新 session 開頭主動讀取。
+If your environment has no native memory mechanism, fall back to second-best: maintain a `PROJECT_CONTEXT.md` in the project root and proactively read it at the start of every new session.
 
 ---
 
 ## 🔗 Related Compass sections
-- [§3 Implementation index](../03_implementation/_index.md) — 三件套是實作階段的紀律載體
-- [§5 Conflict Handling](../05_conflict_handling/_index.md) — `development-log.md` 偏差紀錄的處置流程（§5.1.1 / §5.1.2 / §5.1.3）
-- Sentinel 的診斷階段 — 病歷雙檔（debug-log.md / patterns.md）與三件套互補
+- [§3 Implementation index](../03_implementation/_index.md) — the three docs are the discipline carrier of the implementation phase
+- [§5 Conflict Handling](../05_conflict_handling/_index.md) — handling flow for `development-log.md` deviation entries (§5.1.1 / §5.1.2 / §5.1.3)
+- Sentinel's diagnosis phase — the two case-file docs (debug-log.md / patterns.md) complement the three docs
 
 ## 📝 Status
 v0.2.0 (Phase 1: ported from prior SOP, generalized and de-privatized).

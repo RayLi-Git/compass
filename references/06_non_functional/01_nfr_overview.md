@@ -1,151 +1,151 @@
-# §6.1 非功能需求 (NFR) 總覽：為何 PRD 常漏
+# §6.1 Non-Functional Requirements (NFR) Overview: Why PRDs Keep Dropping Them
 
-> Part of [Compass](../../SKILL.md) §6 — 非功能需求 (Non-Functional Requirements)
-> 為何 PRD 的功能列表寫滿、NFR 卻一片空白，以及如何在 DoR 階段就把它逼出來。
-
----
-
-## 🎯 核心問題：PRD 結構性地過度規格化功能、欠規格化 NFR
-
-大多數 PRD 長這樣：
-
-- 「使用者可以建立訂單」→ 寫了三段、附 schema、附 wireframe
-- 「訂單列表要快」→ **沒寫**。多快？P95 幾毫秒？幾筆資料下測？沒人說。
-
-功能是「會不會做」，看得見、demo 得出來、PM 寫得出來。
-NFR 是「做得夠不夠好」，看不見、要壓測才現形、PM 通常**沒意識到要寫**。
-
-結果：功能 spec 詳到逐欄位，NFR 整類缺席。等到上線壓力一來才發現「原來沒人定義過目標」——而此時改的是架構，不是一行 if。
+> Part of [Compass](../../SKILL.md) §6 — Non-Functional Requirements
+> Why a PRD's feature list is packed while the NFR section is blank, and how to force NFRs out at the DoR stage.
 
 ---
 
-## 🚨 為何反向稽核（§11）救不了你
+## 🎯 Core problem: PRDs structurally over-specify features and under-specify NFRs
 
-§11 的反向稽核機制（M007–M010）拿 PRD 的**功能清單**回頭比對實作：endpoint 列了沒、schema 欄位對不對、頁面缺不缺。
+Most PRDs look like this:
 
-> 它逐項比對的是「PRD 寫了 → 實作做了沒」。
-> **NFR 從來沒被寫進 PRD，所以反向稽核根本沒東西可比。** 它整類穿過漏洞，零告警。
+- "Users can create an order" → three paragraphs, plus schema, plus wireframe
+- "The order list should be fast" → **nothing written**. How fast? P95 at how many ms? Tested under how much data? Nobody says.
 
-這是 NFR 最危險的地方：**自動化防線對它無感**。功能漏實作會被 M008 抓；NFR 漏定義，沒有任何 gate 會亮。唯一的攔截點在更上游——DoR。
+A feature is "will it work" — visible, demoable, something a PM can write.
+An NFR is "is it good enough" — invisible, only surfaces under load testing, and the PM usually **doesn't realize it needs writing**.
 
-詳見 [§11 反向稽核工具鏈](../11_tooling/01_m007_to_m010.md)。
+Result: the feature spec is detailed down to the field, and the entire NFR category is absent. By the time production load hits, you discover "nobody ever defined the target" — and now what you're changing is architecture, not a one-line if.
 
 ---
 
-## 📋 Compass 追蹤的 NFR 類別
+## 🚨 Why the reverse audit (§11) can't save you
 
-| 類別 | 一句話 | 漏了會怎樣 |
+The §11 reverse audit mechanism (M007–M010) takes the PRD's **feature list** and checks it back against the implementation: are the endpoints listed, do the schema fields match, are any pages missing.
+
+> What it checks item by item is "PRD wrote it → did the implementation do it".
+> **NFRs were never written into the PRD, so the reverse audit has nothing to compare.** The whole category slips through the gap, zero alerts.
+
+This is the most dangerous thing about NFRs: **the automated defenses are blind to them**. A missing feature implementation gets caught by M008; a missing NFR definition trips no gate at all. The only interception point is further upstream — DoR.
+
+See [§11 reverse audit toolchain](../11_tooling/01_m007_to_m010.md).
+
+---
+
+## 📋 NFR categories Compass tracks
+
+| Category | One line | What breaks if you drop it |
 |---|---|---|
-| ⚡ 效能 | P95/P99 延遲、吞吐、資料量級下的目標 | 沒目標就沒人優化；上線才發現列表 8 秒、查詢全表掃描 |
-| 🔭 觀測性 | log / metric / trace / 告警 | 出事時兩眼一抹黑，只能猜；MTTR 失控 |
-| 🔒 安全 | authN/authZ、輸入驗證、機密管理、PII | 一個 IDOR 或注入點，全表外洩；補的是信任邊界不是補丁 |
-| 🟢 可用性 (SLA) | 目標可用率、降級策略、依賴失效行為 | 第三方一掛你整站陪葬，因為沒人定義「它死了我怎麼辦」 |
-| ♿ a11y | 鍵盤、對比、ARIA、screen reader | 改完才知道整套元件不可用；retrofit a11y 是重寫不是微調 |
-| 🌐 i18n | 文案外提、日期/數字/貨幣、RTL、複數規則 | 硬編字串散落全 codebase；要支援第二語言時等於重做 UI 層 |
+| ⚡ Performance | P95/P99 latency, throughput, targets at a given data scale | No target means nobody optimizes; you find out in production that the list takes 8s and the query full-table scans |
+| 🔭 Observability | log / metric / trace / alerting | When things break you're flying blind, just guessing; MTTR runs away |
+| 🔒 Security | authN/authZ, input validation, secret management, PII | One IDOR or injection point leaks the whole table; the fix is the trust boundary, not a patch |
+| 🟢 Availability (SLA) | target availability, degradation strategy, dependency-failure behavior | One third party goes down and your whole site goes with it, because nobody defined "what do I do when it dies" |
+| ♿ a11y | keyboard, contrast, ARIA, screen reader | You find out after the fact the whole component set is unusable; retrofitting a11y is a rewrite, not a tweak |
+| 🌐 i18n | string externalization, date/number/currency, RTL, plural rules | Hardcoded strings scattered across the whole codebase; adding a second language means redoing the UI layer |
 
-六類各有專章：效能（[§6.2](02_performance.md)）、觀測性（[§6.3](03_observability.md)）、安全（[§6.4](04_security.md)）、a11y+i18n（[§6.5](05_accessibility_i18n.md)）、可用性/SLA（[§6.6](06_availability_sla.md)）。
-
----
-
-## 🔑 KEY：NFR 必須在 DoR（§2.1）就攔下
-
-這是本章唯一最重要的規則：
-
-> **「PRD 沒寫效能目標」是一個要在寫 code 之前 flag 出來的 gap，不是壓測當天的驚喜。**
-
-NFR 缺失的處理路徑，和功能 gap 走的是同一條 Sentinel 的「動手前協定」——向內問清楚、向外推影響範圍。差別只在：功能 gap 你看 PRD 就知道缺；NFR gap **PRD 上是一片空白，你得主動去問「這裡是不是該有個目標」**。
-
-把它接進 [DoR 檢查清單](../02_definition_of_ready/01_dor_checklist.md)：DoR 不只看「功能寫齊沒」，還要看「NFR 有沒有被明確定義或明確標記為 N/A」。
-
-「沒寫」和「不需要」是兩件事——
-- ✅ 合格：「本功能無效能要求（內部後台、單一管理員、資料量 < 100 筆）」← 明確標 N/A
-- ❌ 不合格：效能欄整段空白 ← 這是 gap，不是 N/A
-
-空白要在 DoR 變成 [PRD 健檢報告](../02_definition_of_ready/02_prd_health_report.md)上的一條紅字。
+Each of the six has its own chapter: performance ([§6.2](02_performance.md)), observability ([§6.3](03_observability.md)), security ([§6.4](04_security.md)), a11y+i18n ([§6.5](05_accessibility_i18n.md)), availability/SLA ([§6.6](06_availability_sla.md)).
 
 ---
 
-## ✅ NFR present? 檢查清單（插進 DoR）
+## 🔑 KEY: NFRs must be caught at DoR (§2.1)
 
-對每一條 PRD 功能，過一遍以下六問。**任一條答不出來 = gap，回頭問 PRD owner。** 你可以提一個標明「待確認」的合理起點值（[§6.2](02_performance.md) 對效能目標就這麼做），但**不可把腦補值當成既定目標靜默帶過**——最終值仍須 owner 裁決。
+This is the single most important rule in this chapter:
+
+> **"The PRD didn't write a performance target" is a gap to flag before you write code, not a surprise on load-test day.**
+
+The path for handling a missing NFR is the same Sentinel "pre-flight" as a feature gap — ask inward to get clarity, push outward to map the blast radius. The only difference: for a feature gap you know it's missing just by reading the PRD; for an NFR gap **the PRD is blank, so you have to proactively ask "shouldn't there be a target here"**.
+
+Wire it into the [DoR checklist](../02_definition_of_ready/01_dor_checklist.md): DoR isn't only "are the features fully written", it's also "is each NFR explicitly defined or explicitly marked N/A".
+
+"Not written" and "not needed" are two different things —
+- ✅ Passes: "This feature has no performance requirement (internal admin tool, single admin, data volume < 100 rows)" ← explicitly marked N/A
+- ❌ Fails: the performance row is entirely blank ← this is a gap, not N/A
+
+A blank must turn into a red line on the [PRD health report](../02_definition_of_ready/02_prd_health_report.md) at DoR.
+
+---
+
+## ✅ NFR present? Checklist (insert into DoR)
+
+For every PRD feature, run the six questions below. **Any one you can't answer = gap, go back and ask the PRD owner.** You may propose a reasonable starting value flagged "to confirm" ([§6.2](02_performance.md) does exactly this for performance targets), but **do not silently pass off a made-up value as an established target** — the final value still needs the owner's ruling.
 
 ```text
-[ ] ⚡ 效能：有沒有給出可量測目標？
-      P95/P99 延遲？吞吐量？在多大資料量級下測？
-      （答不出 → 不是「先不管」，是 flag 給 owner）
+[ ] ⚡ Performance: is there a measurable target?
+      P95/P99 latency? Throughput? Tested at what data scale?
+      (Can't answer → not "ignore for now", it's flag to owner)
 
-[ ] 🔭 觀測性：出事時看什麼？
-      關鍵路徑有沒有 log？有沒有 metric？告警閾值定了沒？
+[ ] 🔭 Observability: what do you look at when things break?
+      Does the critical path have logs? Metrics? Are alert thresholds set?
 
-[ ] 🔒 安全：信任邊界在哪？
-      誰能呼叫？驗的是「有登入」還是「是本人」（IDOR）？
-      輸入有沒有驗證？有沒有碰 PII / 機密？
+[ ] 🔒 Security: where is the trust boundary?
+      Who can call it? Do you verify "logged in" or "is this person" (IDOR)?
+      Is input validated? Does it touch PII / secrets?
 
-[ ] 🟢 可用性 (SLA)：依賴掛了會怎樣？
-      目標可用率？降級策略？第三方逾時 / 失敗的行為定義了沒？
+[ ] 🟢 Availability (SLA): what happens when a dependency dies?
+      Target availability? Degradation strategy? Is third-party timeout / failure behavior defined?
 
-[ ] ♿ a11y：（有 UI 才適用）
-      鍵盤可達？對比達標？互動元件有語意/ARIA？
+[ ] ♿ a11y: (applies only if there's UI)
+      Keyboard reachable? Contrast meets standard? Do interactive elements have semantics/ARIA?
 
-[ ] 🌐 i18n：（有面向使用者文案才適用）
-      字串外提了沒？日期/貨幣/複數有沒有 locale 處理？要不要 RTL？
+[ ] 🌐 i18n: (applies only if there's user-facing copy)
+      Are strings externalized? Do date/currency/plurals have locale handling? Do you need RTL?
 ```
 
-**判讀規則**：每一格只有三種合法狀態——
+**Interpretation rule**: each cell has only three legal states —
 
-| 狀態 | 意思 | DoR 是否放行 |
+| State | Meaning | DoR pass? |
 |---|---|---|
-| 🟢 有目標 | 寫了可量測的值 | ✅ 放行 |
-| ⚪ 標 N/A + 理由 | 明確說「此功能不需要，因為 ___」 | ✅ 放行 |
-| 🔴 空白 | 沒人想過 | ❌ 擋下，flag 成 gap |
+| 🟢 has target | a measurable value is written | ✅ pass |
+| ⚪ marked N/A + reason | explicitly says "this feature doesn't need it, because ___" | ✅ pass |
+| 🔴 blank | nobody thought about it | ❌ block, flag as gap |
 
 ---
 
-## 🪤 陷阱：NFR 在進 production 前是隱形的
+## 🪤 Trap: NFRs are invisible until production
 
-功能漏了，第一次跑就壞給你看——回饋即時。
-NFR 漏了，**開發、測試、demo 全程一路綠燈**，因為：
+A missing feature breaks the first time you run it — feedback is immediate.
+A missing NFR is **green all the way through dev, test, and demo**, because:
 
-- 效能：dev 機上 50 筆資料，當然快。production 50 萬筆才現形。
-- 可用性：本地第三方 mock 永遠回 200，沒人測過它逾時。
-- 觀測性：能 demo 的功能不需要 log；要 log 的是凌晨三點的 production。
-- a11y / i18n：開發者用滑鼠、看英文，永遠不會自己踩到。
+- Performance: 50 rows on the dev box, of course it's fast. 500k rows in production is where it surfaces.
+- Availability: the local third-party mock always returns 200; nobody tested its timeout.
+- Observability: a feature you can demo doesn't need logs; what needs logs is production at 3 a.m.
+- a11y / i18n: the developer uses a mouse and reads English, so they'll never hit it themselves.
 
-> 隱形 ≠ 不存在。它只是把帳記在 production 那天，連本帶利。
+> Invisible ≠ nonexistent. It just puts the bill on the production day, with interest.
 
-**範例**（FastAPI，非強制，僅示意 NFR 如何在 dev 隱形）：
+**Example** (FastAPI, not mandatory, just illustrating how an NFR hides in dev):
 
 ```python
-# dev 看起來完美。production 全表掃描，P95 飆到數秒。
+# Looks perfect in dev. Full-table scan in production, P95 spikes to seconds.
 @app.get("/orders")
 def list_orders(db: Session):
-    return db.query(Order).all()   # 沒分頁、沒索引提示、沒 limit
+    return db.query(Order).all()   # no pagination, no index hint, no limit
 ```
 
-PRD 若有一行「列表 P95 < 200ms @ 10 萬筆」，這段在 DoR / code review 就會被質疑。沒有那行，它一路綠燈直到上線。
+If the PRD had a line "list P95 < 200ms @ 100k rows", this snippet would get challenged at DoR / code review. Without that line, it's green all the way to launch.
 
-這就是為什麼 NFR 的攔截點必須往上游搬到 **DoR**，而不是寄望下游某個 gate 會接住——下游沒有 gate 接得住隱形的東西。
+This is why the NFR interception point has to move upstream to **DoR**, instead of hoping some downstream gate will catch it — there is no downstream gate that catches something invisible.
 
 ---
 
-## 🧭 往下走
+## 🧭 Where to go next
 
-| 章節 | 內容 |
+| Section | Content |
 |---|---|
-| [§6.2 效能](./02_performance.md) | 可量測效能目標怎麼定、怎麼接進 DoD |
-| [§6.3 觀測性](./03_observability.md) | log / metric / trace / 告警的最小集 |
-| [§6.4 安全](./04_security.md) | 信任邊界、輸入驗證、test-first 安全模組 |
-| [§6.5 a11y / i18n](./05_accessibility_i18n.md) | 為何 retrofit 是重寫，怎麼一開始就內建 |
-| [§6 模組索引](./_index.md) | 本資料夾全覽 |
+| [§6.2 Performance](./02_performance.md) | how to set measurable performance targets and wire them into DoD |
+| [§6.3 Observability](./03_observability.md) | the minimal set of log / metric / trace / alerting |
+| [§6.4 Security](./04_security.md) | trust boundaries, input validation, test-first security modules |
+| [§6.5 a11y / i18n](./05_accessibility_i18n.md) | why retrofitting is a rewrite, and how to build it in from the start |
+| [§6 module index](./_index.md) | full overview of this folder |
 
 ---
 
 ## 🔗 Related Compass sections
 
-- [§2.1 DoR 檢查清單](../02_definition_of_ready/01_dor_checklist.md) — NFR present? 清單的掛載點
-- [§2.2 PRD 健檢報告](../02_definition_of_ready/02_prd_health_report.md) — NFR 空白如何呈現為紅字
-- [§5.1 模糊 / bug / 缺漏處理](../05_conflict_handling/01_vague_bug_gap.md) — NFR 缺失走的同一條 gap 路徑
-- [§11 反向稽核工具鏈](../11_tooling/01_m007_to_m010.md) — 為何它攔不到 NFR
+- [§2.1 DoR checklist](../02_definition_of_ready/01_dor_checklist.md) — the mount point for the NFR present? checklist
+- [§2.2 PRD health report](../02_definition_of_ready/02_prd_health_report.md) — how a blank NFR shows up as a red line
+- [§5.1 Vague / bug / gap handling](../05_conflict_handling/01_vague_bug_gap.md) — the same gap path a missing NFR takes
+- [§11 reverse audit toolchain](../11_tooling/01_m007_to_m010.md) — why it can't catch NFRs
 
 ---
 

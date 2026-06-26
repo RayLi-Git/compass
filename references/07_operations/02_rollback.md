@@ -1,135 +1,135 @@
-# §7.2 Rollback：出事後安全回退
+# §7.2 Rollback: safe retreat after things break
 
-> Part of [Compass](../../SKILL.md) §7 — Operations。
-> 每次 deploy 上線前就要備好回退方案，不是凌晨三點臨場硬湊。
-
----
-
-## 🎯 核心鐵律
-
-**回退計畫必須在 ship 之前就存在。** 上線後才開始想「怎麼回退」已經太晚——那時你在壓力下、缺乏睡眠、監控紅成一片，做的每個決定都更容易出錯。
-
-> 如果你答不出「這次 deploy 怎麼回退、回退要幾分鐘、誰按按鈕」，這個 deploy 還沒準備好上線。
-
-對應 Sentinel 的安全網「撤退路線」：動既有 production 前，先確保有一條乾淨、已驗證、可在數分鐘內執行的退路。沒有退路就不要往前。
+> Part of [Compass](../../SKILL.md) §7 — Operations.
+> Have your rollback plan ready before every deploy ships — not improvised at 3 a.m.
 
 ---
 
-## 🔀 Deploy ≠ Release：用 feature flag 解耦
+## 🎯 Core iron rule
 
-最強的回退手段，是讓「上線程式碼」和「啟用功能」變成兩件事。
+**The rollback plan must exist before you ship.** Starting to think about "how do we roll back" only after going live is already too late — by then you're under pressure, sleep-deprived, monitoring is all red, and every decision you make is more error-prone.
 
-| 概念 | 意思 | 回退方式 |
+> If you can't answer "how does this deploy roll back, how many minutes does it take, who pushes the button," this deploy isn't ready to ship.
+
+This maps to Sentinel's safety net "retreat route": before touching existing production, ensure there's a clean, verified escape path executable within minutes. No escape path, don't go forward.
+
+---
+
+## 🔀 Deploy ≠ Release: decouple with feature flags
+
+The strongest rollback lever is making "ship code" and "enable feature" two separate things.
+
+| Concept | Meaning | Rollback method |
 |---|---|---|
-| **Deploy** | 程式碼進入 production 環境 | 需要重新部署舊版本（慢） |
-| **Release** | 功能對使用者真正生效 | 關掉 flag（秒級，不需重部署） |
+| **Deploy** | Code enters the production environment | Need to redeploy the old version (slow) |
+| **Release** | Feature actually takes effect for users | Turn off the flag (seconds, no redeploy) |
 
-把新功能包在 feature flag 後面，出事時不必 rollback 整個版本，只要把 flag 關掉——這就是 **kill-switch**。
+Wrap the new feature behind a feature flag, and when things break you don't have to roll back the whole version — just turn the flag off. This is the **kill-switch**.
 
 ```python
-# 範例（FastAPI）：功能藏在 flag 後面，出事直接關
+# Example (FastAPI): feature hidden behind a flag, flip it off when things break
 if flags.is_enabled("new_checkout_flow", user=user):
     return new_checkout(cart)
-return legacy_checkout(cart)   # flag 關掉 → 秒級回到舊路徑
+return legacy_checkout(cart)   # flag off → back to old path in seconds
 ```
 
-**Flag 使用守則：**
-- kill-switch flag 預設值必須是「關」或「安全的舊行為」（呼應 Sentinel 資安「預設安全」）
-- 關 flag 的人不需要是工程師、不需要重新部署、不需要碰 git
-- flag 開關記入 audit log（誰、何時、為什麼）
-- 上線穩定後要排程**清掉舊 flag**，否則 flag 墳場會變成下一個技術債（YAGNI 反向：留著沒用的 flag 也是債）
+**Flag usage rules:**
+- A kill-switch flag's default must be "off" or "the safe old behavior" (echoes Sentinel security "secure by default")
+- The person flipping the flag off shouldn't need to be an engineer, redeploy, or touch git
+- Flag flips go into an audit log (who, when, why)
+- Once stable in production, schedule a **cleanup of old flags** — otherwise the flag graveyard becomes the next tech debt (reverse YAGNI: keeping unused flags is debt too)
 
 ---
 
-## 🟦🟩 Blue-green 與 canary 基礎
+## 🟦🟩 Blue-green and canary basics
 
-兩種降低 deploy 爆炸半徑的部署策略，回退邏輯不同：
+Two deploy strategies that shrink a deploy's blast radius, with different rollback logic:
 
-| 策略 | 做法 | 回退動作 | 適合 |
+| Strategy | How it works | Rollback action | Good for |
 |---|---|---|---|
-| **Blue-green** | 兩套完整環境，流量一次性切換 | 把 router 切回舊環境（blue） | 回退要快、要乾淨 |
-| **Canary** | 新版本先吃 1% → 5% → 25% 流量 | 把流量比例調回 0% | 想先用小流量驗證 |
-| **Rolling** | 逐台替換實例 | 反向 rolling 回舊版（較慢） | 資源受限 |
+| **Blue-green** | Two full environments, traffic switched all at once | Switch the router back to the old environment (blue) | Rollback needs to be fast and clean |
+| **Canary** | New version takes 1% → 5% → 25% of traffic first | Dial the traffic ratio back to 0% | Want to validate with small traffic first |
+| **Rolling** | Replace instances one at a time | Reverse-rolling back to the old version (slower) | Resource-constrained |
 
-- **Blue-green** 的回退最乾淨：舊環境還活著，切回去即可，幾乎零延遲。但要付兩套環境的成本。
-- **Canary** 的價值在「早期偵測」：壞東西只影響 1% 使用者時你就該攔住它，而不是等 100% 才發現。canary 階段必須**盯著指標**，否則只是把全量爆炸延後幾分鐘。
-
----
-
-## ⚠️ Migration-rollback 陷阱：程式碼可退，資料未必
-
-**這是回退裡最容易致命的盲點。** 你可以把程式碼切回舊版，但資料庫的 schema 變更和已寫入的資料**不會自動跟著回去**。
-
-典型死法：
-
-```
-1. 部署 v2，migration 把欄位 full_name 拆成 first_name / last_name 並 DROP full_name
-2. v2 出事，回退程式碼到 v1
-3. v1 的 code 去讀 full_name → 欄位已經不存在 → 全站 500
-   （而且這幾分鐘寫進去的 first/last 資料也回不去 full_name）
-```
-
-**根因**：破壞性 schema 變更（DROP / RENAME / NOT NULL）和程式碼回退耦合在一起，回退程式碼時資料層沒有對應的退路。
-
-**解法**：用 §7.1 的 **expand / contract（擴張—收縮）**。先只做相容的擴張變更上線，等程式碼穩定後，下一個 deploy 才做收縮（刪舊欄位）。如此「回退程式碼」這個動作永遠不需要「回退資料」。
-
-> 鐵律：**破壞性 migration 永遠不和啟用該變更的程式碼放在同一次 deploy。** 收縮步驟單獨成一個後續 deploy。詳見 [§7.1 Migration](./01_migration.md)。
+- **Blue-green** has the cleanest rollback: the old environment is still alive, just switch back — near-zero latency. But you pay for two environments.
+- **Canary**'s value is "early detection": when the bad thing only hits 1% of users, that's when you should catch it — not wait until 100% to find out. The canary stage must **watch the metrics**, otherwise you've just delayed the full-fleet explosion by a few minutes.
 
 ---
 
-## 📊 回退決策準則：什麼情況下按下按鈕
+## ⚠️ Migration-rollback trap: code can revert, data may not
 
-回退不能靠「感覺怪怪的」。上線前就先寫死觸發門檻，現場照表操課，不臨場辯論。
+**This is the most lethal blind spot in rollback.** You can switch the code back to the old version, but the database's schema changes and already-written data **won't automatically follow it back**.
 
-| 訊號 | 觸發回退的門檻（範例，依服務調整） |
+Classic way to die:
+
+```
+1. Deploy v2, migration splits column full_name into first_name / last_name and DROPs full_name
+2. v2 breaks, roll code back to v1
+3. v1 code reads full_name → column no longer exists → site-wide 500
+   (and the first/last data written during those minutes can't go back to full_name either)
+```
+
+**Root cause**: a destructive schema change (DROP / RENAME / NOT NULL) is coupled with the code rollback, so when you revert code there's no matching escape path at the data layer.
+
+**Fix**: use §7.1's **expand / contract**. First ship only compatible expand changes; once the code is stable, a later deploy does the contract (drop the old column). This way "rolling back code" never requires "rolling back data."
+
+> Iron rule: **a destructive migration never goes in the same deploy as the code that enables that change.** The contract step is a separate follow-up deploy. See [§7.1 Migration](./01_migration.md).
+
+---
+
+## 📊 Rollback decision criteria: when to push the button
+
+Rollback can't ride on "something feels off." Hard-code the trigger thresholds before shipping, then execute by the book on the spot — no live debate.
+
+| Signal | Threshold to trigger rollback (example, tune per service) |
 |---|---|
-| Error rate | 5xx 比例 > baseline + 1%，持續 > 2 分鐘 |
-| Latency | p99 > SLO 上限，持續 > 5 分鐘 |
-| 關鍵業務指標 | checkout 成功率 / 登入成功率掉 > X% |
-| 飽和度 | DB 連線池 / queue 持續逼近上限且仍在惡化 |
-| 資料正確性 | 出現任何資料毀損或寫入錯誤 → **立即回退，不等門檻** |
+| Error rate | 5xx ratio > baseline + 1%, sustained > 2 min |
+| Latency | p99 > SLO ceiling, sustained > 5 min |
+| Key business metric | Checkout success rate / login success rate drops > X% |
+| Saturation | DB connection pool / queue keeps approaching the ceiling and still worsening |
+| Data correctness | Any data corruption or write error → **roll back immediately, don't wait for the threshold** |
 
-**決策原則：**
-- **回退優先於 debug**：production 出事時，先恢復服務、再慢慢找根因。別在著火的房子裡查線路（呼應 Sentinel：先止血，根因事後復盤補追）。
-- 門檻在 deploy 前談好，現場不重新討論「這算不算嚴重」。
-- 指定一個有權拍板的人（roll-back owner），不要全員投票。
-- 設**觀察窗**：deploy 後留一段時間（如 30 分鐘）主動盯指標，別 deploy 完就走人。
-
----
-
-## 🛡️ 回退本身要先驗證過
-
-最危險的回退，是**從來沒人演練過、按下去才發現它也壞了**的回退。
-
-- 回退流程要在 staging 實際跑過一次，量出回退耗時。
-- 確認舊版本的 artifact / image 還在、還能部署（別被自動清理刪掉了）。
-- 確認回退後舊程式碼能正常讀現有資料（這正是 migration 陷阱的檢查點）。
+**Decision principles:**
+- **Rollback before debug**: when production breaks, restore service first, then chase the root cause slowly. Don't trace wiring inside a burning house (echoes Sentinel: stop the bleeding first, do the root-cause retrospective afterward).
+- Agree the thresholds before deploy; don't re-litigate "is this severe enough" on the spot.
+- Designate one person with authority to call it (roll-back owner) — no all-hands vote.
+- Set an **observation window**: after deploy, actively watch metrics for a stretch (e.g. 30 min) — don't walk away the moment the deploy finishes.
 
 ---
 
-## ✅ Pre-deploy 回退檢查清單
+## 🛡️ The rollback itself must be verified first
 
-deploy 前逐項打勾，任一項打不了勾 → 這個 deploy 還沒 ready：
+The most dangerous rollback is the one **nobody ever rehearsed — and you find out it's broken too only after pushing the button**.
 
-- [ ] 回退方法已寫下來（切 flag？切 blue-green？重部署舊版？）
-- [ ] 回退預估耗時已知（秒級 / 分鐘級 / 小時級），且可接受
-- [ ] 舊版本 artifact 仍可用、且回退流程在 staging 演練過
-- [ ] 本次有破壞性 schema 變更嗎？→ 有的話確認已拆成 expand/contract，回退程式碼不需回退資料
-- [ ] 新功能是否包在 feature flag / kill-switch 後面
-- [ ] 回退觸發門檻已定義（error rate / latency / 業務指標的具體數字）
-- [ ] roll-back owner 已指定（誰有權按、誰知道怎麼按）
-- [ ] 監控與告警已就位，能在門檻被踩到時主動通知
-- [ ] deploy 後觀察窗時間已排，有人會盯
-- [ ] 回退後的驗證方式已知（怎麼確認「已經回到安全狀態」）
+- Run the rollback procedure once for real in staging and measure how long it takes.
+- Confirm the old version's artifact / image still exists and is still deployable (don't let auto-cleanup delete it).
+- Confirm that after rollback the old code can read the current data correctly (this is exactly the migration-trap checkpoint).
+
+---
+
+## ✅ Pre-deploy rollback checklist
+
+Tick each item before deploy; if any item can't be ticked → this deploy isn't ready:
+
+- [ ] Rollback method written down (flip a flag? switch blue-green? redeploy old version?)
+- [ ] Estimated rollback time known (seconds / minutes / hours) and acceptable
+- [ ] Old-version artifact still available, and the rollback procedure rehearsed in staging
+- [ ] Any destructive schema changes this time? → if so, confirm they're split into expand/contract so rolling back code doesn't require rolling back data
+- [ ] Is the new feature wrapped behind a feature flag / kill-switch
+- [ ] Rollback trigger thresholds defined (concrete numbers for error rate / latency / business metric)
+- [ ] Roll-back owner designated (who has authority to push, who knows how)
+- [ ] Monitoring and alerting in place, able to actively notify when a threshold is hit
+- [ ] Post-deploy observation window scheduled, with someone watching
+- [ ] Post-rollback verification method known (how to confirm "we're back to a safe state")
 
 ---
 
 ## 🔗 Related Compass sections
 
-- [§7.1 Migration](./01_migration.md) — expand/contract，讓資料層也有退路
-- [§7.3 Deployment](./03_deployment.md) — 部署流程本身
-- [§7 Operations](./_index.md) — 本模組總覽
-- [§6.3 Observability](../06_non_functional/03_observability.md) — 沒有監控就量不到回退門檻
+- [§7.1 Migration](./01_migration.md) — expand/contract, give the data layer an escape path too
+- [§7.3 Deployment](./03_deployment.md) — the deploy process itself
+- [§7 Operations](./_index.md) — module overview
+- [§6.3 Observability](../06_non_functional/03_observability.md) — without monitoring you can't measure the rollback thresholds
 
 ---
 

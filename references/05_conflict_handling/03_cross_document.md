@@ -1,143 +1,143 @@
-# §5.3 跨文件衝突
+# §5.3 Cross-Document Conflict
 
 > Part of [Compass](../../SKILL.md) §5 — Conflict Handling.
-> PRD 很少是唯一的規格。ADR、API contract（OpenAPI）、ERD、設計稿可能同時存在，而且彼此矛盾、或跟 PRD 矛盾——本節給你「誰說了算」的判定程序。
+> The PRD is rarely the only spec. ADRs, API contracts (OpenAPI), ERDs, and design mockups may all exist at once — and contradict each other, or contradict the PRD. This section gives you the "who decides what" procedure.
 
 ---
 
-## 1. 問題長什麼樣
+## 1. What the problem looks like
 
-實作到一半，你發現手上不只一份規格，而它們對不上：
+Mid-implementation, you discover you're holding more than one spec, and they don't line up:
 
-- PRD §4 寫 response 帶 `risk_score` 欄位，但 OpenAPI contract 的 schema 根本沒列。
-- `ADR-007` 拍板「用 Postgres」，但 PRD §3「技術選型」寫的是「MongoDB」。
-- ERD 裡有一張 `audit_log` 表，PRD 從頭到尾沒提過。
-- 設計稿（Figma）顯示一個「匯出 CSV」按鈕，PRD 的 scope 章節沒有這個功能。
+- PRD §4 says the response carries a `risk_score` field, but the OpenAPI contract's schema doesn't list it at all.
+- `ADR-007` rules "use Postgres," but PRD §3 "tech selection" says "MongoDB."
+- The ERD has an `audit_log` table; the PRD never mentions it anywhere.
+- The design mockup (Figma) shows an "Export CSV" button; the PRD's scope section has no such feature.
 
-這時候**最危險的反應是「挑一個我順手的照做」**。你照 PRD 寫了那個欄位，結果消費你 API 的另一個團隊照 OpenAPI 接，欄位對不上，線上炸。你照 ADR 用 Postgres，結果 PRD 那句 MongoDB 是上週剛改的最新意圖，你做白工。
+**The most dangerous reaction here is "pick whichever is convenient and go."** You write that field per the PRD, then another team that consumes your API wires up against the OpenAPI, the fields don't match, and prod blows up. You use Postgres per the ADR, but that MongoDB line in the PRD was the latest intent, changed last week — and you've done throwaway work.
 
-跨文件衝突的本質是：**這些文件各自在不同領域裡權威，誰也不是無條件凌駕誰**。先問「這件事是誰的領域」，再問「誰比較新」。
+The essence of a cross-document conflict: **each document is authoritative within its own domain; none unconditionally overrides another.** First ask "whose domain is this?" then ask "which is newer?"
 
 ---
 
-## 2. 各文件的權威領域（先分領域，再談優先級）
+## 2. Each document's domain of authority (split by domain first, then talk priority)
 
-衝突的第一刀不是比優先級，是**分領域**。不同文件對不同的東西說了算：
+The first cut on a conflict isn't comparing priority — it's **splitting by domain**. Different documents decide different things:
 
-| 文件類型 | 權威領域（它說了算） | 它不該越界管的 |
+| Document type | Domain of authority (it decides) | What it shouldn't overreach into |
 |---|---|---|
-| API contract（OpenAPI / Protobuf / 已簽的介面）| **線格式**（wire format）：欄位名、型別、必填、HTTP 狀態碼、路徑 | 商業邏輯、為什麼要這個欄位 |
-| ADR | **架構決策**：選型、分層、邊界、權衡理由 | 產品行為、UI 文案、欄位細節 |
-| PRD | **行為與 scope**：做什麼、不做什麼、規則、邊界條件 | 怎麼實作、用哪個 DB（除非它明確點名為決策） |
-| ERD / schema migration | **資料形狀**：表、欄位、關聯、索引、約束 | 對外 API 長相、業務規則 |
-| 設計稿（Figma 等）| **視覺與互動**：版面、流程、文案 | 後端契約、資料模型 |
+| API contract (OpenAPI / Protobuf / a signed interface) | **Wire format**: field names, types, required-ness, HTTP status codes, paths | Business logic, why a field exists |
+| ADR | **Architecture decisions**: selection, layering, boundaries, rationale for tradeoffs | Product behavior, UI copy, field details |
+| PRD | **Behavior and scope**: what to do, what not to do, rules, boundary conditions | How to implement, which DB to use (unless it explicitly names it as a decision) |
+| ERD / schema migration | **Data shape**: tables, fields, relations, indexes, constraints | External API surface, business rules |
+| Design mockup (Figma etc.) | **Visual and interaction**: layout, flow, copy | Backend contracts, data models |
 
-**判定第一問：「這件事是誰的領域？」**
+**Decision question #1: "Whose domain is this?"**
 
-- response 欄位有沒有 → **API contract 的領域**（PRD 說有、contract 沒列，多半是 PRD 落後或 contract 漏更新，但對外承諾以 contract 為準）。
-- 用 Postgres 還是 MongoDB → **ADR 的領域**（ADR 是經過權衡的決策；PRD §3 那句技術選型若沒有附理由，通常是 PRD 作者順手寫的，不是合約）。
-- 多一張 `audit_log` 表 → **ERD 的領域**，但 PRD 沒提這個功能 → 同時是 scope 問題，見 §3 的「跨領域真矛盾」。
+- Whether a response field exists → **the API contract's domain** (PRD says yes, contract doesn't list it — most likely the PRD lags or the contract missed an update, but the external promise is governed by the contract).
+- Postgres or MongoDB → **the ADR's domain** (the ADR is a weighed decision; that tech-selection line in PRD §3, if it carries no rationale, is usually something the PRD author jotted down, not a contract).
+- An extra `audit_log` table → **the ERD's domain**, but the PRD doesn't mention this feature → simultaneously a scope problem, see §3's "cross-domain genuine contradiction."
 
-> 七成的跨文件衝突，分完領域就消失了——因為兩份文件根本在講不同層的事，沒有真衝突，只是其中一份過期沒同步。
+> Seventy percent of cross-document conflicts vanish once you split by domain — because the two documents were talking about different layers, there's no real conflict, just one of them being stale and out of sync.
 
 ---
 
-## 3. 真衝突時的優先級（同一領域內對撞）
+## 3. Priority on a genuine conflict (a clash within the same domain)
 
-當兩份文件**確實在同一個領域**裡給出矛盾的答案，套以下預設優先級（**專案可在自己的 CLAUDE.md / 規格總綱覆寫**）：
+When two documents **truly give contradictory answers within the same domain**, apply this default priority (**a project can override it in its own CLAUDE.md / spec master doc**):
 
-1. **明確標為「合約」且被其他團隊消費的文件**
-   已簽的 API contract、被下游服務依賴的 schema。**破壞它就破壞別人**——這是最高優先，因為代價外溢到你掌控不到的系統。
+1. **A document explicitly marked "contract" and consumed by other teams**
+   A signed API contract, a schema depended on by downstream services. **Break it and you break others** — this is top priority, because the cost spills out into systems you don't control.
 
-2. **最新且最具體的文件**（recency + specificity）
-   後出現的通常是修訂；有明確輸入輸出 / 條件 / 邊界值的，贏過含糊的一句話。兩者兼具最強。
+2. **The newest and most specific document** (recency + specificity)
+   What appears later is usually a revision; one with explicit inputs/outputs / conditions / boundary values beats a vague one-liner. Having both is strongest.
 
-3. **PRD**——當爭點是**行為 / scope**（做什麼、不做什麼）。
-   PRD 是產品意圖的代表；行為層面它說了算。
+3. **PRD** — when the dispute is about **behavior / scope** (what to do, what not to do).
+   The PRD represents product intent; on the behavioral layer it decides.
 
-4. **ADR**——當爭點是**刻意的架構決策**。
-   ADR 是「決策」不是「建議」。一個帶權衡理由、狀態為 Accepted 的 ADR，凌駕 PRD 裡順手寫的一句技術選型。
+4. **ADR** — when the dispute is about a **deliberate architecture decision**.
+   An ADR is a "decision," not a "suggestion." An ADR with weighed rationale and status Accepted overrides a tech-selection line jotted into the PRD.
 
-> 注意第 1 條凌駕一切：哪怕 PRD 是上週剛改的最新意圖，只要照它做會破壞一個已被別團隊消費的 contract，**你不能默默照 PRD 改 contract**——這變成 §3.2 的真矛盾，停手等裁決（見 §4）。
+> Note rule #1 overrides everything: even if the PRD is the latest intent changed last week, if following it would break a contract already consumed by another team, **you cannot silently change the contract to match the PRD** — this becomes a §3.2 genuine contradiction: stop and await ruling (see §4).
 
-### 套用範例
+### Applied examples
 
-| 衝突 | 領域 | 判定 |
+| Conflict | Domain | Verdict |
 |---|---|---|
-| PRD 說 response 有 `risk_score`，OpenAPI 沒列，且該 API 已被前端團隊接 | 線格式 | contract 贏（已被消費）。PRD 想加欄位 → 走加欄位流程改 contract，不是默默回傳 |
-| ADR-007「用 Postgres」 vs PRD §3「MongoDB」，ADR 帶權衡理由且 Accepted | 架構 | ADR 贏。PRD §3 那句疑似過期 → 回報請使用者同步 PRD |
-| PRD 上週改「列表預設排序改成最新優先」 vs 設計稿仍畫舊排序 | 行為 | PRD 贏（較新、且排序是行為非視覺） |
-| ERD 有 `audit_log` 表，PRD 完全沒提這功能 | 跨領域 | 真矛盾 → §3.2 |
+| PRD says response has `risk_score`, OpenAPI doesn't list it, and the API is already wired up by the frontend team | Wire format | Contract wins (already consumed). PRD wants to add the field → go through the add-field flow to change the contract, not silently return it |
+| ADR-007 "use Postgres" vs PRD §3 "MongoDB", ADR carries weighed rationale and is Accepted | Architecture | ADR wins. That PRD §3 line is suspected stale → report and ask the user to sync the PRD |
+| PRD changed last week "list default sort to newest-first" vs design mockup still drawing old sort | Behavior | PRD wins (newer, and sort is behavior not visual) |
+| ERD has `audit_log` table, PRD never mentions this feature | Cross-domain | Genuine contradiction → §3.2 |
 
 ---
 
-## §3.2 跨領域真矛盾：分不出領域、或同領域最高權威互撞
+## §3.2 Cross-domain genuine contradiction: can't split by domain, or top authorities of the same domain clash
 
-有些衝突**分完領域也解不掉**：
+Some conflicts **don't resolve even after splitting by domain**:
 
-- ERD 有一張表 / 欄位，對應的功能 PRD 從沒提過——這同時是「資料形狀」和「scope」的事，兩個領域的權威打架。
-- API contract（別團隊已消費）要求的行為，跟 PRD 最新意圖**直接相反**。
-- 兩份都標「合約」的文件互相矛盾。
+- The ERD has a table / field whose corresponding feature the PRD never mentions — this is simultaneously a "data shape" and a "scope" matter; the authorities of two domains clash.
+- A behavior required by the API contract (already consumed by another team) is **directly opposite** to the PRD's latest intent.
+- Two documents both marked "contract" contradict each other.
 
-這類**無法用領域歸屬化解**的，當作 **PRD bug 處理**（見 [§5.1.2](./01_vague_bug_gap.md)）：
+These — **un-resolvable by domain attribution** — get handled as a **PRD bug** (see [§5.1.2](./01_vague_bug_gap.md)):
 
-1. **立即停手**，不在矛盾上硬選一邊寫下去。
-2. **不自行改任何一份規格文件**（不改 PRD、不改 contract、不改 ADR）——你的責任是回報，不是仲裁。
-3. **在開發紀錄檔（development log）記錄**（標 `[SKIPPED-PRD]`）：
-   - 引用衝突的**兩處原文 + 各自文件名與章節 / 版本**
-   - 你**已嘗試的領域歸屬分析**，以及為何分不開（這點最關鍵，要說服使用者這是真矛盾不是你沒讀清楚）
-   - 建議的 2–3 種解法各自代價（例：改 PRD？改 contract 並通知下游？砍掉那張表？）
-4. **在 progress.md 標「⚠ 等待跨文件裁決」**，跳過受影響模組，繼續其他不受影響的。
-5. **等使用者裁決後**才回填，並由**使用者**改對應文件——不是你。
+1. **Stop immediately.** Don't force-pick a side and keep writing on top of the contradiction.
+2. **Don't change any spec document yourself** (don't touch the PRD, the contract, or the ADR) — your job is to report, not to arbitrate.
+3. **Record in the development log** (tag `[SKIPPED-PRD]`):
+   - Quote the **two conflicting passages verbatim + their document names and section / version**
+   - The **domain-attribution analysis you already attempted**, and why it won't split (this is the most critical part — you have to convince the user this is a genuine contradiction, not you not reading carefully).
+   - 2–3 suggested resolutions with their respective costs (e.g.: change the PRD? change the contract and notify downstream? drop that table?)
+4. **Mark "⚠ awaiting cross-document ruling" in progress.md**, skip the affected module, continue with others that aren't affected.
+5. **Only after the user rules** do you fill it back in, and the **user** changes the corresponding document — not you.
 
-> 你是執行者不是仲裁者。看到兩份合約互打，第一反應若是「我幫你決定用哪個」，那是越權；正確反應是停、log、列代價、等裁決。
+> You're the executor, not the arbiter. When you see two contracts clashing, if your first reaction is "I'll decide which one for you," that's overstepping; the correct reaction is stop, log, list the costs, await ruling.
 
 ---
 
-## 4. 完整判定流程（一張決策樹）
+## 4. Full decision flow (one decision tree)
 
-碰到任何跨文件對不上，照這個順序走：
+For any cross-document mismatch, walk this order:
 
 ```
-1. 確認真的衝突，不是其中一份過期沒同步
-   （過期 → 回報請使用者同步那份，以最新意圖繼續）
-2. 問「這件事是誰的領域？」（§2 表）
-   → 分得出領域 → 該領域的權威文件說了算，繼續實作
-3. 同一領域內兩份對撞 → 套優先級（§3）
-   → 第 1 條：會破壞別團隊消費的 contract 嗎？是 → §3.2 停手
-   → 否 → 較新 + 較具體 > PRD（行為）> ADR（架構）
-4. 分不出領域 / 同領域最高權威互撞 → 真矛盾 → §3.2（當 PRD bug：停、log、等裁決）
+1. Confirm it's a real conflict, not one of them being stale and out of sync
+   (stale → report and ask the user to sync that one, continue with the latest intent)
+2. Ask "whose domain is this?" (§2 table)
+   → splits by domain → that domain's authoritative document decides, keep implementing
+3. Two documents clash within the same domain → apply priority (§3)
+   → rule #1: would it break a contract consumed by another team? yes → §3.2 stop
+   → no → newer + more specific > PRD (behavior) > ADR (architecture)
+4. Can't split by domain / top authorities of same domain clash → genuine contradiction → §3.2 (handle as PRD bug: stop, log, await ruling)
 ```
 
-### 動手前最低限度檢查清單
+### Minimal pre-flight checklist
 
-實作一個牽涉多份規格的模組前，先過這幾項：
+Before implementing a module that touches multiple specs, run through these:
 
-- [ ] 列出本模組牽涉的**所有**規格文件（PRD 章節、相關 ADR、對應 OpenAPI path、相關表）
-- [ ] 逐項比對：欄位名 / 型別 / 行為 / 狀態碼有沒有對不上的
-- [ ] 對不上的，先判**是過期沒同步，還是真衝突**
-- [ ] 真衝突的，先**分領域**再談優先級
-- [ ] 分不掉的，**停手 log，不自行仲裁**
+- [ ] List **all** spec documents this module touches (PRD sections, relevant ADRs, corresponding OpenAPI paths, relevant tables)
+- [ ] Compare item by item: are any field names / types / behaviors / status codes mismatched
+- [ ] For mismatches, first judge **whether it's stale-out-of-sync or a real conflict**
+- [ ] For real conflicts, **split by domain** before talking priority
+- [ ] For the un-splittable ones, **stop and log, don't arbitrate yourself**
 
 ---
 
-## 5. 關鍵心法
+## 5. Key principles
 
-> **先分領域，分不掉就停手等裁決。** 跳過分領域直接停手，會把一堆「其實沒衝突、只是某份過期」的東西誤判成需要裁決，拖慢進度；跳過分領域直接挑一邊硬幹，會在別人的領域裡擅自做主，破壞你看不到的下游。（注意：停手不一定在最後——只要踩到「會破壞別團隊消費的 contract」這條紅線，就在優先級那步立即停，見決策樹。）
+> **Split by domain first; if it won't split, stop and await ruling.** Skipping the domain split and stopping outright misjudges a pile of "actually no conflict, just one being stale" things as needing a ruling, dragging down progress; skipping the domain split and force-picking a side makes unilateral calls in someone else's domain, breaking downstream you can't see. (Note: stopping isn't always at the end — the moment you hit the "would break a contract consumed by another team" red line, stop right at the priority step, see the decision tree.)
 
-> **「被別人消費的合約」是最高優先，因為它的代價會外溢。** 你能改自己這側的程式碼，但改不了照舊 contract 接你 API 的那個團隊。
+> **"A contract consumed by others" is top priority, because its cost spills out.** You can change the code on your side, but you can't change the team wiring up to your API against the old contract.
 
-> **你不是仲裁者。** 兩份合約互打 → 停、log、列代價、等裁決，由規格的擁有者去改文件，不是你。
+> **You're not the arbiter.** Two contracts clash → stop, log, list the costs, await ruling; the spec's owner changes the document, not you.
 
 ---
 
 ## 🔗 Related Compass sections
-- [§5.1 PRD 模糊 / Bug / 缺漏](./01_vague_bug_gap.md) — §3.2 跨領域真矛盾沿用 §5.1.2 的「停手 → log `[SKIPPED-PRD]` → 等裁決」軌道
-- [§5.2 PRD 中途變更](./02_prd_change.md) — 「某份文件較新」常源於規格中途改動，與本節 recency 判準互通
-- [§5.4 多 PRD 依賴](./04_multi_prd.md) — 多份規格同時存在的另一種型態：跨 PRD 的依賴與覆蓋
-- [§3.4 完成-比對-修正循環](../03_implementation/04_compare_fix_loop.md) — 比對步驟發現跨文件對不上時，分流到本節
-- [§3.1 PRD 吸收](../03_implementation/01_prd_intake.md) — 吸收階段就該清點牽涉哪些 ADR / contract / ERD，越早發現衝突越省
-- Sentinel 的安全網（「不在錯誤上疊補丁」、停手等裁決）與 §3.2 真矛盾的處置精神一致
+- [§5.1 PRD Vague / Bug / Gap](./01_vague_bug_gap.md) — §3.2 cross-domain genuine contradiction reuses §5.1.2's "stop → log `[SKIPPED-PRD]` → await ruling" track
+- [§5.2 PRD Mid-Course Change](./02_prd_change.md) — "one document is newer" often stems from a mid-course spec change, sharing this section's recency criterion
+- [§5.4 Multi-PRD Dependency](./04_multi_prd.md) — another form of multiple specs coexisting: cross-PRD dependency and override
+- [§3.4 Compare-Fix Loop](../03_implementation/04_compare_fix_loop.md) — when the compare step finds a cross-document mismatch, route it here
+- [§3.1 PRD Intake](../03_implementation/01_prd_intake.md) — the intake stage should already inventory which ADRs / contracts / ERDs are involved; the earlier you spot a conflict, the cheaper
+- Sentinel's safety nets ("don't patch on top of an error," stop and await ruling) align with the §3.2 genuine-contradiction handling spirit
 
 ## 📝 Status
 v0.5.0 (Phase 2: original content).

@@ -1,55 +1,66 @@
 #!/usr/bin/env python3
 """expand_checklist.example.py — Compass Phase 4 / M-007 anti-aggregation.
 
-WHAT (做什麼)
-------------
-讀一個 PRD markdown 檔，找出其中的 markdown 表格（以 "|" 開頭的行），
-跳過表頭列與分隔列（如 "|---|---|"），把每一筆「資料列」展開成
-**一行一個 checkbox** 的 checklist：
+WHAT
+----
+Read a PRD markdown file, find the markdown tables within it (lines starting
+with "|"), skip the header row and separator rows (like "|---|---|"), and
+expand each "data row" into a checklist with
+**one checkbox per line**:
 
     - [ ] <section> | <first meaningful cell>
 
-REFERENCE / EXAMPLE 用途
-------------------------
-本檔副檔名為 `.example.py`，是參考實作。可直接用 python3 標準庫執行，
-不依賴任何 pip 套件。請依自己專案的 PRD 結構調整，不要假設欄位固定。
-
-WHY (為什麼 — 對應 M-007 規則)
-------------------------------
-M-007「反聚合 (anti-aggregation)」：PRD 裡常見一行寫
-"12 endpoints ⬜" 這種聚合條目，會把 12 件待辦藏在一個勾選框後面，
-驗收時容易整批被當成「做完」。本工具把它攤成 12 條獨立 ⬜，
-讓任何一條沒做都藏不住。
-
-HOW TO CONFIGURE (怎麼設定)
+REFERENCE / EXAMPLE PURPOSE
 ---------------------------
-本工具用「命令列旗標」驅動，不在程式內寫死任何特定專案的 PRD 結構：
+This file's extension is `.example.py`; it is a reference implementation. It
+can be run directly with the python3 standard library and does not depend on
+any pip packages. Adjust it to your own project's PRD structure; do not assume
+columns are fixed.
 
-    --section-header TEXT   每條 checklist 前綴的 section 標籤
-                            （預設取最近一個 markdown 標題 "# / ## ..."）
-    --cell-index N          取資料列的第幾欄當內容（0 起算，預設 0；
-                            跳過空白欄找第一個有意義的欄）
-    --min-cols N            少於 N 欄的表格列視為雜訊跳過（預設 1）
+WHY (corresponding to the M-007 rule)
+-------------------------------------
+M-007 "anti-aggregation": PRDs often contain a single line like
+"12 endpoints ⬜" — such aggregated entries hide 12 todos behind one checkbox,
+making it easy for the whole batch to be treated as "done" during acceptance.
+This tool spreads it out into 12 independent ⬜ items,
+so that no single unfinished item can hide.
 
-HOW TO RUN (怎麼執行)
----------------------
+HOW TO CONFIGURE
+----------------
+This tool is driven by "command-line flags" and does not hardcode any specific
+project's PRD structure in the program:
+
+    --section-header TEXT   The section label prefixed to each checklist item
+                            (defaults to the nearest markdown heading "# / ## ...")
+    --cell-index N          Which column of the data row to take as content
+                            (0-based, default 0; skips empty columns to find
+                            the first meaningful one)
+    --min-cols N            Table rows with fewer than N columns are treated as
+                            noise and skipped (default 1)
+
+HOW TO RUN
+----------
     python3 expand_checklist.example.py PRD.md > prd-checklist.md
     python3 expand_checklist.example.py PRD.md --section-header "API" --cell-index 1
 
-EXIT CODES (離開碼)
--------------------
-    0  成功（有找到表格並輸出，或檔案可讀但無表格 — 印提示到 stderr）
-    1  參數錯誤 / 缺少輸入檔（印用法與設定範例）
-    2  輸入檔不存在或無法讀取
+EXIT CODES
+----------
+    0  Success (a table was found and output, or the file is readable but has
+       no table — prints a hint to stderr)
+    1  Argument error / missing input file (prints usage and config example)
+    2  Input file does not exist or cannot be read
 """
 
 import sys
 import os
 import argparse
 
-# Windows console 預設可能是 cp950 / cp1252，無法編碼 PRD 內的 emoji（如 🟢/🪤）等字元。
-# 不處理會在 print 該列時丟 UnicodeEncodeError 中途崩潰，造成「部分輸出 + 截斷」或「看似無輸出」，
-# 使用者誤以為展開失敗。故強制 stdout / stderr 走 UTF-8；失敗（非 TextIO 或舊版）則靜默略過。
+# The Windows console may default to cp950 / cp1252, which cannot encode emoji
+# (like 🟢/🪤) and similar characters found in a PRD.
+# If unhandled, this throws a UnicodeEncodeError mid-print and crashes, producing
+# "partial output + truncation" or "apparently no output", making the user think
+# the expansion failed. So force stdout / stderr to UTF-8; on failure (non-TextIO
+# or old version) silently skip.
 for _stream in (sys.stdout, sys.stderr):
     try:
         _stream.reconfigure(encoding="utf-8")
@@ -58,7 +69,7 @@ for _stream in (sys.stdout, sys.stderr):
 
 
 def split_row(line):
-    """把一行 markdown 表格列切成 cell 串列（去掉前後的管線與空白）。"""
+    """Split a markdown table row into a list of cells (strip leading/trailing pipes and whitespace)."""
     s = line.strip()
     if s.startswith("|"):
         s = s[1:]
@@ -68,7 +79,7 @@ def split_row(line):
 
 
 def is_separator_row(cells):
-    """判斷是否為分隔列，如 |---|:--:|---|。允許 -、:、空白。"""
+    """Determine whether this is a separator row, like |---|:--:|---|. Allows -, :, and whitespace."""
     seen = False
     for c in cells:
         if c == "":
@@ -81,7 +92,7 @@ def is_separator_row(cells):
 
 
 def first_meaningful_cell(cells, start_index):
-    """從 start_index 起找第一個非空欄；找不到就退回任何非空欄。"""
+    """Find the first non-empty column starting from start_index; if none found, fall back to any non-empty column."""
     for i in range(start_index, len(cells)):
         if cells[i]:
             return cells[i]
@@ -92,7 +103,7 @@ def first_meaningful_cell(cells, start_index):
 
 
 def expand(lines, default_section, cell_index, min_cols):
-    """掃描所有行，回傳展開後的 checklist 字串串列。"""
+    """Scan all lines and return a list of expanded checklist strings."""
     out = []
     current_section = default_section
     in_table = False
@@ -102,7 +113,7 @@ def expand(lines, default_section, cell_index, min_cols):
         line = raw.rstrip("\n")
         stripped = line.strip()
 
-        # 追蹤最近的 markdown 標題，當作 section 標籤（除非使用者指定）
+        # Track the nearest markdown heading as the section label (unless the user specified one)
         if stripped.startswith("#") and default_section is None:
             current_section = stripped.lstrip("#").strip() or current_section
             in_table = False
@@ -112,7 +123,7 @@ def expand(lines, default_section, cell_index, min_cols):
         if stripped.startswith("|"):
             cells = split_row(line)
             if not in_table:
-                # 表格的第一行 = 表頭，跳過
+                # The first line of the table = header, skip it
                 in_table = True
                 header_consumed = True
                 continue
@@ -126,7 +137,7 @@ def expand(lines, default_section, cell_index, min_cols):
             section = current_section if current_section else "(no-section)"
             out.append("- [ ] {} | {}".format(section, content))
         else:
-            # 離開表格區塊
+            # Leaving the table block
             in_table = False
             header_consumed = False
 
@@ -135,51 +146,51 @@ def expand(lines, default_section, cell_index, min_cols):
 
 def print_config_example(stream):
     stream.write(
-        "用法 / Usage:\n"
+        "Usage:\n"
         "  python3 expand_checklist.example.py PRD.md > prd-checklist.md\n\n"
-        "設定範例 / Config example:\n"
-        "  --section-header \"API endpoints\"   給每條 checklist 一個固定 section 標籤\n"
-        "  --cell-index 1                      取第 2 欄當內容（0 起算）\n"
-        "  --min-cols 2                        少於 2 個非空欄的列視為雜訊\n"
+        "Config example:\n"
+        "  --section-header \"API endpoints\"   give each checklist item a fixed section label\n"
+        "  --cell-index 1                      take the 2nd column as content (0-based)\n"
+        "  --min-cols 2                        rows with fewer than 2 non-empty columns are treated as noise\n"
     )
 
 
 def main(argv):
     parser = argparse.ArgumentParser(
         add_help=True,
-        description="M-007 anti-aggregation: 把 PRD 表格展開成一行一個 checkbox。",
+        description="M-007 anti-aggregation: expand a PRD table into one checkbox per line.",
     )
-    parser.add_argument("input", nargs="?", help="輸入的 PRD markdown 檔路徑")
+    parser.add_argument("input", nargs="?", help="path to the input PRD markdown file")
     parser.add_argument("--section-header", default=None,
-                        help="固定的 section 標籤（預設取最近的 markdown 標題）")
+                        help="fixed section label (defaults to the nearest markdown heading)")
     parser.add_argument("--cell-index", type=int, default=0,
-                        help="取資料列的第幾欄當內容（0 起算，預設 0）")
+                        help="which column of the data row to take as content (0-based, default 0)")
     parser.add_argument("--min-cols", type=int, default=1,
-                        help="少於 N 個非空欄的列視為雜訊跳過（預設 1）")
+                        help="rows with fewer than N non-empty columns are treated as noise and skipped (default 1)")
     args = parser.parse_args(argv[1:])
 
     if not args.input:
-        sys.stderr.write("[expand] 錯誤：缺少輸入檔 argv[1]。\n\n")
+        sys.stderr.write("[expand] Error: missing input file argv[1].\n\n")
         print_config_example(sys.stderr)
         return 1
 
     if not os.path.isfile(args.input):
-        sys.stderr.write("[expand] 錯誤：找不到輸入檔: {}\n".format(args.input))
+        sys.stderr.write("[expand] Error: input file not found: {}\n".format(args.input))
         return 2
 
     try:
         with open(args.input, "r", encoding="utf-8") as f:
             lines = f.readlines()
     except (OSError, UnicodeDecodeError) as e:
-        sys.stderr.write("[expand] 錯誤：無法讀取 {}: {}\n".format(args.input, e))
+        sys.stderr.write("[expand] Error: cannot read {}: {}\n".format(args.input, e))
         return 2
 
     items = expand(lines, args.section_header, args.cell_index, args.min_cols)
 
     if not items:
         sys.stderr.write(
-            "[expand] 提示：在 {} 找不到任何 markdown 表格資料列。\n"
-            "         確認檔內有以 '|' 開頭的表格，或調整 --min-cols / --cell-index。\n"
+            "[expand] Hint: no markdown table data rows found in {}.\n"
+            "         Make sure the file has tables starting with '|', or adjust --min-cols / --cell-index.\n"
             .format(args.input)
         )
         return 0

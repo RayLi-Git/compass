@@ -1,0 +1,80 @@
+# PRD 對齊追蹤表（prd-checklist.md）
+
+> Compass §3.2 / §11 M-007 — 防止「PRD 寫了但沒做」「做了但偏離」的逐項追蹤表。
+> <!-- 動手前由 PRD 拆出每一項；每完成一塊立即回填狀態（十二誡 §3 完成即比對）。 -->
+
+---
+
+## 顆粒度鐵律：1 PRD item = 1 row（禁止聚合）
+
+PRD 裡每一個**可獨立驗證的最小單位**，都必須單獨佔一列，**不准合併、不准摘要**。
+
+- ❌ 錯誤（聚合）：`使用者 CRUD API` → 一列帶過
+- ✅ 正確（拆開）：`POST /users`、`GET /users/:id`、`PATCH /users/:id`、`DELETE /users/:id` 各一列
+
+**為什麼**：聚合會讓「4 個 endpoint 做了 3 個」看起來像「✅ 完成」，漏掉的那個永遠不會被發現。一列一項才能讓缺口無所遁形。
+
+**最小單位的判定**（依 PRD 章節型態）：
+- endpoint 顆粒度 → 一個 HTTP method + path = 一列
+- table 顆粒度 → 一張資料表 = 一列（欄位多時可再下鑽成 field 列）
+- field 顆粒度 → 一個欄位（含型別 / 必填 / 約束）= 一列
+- page 顆粒度 → 一個畫面 / 路由 = 一列
+
+---
+
+## 狀態圖例
+
+| 記號 | 意義 |
+|---|---|
+| ⬜ | 未開始 |
+| 🟡 | 進行中 / 部分完成 |
+| ✅ | 完成且已對齊 PRD |
+
+> `verified-in-codebase?` 欄位：是否實際在 codebase 確認過（非靠記憶）。填 `是 (檔案:行)` / `否` / `⚠️推測`。
+>
+> `優先級` 欄：P0 / P1 / P2…（承接 PRD 或 [Cartographer](https://github.com/RayLi-Git/cartographer) 交棒的優先級）。
+> `AC/驗收方式` 欄：這條的驗收標準 + 驗法（單元 / 整合 / 安全 / 手動）——對應 [§10](../references/10_testing_strategy/_index.md)「每條驗收要能指到測試」。
+
+---
+
+## 追蹤表（依 PRD 章節分組）
+
+### §<X.Y> <章節標題，例：使用者帳號 API>
+<!-- endpoint 顆粒度範例 -->
+
+| 狀態 | PRD §ref | 項目（最小單位） | 優先級 | AC/驗收方式 | verified-in-codebase? |
+|---|---|---|---|---|---|
+| ✅ | §<X.Y> | `POST /api/users` 建立帳號 | P0 | 回 201 含 id；整合測試 | 是 (routes/users.ts:42) |
+| 🟡 | §<X.Y> | `GET /api/users/:id` 查單筆 | P0 | 回 200/404；整合測試 | 否（route 有、權限檢查未做） |
+| ⬜ | §<X.Y> | `DELETE /api/users/:id` 軟刪除 | P1 | deleted_at 設值；整合測試 | 否 |
+
+### §<X.Z> <章節標題，例：資料模型>
+<!-- table / field 顆粒度範例 -->
+
+| 狀態 | PRD §ref | 項目（最小單位） | 優先級 | AC/驗收方式 | verified-in-codebase? |
+|---|---|---|---|---|---|
+| ✅ | §<X.Z> | `users` 表存在 | P0 | migration 套用無誤；遷移測試 | 是 (migrations/001_users.sql) |
+| ✅ | §<X.Z> | `users.email` UNIQUE NOT NULL | P0 | 重複 email 插入失敗；單元測試 | 是 (migrations/001_users.sql:5) |
+| 🟡 | §<X.Z> | `users.deleted_at` 軟刪除欄位 | P1 | 欄位存在且可為 null；遷移測試 | ⚠️推測（migration 未確認） |
+
+### §<X.W> <章節標題，例：前端畫面>
+<!-- page 顆粒度範例 -->
+
+| 狀態 | PRD §ref | 項目（最小單位） | 優先級 | AC/驗收方式 | verified-in-codebase? |
+|---|---|---|---|---|---|
+| ⬜ | §<X.W> | `/login` 登入頁 | P0 | 表單可送出、錯誤顯示；手動 + e2e | 否 |
+| ⬜ | §<X.W> | `/settings/profile` 個人資料頁 | P2 | 顯示/儲存個資；手動 | 否 |
+
+---
+
+## 自動展開（選用）
+
+逐項手動拆 PRD 很累且易漏。可用 `scripts/expand_checklist.example.py` 從 PRD 表格產出**一項一列的 checkbox 起點清單**（注意：它產的是 bullet 種子，不是本表的完整欄位）：
+
+```bash
+python scripts/expand_checklist.example.py <path/to/PRD.md> > checklist-seed.md
+```
+
+它會掃 PRD 表格、把每列攤成 `- [ ] <章節> | <最小單位>` 的 bullet（避免人手抄漏行）。接著把這些 bullet **排進上面的表格**，補上 `優先級` / `AC/驗收方式`（從 PRD 或 Cartographer 交棒取得），`狀態` 預設 ⬜、`verified-in-codebase?` 預設 `否`。自動拆分可能漏掉散落在敘述段落裡的需求，仍須人工複核。
+
+<!-- 維護提醒：PRD 改版時重新展開並 diff，新增項補列、刪除項標註，勿直接覆蓋既有狀態。 -->

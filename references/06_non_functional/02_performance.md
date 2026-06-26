@@ -1,98 +1,98 @@
-# §6.2 效能規格落地
+# §6.2 Landing Performance Specs
 
-> Part of [Compass](../../SKILL.md) §6 — 非功能性需求（NFR）。
-> 把「要快」翻成「可測的數字」，再把數字寫進測試，否則效能永遠是嘴砲。
+> Part of [Compass](../../SKILL.md) §6 — Non-Functional Requirements (NFR).
+> Translate "make it fast" into "measurable numbers," then write the numbers into tests — otherwise performance is forever just talk.
 
 ---
 
-## 🎯 為什麼「要快」不是規格
+## 🎯 Why "Make It Fast" Is Not a Spec
 
-「頁面要快」「API 不能卡」——這些不是需求，是抱怨。
-無法測的東西就無法驗收，也就無法在 DoD 上打勾。
+"The page should be fast," "the API can't lag" — these aren't requirements, they're complaints.
+What can't be measured can't be accepted, and can't be checked off on the DoD.
 
-效能規格落地只有一個動作：**把形容詞換成「指標 + 數字 + 條件」。**
+Landing a performance spec has exactly one move: **replace adjectives with "metric + number + condition."**
 
-| 模糊說法 | 可測規格 |
+| Vague phrasing | Measurable spec |
 |---|---|
-| 「API 要快」 | 「`GET /orders` p95 < 200ms @ 50 req/s」 |
-| 「不能吃太多記憶體」 | 「單 worker RSS < 512MB @ 並發 100」 |
-| 「首頁要秒開」 | 「LCP < 2.5s（4G/中階手機）；JS bundle < 200KB gzip」 |
-| 「不能拖垮 DB」 | 「單請求 DB 查詢 ≤ 3 次，無 N+1」 |
+| "The API should be fast" | "`GET /orders` p95 < 200ms @ 50 req/s" |
+| "Don't use too much memory" | "Single worker RSS < 512MB @ concurrency 100" |
+| "Homepage should load instantly" | "LCP < 2.5s (4G/mid-range phone); JS bundle < 200KB gzip" |
+| "Don't drag down the DB" | "≤ 3 DB queries per request, no N+1" |
 
-沒有數字、沒有負載條件、沒有測量點的效能描述，一律視為 **DoR 缺口**（見 [§2.1 DoR 檢查清單](../02_definition_of_ready/01_dor_checklist.md)）。
-
----
-
-## 📐 三類指標：先選對要量什麼
-
-### 1. 延遲（Latency）— 一個請求多久回
-
-**永遠用百分位數，不要用平均值。** 平均值會被掩蓋——p50 漂亮不代表沒人在等。
-
-| 百分位 | 意義 | 何時在乎 |
-|---|---|---|
-| p50 | 一半的人比這快 | 體感基準 |
-| p95 | 95% 的人在此之內 | **主力驗收線**，多數 SLO 用這個 |
-| p99 | 最慢的 1% | 尾延遲；高並發/付費客戶在乎 |
-
-> ⚠️ 規格寫 p95/p99，**不要寫 avg**。一個 10s 的請求能被 99 個 10ms 的請求稀釋到「平均 110ms」，但那個等 10s 的就是你的客訴。
-
-### 2. 吞吐（Throughput）— 單位時間扛多少
-
-- 單位：req/s、msg/s、rows/s。
-- **延遲與吞吐要綁在一起講**：「p95 < 200ms」必須附「@ X req/s」，否則零負載下誰都快。
-
-### 3. 資源預算（Resource Budget）— 花多少才換到
-
-| 資源 | 典型指標 | 落地點 |
-|---|---|---|
-| 記憶體 | RSS / heap 峰值 | 容器 limit、OOM 線 |
-| 前端體積 | bundle KB（gzip/brotli） | CI bundle-size 檢查 |
-| DB | 查詢次數 / 慢查詢數 | 防 N+1、加索引 |
-| 啟動 | cold start ms | serverless、容器排程 |
+Any performance description without a number, a load condition, or a measurement point is treated as a **DoR gap** (see [§2.1 DoR Checklist](../02_definition_of_ready/01_dor_checklist.md)).
 
 ---
 
-## 🚧 BUDGET vs GOAL：分清「天花板」與「願望」
+## 📐 Three Metric Types: First Pick What to Measure
 
-這是效能規格最常被混為一談、卻最該分開的兩件事：
+### 1. Latency — How Long One Request Takes
 
-| | 效能預算 BUDGET | 效能目標 GOAL |
+**Always use percentiles, never the average.** Averages hide things — a pretty p50 doesn't mean nobody's waiting.
+
+| Percentile | Meaning | When you care |
 |---|---|---|
-| 性質 | **硬上限**，不可逾越 | 願望值，努力靠近 |
-| 違反後果 | **直接擋 PR / 阻 release**（fail build） | 記錄、追蹤、排進 backlog |
-| 範例 | bundle ≤ 200KB；p99 ≤ 1s | p95 目標 100ms（目前 180ms） |
-| 寫在哪 | CI gate、自動化測試斷言 | tracking doc、儀表板 |
+| p50 | Half the users are faster than this | Perceived baseline |
+| p95 | 95% of users are within this | **Primary acceptance line**, most SLOs use this |
+| p99 | The slowest 1% | Tail latency; high-concurrency/paying customers care |
 
-**規則**：DoD 上能打勾的只認 BUDGET。GOAL 寫進追蹤文件當改善方向，不拿來卡驗收（見 [§3.2 追蹤文件](../03_implementation/02_tracking_docs.md)）。
-混用的後果：要嘛永遠過不了（拿 GOAL 當門檻），要嘛形同虛設（把 BUDGET 當願望）。
+> ⚠️ Write the spec as p95/p99, **not avg**. One 10s request can be diluted by 99 10ms requests into an "average 110ms" — but that one user waiting 10s is your support ticket.
+
+### 2. Throughput — How Much It Handles Per Unit Time
+
+- Units: req/s, msg/s, rows/s.
+- **Latency and throughput must be stated together**: "p95 < 200ms" must carry "@ X req/s," otherwise everyone's fast under zero load.
+
+### 3. Resource Budget — What It Costs to Get There
+
+| Resource | Typical metric | Landing point |
+|---|---|---|
+| Memory | RSS / heap peak | Container limit, OOM line |
+| Frontend size | bundle KB (gzip/brotli) | CI bundle-size check |
+| DB | query count / slow-query count | Prevent N+1, add indexes |
+| Startup | cold start ms | serverless, container scheduling |
 
 ---
 
-## ✍️ 把效能目標寫進測試（這才叫落地）
+## 🚧 BUDGET vs GOAL: Separate "Ceiling" from "Wish"
 
-口頭目標 = 沒目標。效能規格的歸宿是一條會 **紅燈** 的斷言。
+This is the thing in performance specs most often conflated, yet most needing to be kept apart:
 
-### 範例：負載測試斷言 p95（Python / locust 風格）
+| | Performance BUDGET | Performance GOAL |
+|---|---|---|
+| Nature | **Hard ceiling**, not to be crossed | Wish value, strive toward |
+| Consequence of violation | **Blocks the PR / blocks the release** (fail build) | Logged, tracked, queued into backlog |
+| Example | bundle ≤ 200KB; p99 ≤ 1s | p95 target 100ms (currently 180ms) |
+| Where it lives | CI gate, automated test assertion | tracking doc, dashboard |
+
+**Rule**: only BUDGET counts as a checkbox on the DoD. GOAL goes into the tracking docs as an improvement direction, not as an acceptance gate (see [§3.2 Tracking Docs](../03_implementation/02_tracking_docs.md)).
+Consequence of mixing them: either you never pass (using GOAL as the gate), or it's toothless (treating BUDGET as a wish).
+
+---
+
+## ✍️ Write Performance Goals into Tests (This Is What Landing Means)
+
+A verbal goal = no goal. A performance spec's home is an assertion that goes **red**.
+
+### Example: Load-test assertion on p95 (Python / locust-style)
 
 ```python
-# 不是「跑跑看多快」，是「不夠快就 fail」
+# Not "let's see how fast it runs" — it's "if not fast enough, fail"
 def test_orders_p95_under_budget(load_result):
     P95_BUDGET_MS = 200
     TARGET_RPS = 50
 
     assert load_result.rps >= TARGET_RPS, \
-        f"未達負載條件 {TARGET_RPS} req/s，此次結果無效"
+        f"Load condition {TARGET_RPS} req/s not met; this result is invalid"
     assert load_result.p95_ms < P95_BUDGET_MS, \
-        f"p95={load_result.p95_ms}ms 超出預算 {P95_BUDGET_MS}ms"
+        f"p95={load_result.p95_ms}ms exceeds budget {P95_BUDGET_MS}ms"
 ```
 
-重點：**先驗負載條件達標，再驗延遲**。沒打到目標 RPS 的「p95 很漂亮」是假數據。
+Key point: **verify the load condition is met first, then verify latency**. A "beautiful p95" that never hit the target RPS is fake data.
 
-### 範例：前端 bundle 預算（CI 檢查）
+### Example: Frontend bundle budget (CI check)
 
 ```jsonc
-// 體積預算寫成設定，CI 自動擋
+// Size budget written as config, CI blocks automatically
 {
   "budgets": [
     { "path": "dist/main.*.js", "maxSize": "200KB" },
@@ -101,80 +101,80 @@ def test_orders_p95_under_budget(load_result):
 }
 ```
 
-### 落地檢查清單
+### Landing Checklist
 
-- [ ] 每條效能 BUDGET 都對應一條**會 fail 的**斷言（不是只印 log）
-- [ ] 延遲斷言附帶**負載條件**（@ N req/s）且先驗證負載達標
-- [ ] 用 p95/p99，未用 avg
-- [ ] 測試資料量接近正式環境量級（100 筆跑很快不代表 100 萬筆也快）
-- [ ] BUDGET 數字寫成具名常數，不散落 magic number
-- [ ] 預算違反會擋 CI / PR，而非僅警告
+- [ ] Every performance BUDGET maps to an assertion that **fails** (not just prints a log)
+- [ ] Latency assertions carry a **load condition** (@ N req/s) and verify the load is met first
+- [ ] Uses p95/p99, not avg
+- [ ] Test data volume close to production scale (100 rows running fast doesn't mean 1M rows will)
+- [ ] BUDGET numbers written as named constants, no scattered magic numbers
+- [ ] Budget violation blocks CI / PR, not just warns
 
 ---
 
-## 🩹 PRD 沒給效能目標時怎麼辦
+## 🩹 What to Do When the PRD Gives No Performance Goals
 
-很常見。PRD 寫了功能卻沒寫效能，這是 **DoR 缺口**，不是讓你自由發揮的空白。
+Very common. The PRD specifies the feature but not the performance — this is a **DoR gap**, not a blank for you to freestyle.
 
-處理流程：
+Process:
 
-1. **標記為 DoR 缺口**，寫進 PRD 健檢報告（見 [§2.2 PRD 健檢報告](../02_definition_of_ready/02_prd_health_report.md)）。
-2. **提出預設值**而非沉默略過——給可起步的合理數字，標明「待確認」。
-3. 走衝突處理：PRD 缺漏 + 你有更好建議 → 保留並標記、等裁決，不擅自當合約（見 [§5.1 模糊/缺漏/bug](../05_conflict_handling/01_vague_bug_gap.md)）。
+1. **Mark it as a DoR gap**, write it into the PRD health report (see [§2.2 PRD Health Report](../02_definition_of_ready/02_prd_health_report.md)).
+2. **Propose a default** rather than silently skipping — give a reasonable startable number, marked "to be confirmed."
+3. Go through conflict handling: PRD gap + you have a better suggestion → keep it, mark it, await ruling — don't unilaterally treat it as the contract (see [§5.1 Vague/Gap/Bug](../05_conflict_handling/01_vague_bug_gap.md)).
 
-### 可提的預設值（起點，非聖經）
+### Defaults You Can Propose (starting points, not scripture)
 
-| 場景 | 建議預設 BUDGET |
+| Scenario | Suggested default BUDGET |
 |---|---|
-| 互動式 API（讀） | p95 < 300ms @ 預估尖峰 RPS |
-| 互動式 API（寫） | p95 < 500ms |
-| 背景批次 | 吞吐優先；單筆延遲不設硬上限 |
-| 前端首屏 | LCP < 2.5s（中階手機/4G）；初始 JS < 200KB gzip |
-| 記憶體 | 容器 limit 的 70% 為告警線 |
+| Interactive API (read) | p95 < 300ms @ estimated peak RPS |
+| Interactive API (write) | p95 < 500ms |
+| Background batch | Throughput first; no hard ceiling on per-item latency |
+| Frontend first paint | LCP < 2.5s (mid-range phone/4G); initial JS < 200KB gzip |
+| Memory | 70% of container limit as the alert line |
 
-> 提預設值時必須一併問：「預估尖峰流量多少？」沒有負載量級，所有延遲數字都是空談。
-
----
-
-## 🚫 反模式：沒有目標就開始優化
-
-**最大的效能反模式：先優化，後（或永不）定義「夠快」。**
-
-沒有目標的優化會出現：
-
-- **無止境調校**：永遠覺得「還能更快」，停不下來——因為沒有「到此為止」的線。
-- **優化錯地方**：憑感覺改，沒先測量。改了不在熱路徑上的程式碼，p95 文風不動（症狀不是根因——Sentinel 的診斷紀律：先量再改）。
-- **以可讀性換不存在的需求**：為了省 2ms 把程式碼寫成天書，而那 2ms 根本沒人要求。違反 [§3.5 YAGNI](../03_implementation/05_yagni.md)。
-- **無法宣稱完成**：沒有 BUDGET，就沒有 DoD 能打勾，「優化完了嗎」永遠無解。
-
-**鐵律**：
-
-```
-量測 → 定目標(BUDGET) → 才動手優化 → 用斷言證明達標
-```
-
-任何「先優化再說」的衝動 → 停下，先補上可測目標。
-宣稱「優化好了」前必附證據等級（Sentinel 的證據強度）：🟢 跑過負載測試有數字 / 🟡 只讀邏輯沒實測（明說建議跑） / 🔴 推測。**沒跑過負載測試，不准說「變快了」。**
+> When proposing a default you must also ask: "What's the estimated peak traffic?" Without a load magnitude, all latency numbers are hot air.
 
 ---
 
-## ✅ 本節落地檢查
+## 🚫 Anti-Pattern: Optimizing Before You Have a Goal
 
-- [ ] 每個效能需求都是「指標 + 數字 + 負載條件」，無形容詞
-- [ ] 延遲用 p95/p99，吞吐附 req/s，資源有預算
-- [ ] BUDGET 與 GOAL 分清；只有 BUDGET 進 DoD
-- [ ] 每條 BUDGET 對應一條會 fail 的測試斷言
-- [ ] PRD 缺效能目標 → 標 DoR 缺口 + 提預設 + 等裁決，不擅填
-- [ ] 沒有目標前不啟動優化；優化後用實測數字佐證
+**The biggest performance anti-pattern: optimize first, define "fast enough" later (or never).**
+
+Optimization without a goal produces:
+
+- **Endless tuning**: always feeling "it could be faster," never able to stop — because there's no "this far and no further" line.
+- **Optimizing the wrong place**: changing things by gut feel without measuring first. Touch code that isn't on the hot path and p95 doesn't budge (the symptom is not the root cause — Sentinel's diagnosis discipline: measure before you change).
+- **Trading readability for a nonexistent requirement**: turning code into gibberish to save 2ms that nobody asked for. Violates [§3.5 YAGNI](../03_implementation/05_yagni.md).
+- **Can't claim done**: with no BUDGET, there's no DoD to check off, and "is the optimization done" is forever unanswerable.
+
+**Iron rule**:
+
+```
+measure → set goal (BUDGET) → only then optimize → prove it with an assertion
+```
+
+Any "let's just optimize first" urge → stop, fill in a measurable goal first.
+Before claiming "optimization done," attach an evidence grade (Sentinel's evidence grading): 🟢 ran the load test, have numbers / 🟡 only read the logic, didn't actually test (say so and recommend running) / 🔴 speculation. **Without running a load test, you don't get to say "it's faster."**
+
+---
+
+## ✅ Landing Check for This Section
+
+- [ ] Every performance requirement is "metric + number + load condition," no adjectives
+- [ ] Latency uses p95/p99, throughput carries req/s, resources have a budget
+- [ ] BUDGET and GOAL kept separate; only BUDGET enters the DoD
+- [ ] Every BUDGET maps to a test assertion that fails
+- [ ] PRD missing performance goals → mark DoR gap + propose default + await ruling, don't fill in unilaterally
+- [ ] No optimization before there's a goal; back up optimization with measured numbers
 
 ---
 
 ## 🔗 Related Compass sections
 
-- [§6.1 NFR 總覽](./01_nfr_overview.md) — 效能在 NFR 全景中的定位
-- [§6.3 可觀測性](./03_observability.md) — 沒有 metrics 就量不到 p95
-- [§2.1 DoR 檢查清單](../02_definition_of_ready/01_dor_checklist.md) — 缺效能目標即未就緒
-- [§4.1 DoD](../04_quality_gates/01_dod.md) — BUDGET 斷言是完成定義的一部分
+- [§6.1 NFR Overview](./01_nfr_overview.md) — where performance sits in the full NFR picture
+- [§6.3 Observability](./03_observability.md) — no metrics means you can't measure p95
+- [§2.1 DoR Checklist](../02_definition_of_ready/01_dor_checklist.md) — missing performance goals means not ready
+- [§4.1 DoD](../04_quality_gates/01_dod.md) — BUDGET assertions are part of the Definition of Done
 
 ---
 

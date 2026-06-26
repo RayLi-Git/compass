@@ -1,55 +1,55 @@
-# 自檢失敗回報：<塊名稱>
+# Self-Check Failure Report: <block name>
 
-<!-- Compass §3.4 自動自檢循環（最多 3 輪）用盡 or 中途卡死時，填此交使用者裁決。 -->
-<!-- 每輪都要同步 append 一筆到 development-log.md（§3.4 規定），本檔是給使用者的彙整。 -->
-
----
-
-## 情況 A：跑滿 3 輪仍失敗
-
-### 第 1 輪
-- 失敗：Test X — <錯誤訊息>
-- 修正：<採取的動作>
-
-### 第 2 輪
-- 失敗：Test Y — <錯誤訊息>
-- 修正：<採取的動作>
-
-### 第 3 輪
-- 失敗：Test Z — <錯誤訊息>
-- 嘗試的修正：<列出> — 仍失敗
+<!-- Fill when Compass §3.4 automated self-check loop (max 3 rounds) is exhausted, or stuck mid-way, and hand to the user for a ruling. -->
+<!-- Each round must also append an entry to development-log.md (§3.4 rule); this file is the summary for the user. -->
 
 ---
 
-## 情況 B：未滿 3 輪即中止（撞 blocker）
+## Case A: 3 rounds run, still failing
 
-> 卡在「不是再試就能解」的東西（等 PRD 裁決、缺外部依賴、缺權限）→ 不硬湊 3 輪，直接停。
+### Round 1
+- Failure: Test X — <error message>
+- Fix: <action taken>
 
-- 第 N 輪卡住：<為什麼再試也沒用>
-- 已記入 development-log.md：<[SKIPPED-PRD] 或 blocker 描述>
+### Round 2
+- Failure: Test Y — <error message>
+- Fix: <action taken>
+
+### Round 3
+- Failure: Test Z — <error message>
+- Fix attempted: <list> — still failing
 
 ---
 
-## 診斷（調用 Sentinel 診斷模式 — 不要只報「修不好」）
+## Case B: aborted before 3 rounds (hit a blocker)
 
-> 進診斷模式：列 2-3 個假說，別只認定一個。（Sentinel `self_check.md`）
+> Stuck on something "retrying won't solve" (awaiting PRD ruling, missing external dependency, missing permission) → don't pad to 3 rounds, stop now.
 
-- 可能根因 A：<…>（驗證成本 / 合理性）
-- 可能根因 B：<…>
-- 可能根因 C：<…>
+- Stuck at round N: <why retrying is pointless>
+- Recorded in development-log.md: <[SKIPPED-PRD] or blocker description>
 
-## 請使用者裁決（給選項，不替你決定）
+---
 
-- 建議解法 1：<…>
-- 建議解法 2：<…>
-- 建議解法 3：<…>
-- 我的傾向：<哪個 + 為何>（標證據等級 🟢已驗證／🟡已檢視／🔴推測）
+## Diagnosis (invoke Sentinel diagnostic mode — don't just report "can't fix it")
+
+> Enter diagnostic mode: list 2-3 hypotheses, don't latch onto one. (Sentinel `self_check.md`)
+
+- Possible root cause A: <…> (verification cost / plausibility)
+- Possible root cause B: <…>
+- Possible root cause C: <…>
+
+## Ask the user to rule (give options, don't decide for them)
+
+- Proposed fix 1: <…>
+- Proposed fix 2: <…>
+- Proposed fix 3: <…>
+- My lean: <which + why> (mark evidence level 🟢 verified / 🟡 reviewed / 🔴 speculative)
 
 ---
 
 ## 🔗 Related
-- [§3.4 自動自檢循環](../references/03_implementation/04_compare_fix_loop.md) — 3 輪規則與失敗決策樹
-- Sentinel `self_check.md` — 診斷模式 6 步 + 分級漸進失敗門檻
+- [§3.4 Compare-Fix Loop](../references/03_implementation/04_compare_fix_loop.md) — the 3-round rule and failure decision tree
+- Sentinel `self_check.md` — diagnostic mode 6 steps + tiered progressive failure threshold
 
 ## 📝 Status
-v0.3.0 (ported from prior SOP T6, + 情況B 提早中止 + Sentinel 診斷模式接線 + dev-log 提醒).
+v0.3.0 (ported from prior SOP T6, + Case B early abort + Sentinel diagnostic-mode wiring + dev-log reminder).

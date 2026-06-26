@@ -1,159 +1,159 @@
-# §6.5 無障礙 (a11y) 與國際化 (i18n)
+# §6.5 Accessibility (a11y) and Internationalization (i18n)
 
-> Part of [Compass](../../SKILL.md) §6 — 非功能性需求 (NFR)。
-> a11y 與 i18n 設計時內建幾乎免費，事後補做是地獄——所以它們屬於 DoR，不是上線前的補丁。
+> Part of [Compass](../../SKILL.md) §6 — Non-functional requirements (NFR).
+> a11y and i18n are nearly free when built in at design time; retrofitting them is hell — so they belong in DoR, not as a pre-launch patch.
 
 ---
 
-## 🎯 核心立場
+## 🎯 Core stance
 
-兩者的共同性質：**設計階段內建 = 便宜；上線後回補 = 殘酷。**
+Both share the same nature: **built in at design time = cheap; retrofitted after launch = brutal.**
 
-| 維度 | 設計時內建 | 事後回補 |
+| Dimension | Built in at design time | Retrofitted afterward |
 |---|---|---|
-| a11y | 語意 HTML + 鍵盤流，幾乎零成本 | 重寫 DOM、補 ARIA、重測每個元件 |
-| i18n | 字串外置 + locale-aware 格式化 | 全 codebase 撈 hardcode、改版面、處理 RTL |
+| a11y | Semantic HTML + keyboard flow, near zero cost | Rewrite DOM, add ARIA, retest every component |
+| i18n | Externalized strings + locale-aware formatting | Hunt hardcoded copy across the codebase, rework layout, handle RTL |
 
-結論：**a11y / i18n 是否在範圍內，必須在 DoR 拍板**（見 [§2.1 DoR checklist](../02_definition_of_ready/01_dor_checklist.md)）。PRD 沒寫不代表不用做——代表「範圍未定義」，必須回去問。
-
----
-
-## 🚩 DoR 攔截規則（PRD 對 a11y/i18n 沉默時）
-
-PRD 沒提 a11y 或 i18n，不要當作「不用做」直接跳過。這是 PRD 缺漏，走 [§5.1 模糊/缺漏處置](../05_conflict_handling/01_vague_bug_gap.md)，在 DoR 標記並反問：
-
-- 「這個 UI 要不要支援鍵盤操作 / 螢幕報讀器？」（a11y 範圍）
-- 「未來會不會出多語言 / 多地區版本？」（i18n 範圍）
-- 「有沒有法規要求？」（部分產業 a11y 是法律義務，非選配）
-
-得到答案前，至少把**字串外置**與**語意 HTML** 當預設做掉——這兩項即使最後不上 i18n/a11y 也不虧，反向回補才虧。
+Conclusion: **whether a11y / i18n is in scope must be settled at DoR** (see [§2.1 DoR checklist](../02_definition_of_ready/01_dor_checklist.md)). PRD silence doesn't mean "skip it" — it means "scope undefined," go back and ask.
 
 ---
 
-## ♿ a11y：WCAG 基線
+## 🚩 DoR interception rule (when PRD is silent on a11y/i18n)
 
-不背完整 WCAG。記住可在 PR 直接檢查的五條：
+If the PRD doesn't mention a11y or i18n, don't treat it as "not needed" and skip. This is a PRD gap — run [§5.1 vague/bug/gap handling](../05_conflict_handling/01_vague_bug_gap.md), flag it in DoR, and ask back:
 
-| 項目 | 規則 | 快速自檢 |
+- "Does this UI need keyboard operation / screen reader support?" (a11y scope)
+- "Will there be multi-language / multi-region versions later?" (i18n scope)
+- "Any regulatory requirement?" (in some industries a11y is a legal obligation, not optional)
+
+Before you get an answer, at least do **string externalization** and **semantic HTML** as the default — these two cost nothing even if i18n/a11y never ships, while retrofitting them is what costs.
+
+---
+
+## ♿ a11y: WCAG baseline
+
+Don't memorize all of WCAG. Remember the five you can check directly in a PR:
+
+| Item | Rule | Quick self-check |
 |---|---|---|
-| 鍵盤可達 | 所有互動元素 Tab 可達、Enter/Space 可觸發、焦點順序合理 | 拔掉滑鼠走一遍 |
-| 語意 HTML | 用 `<button>`/`<nav>`/`<label>` 而非 `<div onClick>` | 看 DOM 有沒有一堆裸 div 當按鈕 |
-| 對比度 | 文字對背景 ≥ 4.5:1（大字 ≥ 3:1） | 用對比檢查器量一次 |
-| 替代文字 | `<img>` 有 `alt`；裝飾圖 `alt=""` | grep 沒 alt 的 img |
-| ARIA 兜底 | 原生語意不足才補 ARIA，且 role/state 要正確 | 沒有原生標籤時才碰 ARIA |
+| Keyboard reachable | All interactive elements Tab-reachable, Enter/Space triggerable, focus order sensible | Unplug the mouse and walk through it |
+| Semantic HTML | Use `<button>`/`<nav>`/`<label>`, not `<div onClick>` | Check the DOM for piles of bare divs acting as buttons |
+| Contrast | Text against background ≥ 4.5:1 (large text ≥ 3:1) | Measure once with a contrast checker |
+| Alt text | `<img>` has `alt`; decorative images use `alt=""` | grep for imgs without alt |
+| ARIA fallback | Add ARIA only when native semantics fall short, and get role/state right | Only touch ARIA when there's no native tag |
 
-**鐵律：ARIA 是最後手段，不是第一手段。** 一個正確的 `<button>` 勝過 `<div role="button" tabindex="0" aria-pressed>` 兜出來的東西。錯的 ARIA 比沒有 ARIA 更糟。
+**Iron rule: ARIA is the last resort, not the first.** One correct `<button>` beats anything cobbled together with `<div role="button" tabindex="0" aria-pressed>`. Wrong ARIA is worse than no ARIA.
 
-### 每個 UI feature 的 a11y checklist
+### a11y checklist per UI feature
 
-新增任何可互動 UI 時逐項過：
+When adding any interactive UI, go through every item:
 
-- [ ] 純鍵盤可完成整個操作流程（含開關 modal、提交表單）
-- [ ] 焦點狀態可見（不是只有 `outline: none`）
-- [ ] 表單欄位都有 `<label>` 關聯（`for`/`id` 或包裹）
-- [ ] 圖片/icon 有文字替代；純裝飾標 `alt=""`/`aria-hidden`
-- [ ] 顏色不是唯一資訊載體（錯誤不能只靠紅色，要有文字/icon）
-- [ ] 動態內容變化有通知（`aria-live` 用於 toast/錯誤）
-- [ ] Modal 開啟時焦點被困在內部、關閉後歸還觸發元素
+- [ ] The entire operation flow can be completed with keyboard alone (including opening/closing modals, submitting forms)
+- [ ] Focus state is visible (not just `outline: none`)
+- [ ] Form fields all have associated `<label>` (`for`/`id` or wrapping)
+- [ ] Images/icons have text alternatives; pure decoration marked `alt=""`/`aria-hidden`
+- [ ] Color is not the sole information carrier (errors can't rely on red alone — need text/icon)
+- [ ] Dynamic content changes are announced (`aria-live` for toasts/errors)
+- [ ] When a modal opens, focus is trapped inside; on close, focus returns to the triggering element
 
-### 範例（React/TS，非強制）
+### Example (React/TS, not mandatory)
 
 ```tsx
-// ❌ 螢幕報讀器讀不到、鍵盤點不到
-<div className="btn" onClick={handleDelete}>刪除</div>
+// ❌ Screen reader can't read it, keyboard can't reach it
+<div className="btn" onClick={handleDelete}>Delete</div>
 
-// ✅ 原生語意，鍵盤與報讀器免費拿到
-<button type="button" onClick={handleDelete}>刪除</button>
+// ✅ Native semantics, keyboard and screen reader for free
+<button type="button" onClick={handleDelete}>Delete</button>
 
-// 錯誤訊息：顏色 + 文字 + live region
-<p role="alert" className="error">電子郵件格式不正確</p>
+// Error message: color + text + live region
+<p role="alert" className="error">Email format is invalid</p>
 ```
 
 ---
 
-## 🌐 i18n：四大支柱
+## 🌐 i18n: four pillars
 
-### 1. 字串外置（no hardcoded copy）
+### 1. String externalization (no hardcoded copy)
 
-UI 文案一律走資源檔/翻譯函式，不直接寫在元件裡。
+All UI copy goes through resource files / translation functions, never written directly in the component.
 
 ```tsx
-// ❌ hardcode，之後撈到死
-<h1>歡迎回來</h1>
+// ❌ hardcoded, you'll be hunting it forever
+<h1>Welcome back</h1>
 
-// ✅ key 化，文案集中
+// ✅ key-ified, copy centralized
 <h1>{t("home.welcome_back")}</h1>
 ```
 
-紅旗：PR 裡出現任何面向使用者的字面字串（按鈕、標題、錯誤、email 模板）。
+Red flag: any user-facing literal string in a PR (buttons, titles, errors, email templates).
 
-### 2. Locale-aware 格式化
+### 2. Locale-aware formatting
 
-日期、數字、貨幣**絕不手動拼**。用平台的 locale API。
+Dates, numbers, currency: **never assemble by hand.** Use the platform's locale API.
 
-| 資料 | 錯誤做法 | 正確做法 |
+| Data | Wrong way | Right way |
 |---|---|---|
-| 日期 | `` `${y}/${m}/${d}` `` | `Intl.DateTimeFormat(locale)` |
-| 數字 | 手動塞千分位 | `Intl.NumberFormat(locale)` |
-| 貨幣 | `` `$${n}` `` | `Intl.NumberFormat(locale, {style:"currency", currency})` |
-| 時區 | 存本地時間 | 存 UTC，顯示時轉 locale 時區 |
+| Date | `` `${y}/${m}/${d}` `` | `Intl.DateTimeFormat(locale)` |
+| Number | Manually inserting thousands separators | `Intl.NumberFormat(locale)` |
+| Currency | `` `$${n}` `` | `Intl.NumberFormat(locale, {style:"currency", currency})` |
+| Timezone | Store local time | Store UTC, convert to locale timezone on display |
 
-### 3. 複數形（pluralization）
+### 3. Pluralization
 
-別用 `count === 1 ? "item" : "items"` 硬切。不同語言複數規則不同（有些語言 3 種以上形式）。用 ICU MessageFormat / `Intl.PluralRules`。
+Don't hard-split with `count === 1 ? "item" : "items"`. Plural rules differ across languages (some have 3+ forms). Use ICU MessageFormat / `Intl.PluralRules`.
 
 ```ts
-// ❌ 只對英文/中文勉強成立
+// ❌ Barely works for English/Chinese only
 const label = `${n} ${n === 1 ? "file" : "files"}`;
 
-// ✅ 交給 plural rules
-t("file_count", { count: n }); // 翻譯檔內定義 one/other/...
+// ✅ Hand it to plural rules
+t("file_count", { count: n }); // define one/other/... inside the translation file
 ```
 
-### 4. RTL 覺知
+### 4. RTL awareness
 
-支援阿拉伯文/希伯來文時版面會鏡像。CSS 用邏輯屬性，不用方向屬性。
+When supporting Arabic/Hebrew, the layout mirrors. Use CSS logical properties, not directional properties.
 
-| 不要 | 改用 |
+| Don't | Use instead |
 |---|---|
 | `margin-left` | `margin-inline-start` |
 | `text-align: left` | `text-align: start` |
 | `left: 0` | `inset-inline-start: 0` |
 
-即使現在只做 LTR，養成用 logical properties 的習慣，未來開 RTL 幾乎零改動。
+Even if you only do LTR now, build the habit of using logical properties — turning on RTL later becomes near zero change.
 
 ### i18n checklist
 
-- [ ] 無面向使用者的 hardcode 字串
-- [ ] 日期/數字/貨幣全走 `Intl` 或等效 locale API
-- [ ] 時間以 UTC 儲存
-- [ ] 複數走 plural rules，不靠 `=== 1`
-- [ ] 版面用 logical properties（為 RTL 留路）
-- [ ] 字串不靠拼接組句（語序因語言而異，整句一個 key）
+- [ ] No user-facing hardcoded strings
+- [ ] Dates/numbers/currency all go through `Intl` or an equivalent locale API
+- [ ] Time stored as UTC
+- [ ] Plurals via plural rules, not `=== 1`
+- [ ] Layout uses logical properties (leaving a path for RTL)
+- [ ] Strings don't assemble sentences by concatenation (word order varies by language — one key per whole sentence)
 
 ---
 
-## ⚖️ 決策程序：要不要現在做？
+## ⚖️ Decision procedure: do it now or not?
 
 ```
-PRD 有寫 a11y/i18n 範圍？
-├─ 有 → 照 PRD 範圍實作，列入 DoD
-└─ 沒有 → DoR 反問使用者（見上方攔截規則）
-          ├─ 確認要做 → 補進 PRD 範圍，當需求做
-          ├─ 確認不做 → 仍把「字串外置 + 語意 HTML」當預設
-          └─ 未定 → 標 ⚠️待裁決，預設做掉低成本兩項，不做高成本回補項
+PRD specifies a11y/i18n scope?
+├─ Yes → implement to PRD scope, include in DoD
+└─ No  → ask the user back at DoR (see interception rule above)
+          ├─ Confirmed do → add to PRD scope, build it as a requirement
+          ├─ Confirmed skip → still do "string externalization + semantic HTML" by default
+          └─ Undecided → flag ⚠️await ruling, do the two low-cost items by default, skip the high-cost retrofit items
 ```
 
-不適用 YAGNI 直接砍 i18n/a11y——「字串外置、語意 HTML、logical properties」是低成本前置投資，砍掉等於把未來的回補成本鎖死（見 [§3.5 YAGNI](../03_implementation/05_yagni.md)）。
+YAGNI doesn't apply to just cutting i18n/a11y — "string externalization, semantic HTML, logical properties" are low-cost upfront investments; cutting them locks in the future retrofit cost (see [§3.5 YAGNI](../03_implementation/05_yagni.md)).
 
 ---
 
 ## 🔗 Related Compass sections
 
-- [§6 NFR overview](./01_nfr_overview.md) — a11y/i18n 在 NFR 全景中的位置
-- [§2.1 DoR checklist](../02_definition_of_ready/01_dor_checklist.md) — 範圍在這裡拍板
-- [§5.1 模糊/Bug/缺漏處置](../05_conflict_handling/01_vague_bug_gap.md) — PRD 沉默時的反問流程
-- [§4.1 DoD](../04_quality_gates/01_dod.md) — 確認的 a11y/i18n 項目納入完成定義
+- [§6 NFR overview](./01_nfr_overview.md) — where a11y/i18n sits in the NFR landscape
+- [§2.1 DoR checklist](../02_definition_of_ready/01_dor_checklist.md) — scope is settled here
+- [§5.1 Vague/Bug/Gap handling](../05_conflict_handling/01_vague_bug_gap.md) — the ask-back flow when the PRD is silent
+- [§4.1 DoD](../04_quality_gates/01_dod.md) — confirmed a11y/i18n items fold into the definition of done
 
 ## 📝 Status
 

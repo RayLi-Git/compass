@@ -1,159 +1,159 @@
-# §8.5 無正式 PRD 時的最小紀律
+# §8.5 Minimal Discipline When There's No Formal PRD
 
-> Part of [Compass](../../SKILL.md) §8 — Brownfield 與既有專案。
-> 沒有正式 PRD 也別裸奔：動手前先寫下三行「目標／驗收／不做」，讓 DoR、DoD、比對修正有錨可比。
-
----
-
-## 🎯 現實：大多數工作沒有 PRD
-
-正式 PRD 是奢侈品。現實裡的需求長這樣：
-
-- Slack 一句「幫我把匯出加個 CSV 選項」
-- Jira ticket 標題三個字「修一下登入」
-- 老闆走過來「讓它能 X 就好」
-- 你自己冒出來「順手把這段重構一下」
-
-Compass 不能因為「沒有 PRD 檔」就整套失效。沒有合約 ≠ 不需要合約——只是**合約還沒被寫下來**。沒寫下來的合約，驗收時就會變成各說各話。
-
-**核心主張**：沒有正式 PRD 時，你的責任不是跳過紀律，而是**用三行補上一份用完即丟的迷你 PRD**，讓後面的 gate 有東西可比。
+> Part of [Compass](../../SKILL.md) §8 — Brownfield and existing projects.
+> No formal PRD doesn't mean running naked: before you start, write down three lines — "goal / acceptance / out of scope" — so DoR, DoD, and compare-fix have an anchor to check against.
 
 ---
 
-## 📝 最小可行規格（MVS）：動手前三行
+## 🎯 Reality: Most work has no PRD
 
-開寫前，把下面三行寫進 ticket 留言、commit message 草稿，或 `.claude/` 暫存檔。三行就夠：
+A formal PRD is a luxury. Real requirements look like this:
 
-| 欄位 | 問題 | 反面教材（不及格） |
+- A one-liner on Slack: "add a CSV option to the export"
+- A Jira ticket titled "fix login"
+- The boss walks over: "just make it do X"
+- Your own thought: "let me refactor this bit while I'm here"
+
+Compass can't collapse just because "there's no PRD file." No contract ≠ no contract needed — it just means **the contract hasn't been written down yet**. An unwritten contract turns into he-said-she-said at acceptance time.
+
+**Core claim**: with no formal PRD, your job isn't to skip discipline, but to **fill the gap with a three-line throwaway mini-PRD**, so the downstream gates have something to check against.
+
+---
+
+## 📝 Minimal Viable Spec (MVS): three lines before you start
+
+Before writing code, put these three lines into a ticket comment, a draft commit message, or a scratch file in `.claude/`. Three lines is enough:
+
+| Field | Question | Counter-example (fails) |
 |---|---|---|
-| **目標** | 做完後，什麼從「不行」變「行」？ | 「優化匯出」（沒說優化什麼） |
-| **驗收條件** | 怎麼一眼看出做完了？可觀察、可勾選 | 「讓它更好用」（無法驗證） |
-| **不做什麼** | 這次明確**不碰**的範圍邊界 | （留空 → scope 無限蔓延） |
+| **Goal** | After this is done, what goes from "can't" to "can"? | "Optimize export" (doesn't say what to optimize) |
+| **Acceptance criteria** | How do you tell at a glance it's done? Observable, checkable | "Make it nicer" (unverifiable) |
+| **Out of scope** | The scope boundary you explicitly **won't touch** this time | (left blank → scope creeps without bound) |
 
-第三行（不做什麼）最常被省略，卻最關鍵——它是擋住 scope creep 的唯一一道牆。
+The third line (out of scope) is the one most often dropped, yet it's the most critical — it's the only wall stopping scope creep.
 
-### 範例：Slack 來的「加個 CSV 匯出」
+### Example: "add a CSV export" from Slack
 
 ```text
-目標：報表頁能匯出 CSV（目前只有 JSON）
-驗收：
-  - 報表頁出現「匯出 CSV」按鈕
-  - 點下載出 .csv，欄位順序與畫面表格一致
-  - 空資料時下載出只有表頭的檔，不報錯
-不做：
-  - 不做 Excel / PDF
-  - 不做欄位自選 / 排序設定
-  - 不改現有 JSON 匯出行為
+Goal: report page can export CSV (currently only JSON)
+Acceptance:
+  - report page shows an "Export CSV" button
+  - clicking downloads a .csv, column order matches the on-screen table
+  - empty data downloads a header-only file, no error
+Out of scope:
+  - no Excel / PDF
+  - no column picker / sort settings
+  - don't change existing JSON export behavior
 ```
 
-這份三行就是你這次的「PRD」。它即拋即用，但在它存活的這段時間裡，它**就是合約**。
+These three lines are your "PRD" for this task. It's throwaway, but for as long as it lives, it **is the contract**.
 
 ---
 
-## 🔁 三行如何串起 Compass 的 gate
+## 🔁 How the three lines wire back into Compass gates
 
-寫下三行後，原本需要 PRD 才能跑的 gate 全部可以跑：
+Once you've written the three lines, every gate that previously required a PRD can run:
 
-| Gate | 沒 PRD 時的對應做法 |
+| Gate | Equivalent without a PRD |
 |---|---|
-| **DoR**（[§2](../02_definition_of_ready/01_dor_checklist.md)） | 你剛才寫的三行**就是一份迷你 DoR 標的**——目標清楚、驗收可測、邊界明確，三項齊了才開寫 |
-| **比對修正**（[§3.4](../03_implementation/04_compare_fix_loop.md)） | 每寫完一塊，回頭比對「驗收條件」逐項勾，而不是憑感覺說「差不多了」 |
-| **DoD**（[§4](../04_quality_gates/01_dod.md)） | 「驗收條件」全綠 + lint/test/self-review 才算完成 |
-| **YAGNI**（[§3.5](../03_implementation/05_yagni.md)） | 「不做什麼」就是你的 YAGNI 清單，想加東西先問它在不在「不做」裡 |
+| **DoR** ([§2](../02_definition_of_ready/01_dor_checklist.md)) | The three lines you just wrote **are a mini DoR target** — clear goal, testable acceptance, explicit boundary; all three present before you start |
+| **Compare-fix** ([§3.4](../03_implementation/04_compare_fix_loop.md)) | After each slice, go back and tick off "acceptance criteria" item by item, instead of going by gut feel and saying "close enough" |
+| **DoD** ([§4](../04_quality_gates/01_dod.md)) | "Acceptance criteria" all green + lint/test/self-review before it counts as done |
+| **YAGNI** ([§3.5](../03_implementation/05_yagni.md)) | "Out of scope" is your YAGNI list — before adding anything, check whether it's in "out of scope" |
 
-換句話說，**三行迷你 PRD 是把「無規格任務」接回 Compass 主流程的轉接頭**。
+In other words, **the three-line mini-PRD is the adapter that plugs a "spec-less task" back into the Compass mainline**.
 
 ---
 
-## ⚖️ 何時三行就夠，何時堅持要真 PRD
+## ⚖️ When three lines suffice, and when to insist on a real PRD
 
-不是所有任務都該用三行打發。用下面這張表判斷力道：
+Not every task should be brushed off with three lines. Use this table to gauge the force needed:
 
-| 信號 | 三行夠 ✅ | 堅持要正式 PRD ⛔ |
+| Signal | Three lines suffice ✅ | Insist on a formal PRD ⛔ |
 |---|---|---|
-| 影響範圍 | 單一模組、孤立改動 | 跨模組 / 跨服務 |
-| 資料模型 | 不動 schema | 改表、改欄位、改遷移 |
-| 資安 / 權限 | 不碰 | 碰 Auth / 權限 / PII |
-| 參與人數 | 你一個人吃得下 | 需要多人協作、有交接 |
-| 可逆性 | 出錯易回退 | 上線難回退 / 影響金流 |
-| 模糊度 | 需求清楚只是沒寫 | 需求本身就吵不定 |
+| Blast radius | Single module, isolated change | Cross-module / cross-service |
+| Data model | No schema change | Alter tables, columns, migrations |
+| Security / permissions | Doesn't touch | Touches Auth / permissions / PII |
+| People involved | You can handle it solo | Needs multi-person collaboration, has a handoff |
+| Reversibility | Easy to roll back on error | Hard to roll back in prod / affects money flow |
+| Ambiguity | Requirement clear, just unwritten | Requirement itself is in dispute |
 
-### 決策程序
-
-```text
-這次改動，命中任一「⛔」欄了嗎？
-├─ 否 → 寫三行 MVS，直接開工
-└─ 是 → 停。三行不夠：
-        1) 把模糊點列成具體問題（不是「要不要做」而是「A 還是 B」）
-        2) 回去要一份真 PRD，或至少把這幾點談定寫下
-        3) 資安類強制走 test-first（見下）
-```
-
-**鐵律**：命中資安欄時，三行不能當免死金牌。Auth / 權限 / PII 一律先寫測試再寫實作，且把威脅情境寫進「驗收條件」（這是 Sentinel 的資安思考底線，不是 Compass 可選項）。
-
----
-
-## 🕳️ 零規格的危害（為什麼不能直接開寫）
-
-省掉三行、直接動手，會踩到兩個必然的坑：
-
-### 坑一：「完成」變成未定義
-
-沒有驗收條件，「做完了沒」就沒有客觀答案。結果是：
-
-- 你以為做完，需求方覺得沒做完 → 來回返工
-- 沒有「停手線」，你會一直加細節到自己累為止
-- review 的人不知道該驗什麼，只能憑感覺放行
-
-### 坑二：scope 靜默蔓延
-
-沒有「不做什麼」，每個「順手再做一下」都顯得合理：
+### Decision procedure
 
 ```text
-原始請求：加個 CSV 匯出
-  → 「順手支援 Excel 吧」
-    → 「那欄位也讓使用者自選吧」
-      → 「自選了不如存成範本吧」
-        → 兩天後：你在寫一個匯出設定系統，沒人要求過
+Does this change hit any "⛔" column?
+├─ No  → write the three-line MVS, start work directly
+└─ Yes → stop. Three lines aren't enough:
+         1) list the ambiguous points as concrete questions (not "do it or not" but "A or B")
+         2) go get a real PRD, or at least nail down and write down these points
+         3) security cases mandatorily go test-first (see below)
 ```
 
-每一步都「只多一點」，加起來就是一個沒人批准的新功能。**「不做什麼」那一行，就是在第一步喊停的成本最低時機。**
+**Iron rule**: when you hit the security column, three lines are no get-out-of-jail card. Auth / permissions / PII always go test-first, and the threat scenario goes into "acceptance criteria" (this is Sentinel's security-thinking floor, not a Compass option).
 
 ---
 
-## ✅ 開工前自檢清單
+## 🕳️ The harm of zero spec (why you can't just start writing)
 
-動手前過一遍，缺哪補哪：
+Skip the three lines, dive straight in, and you hit two inevitable traps:
 
-- [ ] 我寫下**目標**了嗎？（一句話：什麼從不行變行）
-- [ ] 驗收條件**可勾選**嗎？（不是「更好」，是能 yes/no 的條目）
-- [ ] 我寫下**不做什麼**了嗎？（至少 2 條範圍邊界）
-- [ ] 這次改動命中資料模型 / 資安 / 跨模組 / 多人了嗎？→ 命中就升級要真 PRD
-- [ ] 三行寫完，跑得過 [DoR](../02_definition_of_ready/01_dor_checklist.md) 的「目標清楚、可驗證、邊界明確」嗎？
-- [ ] 過程中想加「不做」清單裡的東西時，我會回頭重新裁決而不是偷偷做嗎？
+### Trap 1: "Done" becomes undefined
 
-全勾 → 開工。任一沒勾 → 先補規格，別開 code 模式。
+With no acceptance criteria, "is it done" has no objective answer. The result:
+
+- you think it's done, the requester thinks it isn't → back-and-forth rework
+- with no "stop line," you keep adding detail until you're worn out
+- the reviewer doesn't know what to verify, can only sign off on gut feel
+
+### Trap 2: scope creeps silently
+
+With no "out of scope," every "while I'm at it" looks reasonable:
+
+```text
+Original request: add a CSV export
+  → "let's support Excel while we're at it"
+    → "then let users pick columns too"
+      → "if they can pick, may as well save it as a template"
+        → two days later: you're writing an export-config system nobody asked for
+```
+
+Each step is "only a little more"; together they add up to a new feature no one approved. **The "out of scope" line is the lowest-cost moment to call stop — at step one.**
 
 ---
 
-## 🧭 三行的生命週期
+## ✅ Pre-flight self-check list
 
-迷你 PRD 是即拋的，但別拋得太早：
+Run through this before you start; fill whatever's missing:
 
-1. **動手前**：寫下三行。
-2. **過程中**：每完成一塊回比「驗收條件」（比對修正）。
-3. **想擴張時**：對照「不做什麼」，要擴就重新裁決、更新三行，不偷加。
-4. **完成時**：三行全綠 → 連同 commit message 一起留痕（`ticket: <目標> / 驗收 N 項全過 / 範圍不含 X`）。
-5. **之後**：若這塊未來會反覆動、或多人接手 → 把三行升格成正式 PRD 章節，別讓它永遠停在留言裡。
+- [ ] Did I write down the **goal**? (one sentence: what goes from can't to can)
+- [ ] Are the acceptance criteria **checkable**? (not "nicer," but yes/no items)
+- [ ] Did I write down **out of scope**? (at least 2 scope boundaries)
+- [ ] Does this change hit data model / security / cross-module / multi-person? → if so, escalate to demanding a real PRD
+- [ ] With the three lines written, does it pass DoR's "clear goal, verifiable, explicit boundary" ([DoR](../02_definition_of_ready/01_dor_checklist.md))?
+- [ ] When I want to add something from the "out of scope" list mid-way, will I go back and re-rule rather than sneak it in?
+
+All checked → start. Any unchecked → fill the spec first, don't enter code mode.
+
+---
+
+## 🧭 Lifecycle of the three lines
+
+The mini-PRD is throwaway, but don't throw it too early:
+
+1. **Before you start**: write the three lines.
+2. **During**: after each slice, compare back to "acceptance criteria" (compare-fix).
+3. **When you want to expand**: check against "out of scope"; to expand, re-rule, update the three lines, don't sneak-add.
+4. **On completion**: three lines all green → leave a trail alongside the commit message (`ticket: <goal> / N acceptance items all passed / scope excludes X`).
+5. **After**: if this area will be touched repeatedly in future, or handed to multiple people → promote the three lines into a formal PRD section; don't let it sit in a comment forever.
 
 ---
 
 ## 🔗 Related Compass sections
 
-- [§2.1 DoR Checklist](../02_definition_of_ready/01_dor_checklist.md) — 三行 MVS 就是在自寫一份迷你 DoR 標的
-- [§3.4 Compare-Fix Loop](../03_implementation/04_compare_fix_loop.md) — 拿「驗收條件」逐項回比
-- [§3.5 YAGNI](../03_implementation/05_yagni.md) — 「不做什麼」就是你的 YAGNI 邊界
-- [§8 Brownfield 總覽](./01_overview.md) — 既有專案改動的共通紀律
+- [§2.1 DoR Checklist](../02_definition_of_ready/01_dor_checklist.md) — the three-line MVS is you self-writing a mini DoR target
+- [§3.4 Compare-Fix Loop](../03_implementation/04_compare_fix_loop.md) — compare back item by item against "acceptance criteria"
+- [§3.5 YAGNI](../03_implementation/05_yagni.md) — "out of scope" is your YAGNI boundary
+- [§8 Brownfield Overview](./01_overview.md) — shared discipline for changes to existing projects
 
 ---
 

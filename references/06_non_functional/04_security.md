@@ -1,138 +1,138 @@
-# §6.4 安全：beyond test-first
+# §6.4 Security: beyond test-first
 
-> Part of [Compass](../../SKILL.md) §6 — 非功能需求（NFR）。
-> §3.3 / DoR 已要求 Auth / authz / PII test-first；本檔處理「其餘所有功能」的逐功能安全審查門。
-
----
-
-## 🎯 定位
-
-test-first 只蓋住三個高敏感模組（Auth / 權限 / PII），但**注入、SSRF、XSS、IDOR 不挑模組**——任何吃外部輸入、發外部請求、拼字串、回傳資料給瀏覽器的功能都可能中招。
-
-本檔提供一個 **per-feature 安全審查門**：每實作一塊功能，過一遍 OWASP 對照表 + STRIDE-lite，30 秒內判斷「這塊要不要補安全工作」。不是寫一份威脅模型文件，是當作 DoD 前的一道快篩。
-
-> 對應 Sentinel 的「資安五大類」思考：#不信任輸入、#認證授權、#最小權限、#敏感資料、#預設安全。本檔把它落成可勾的清單。
+> Part of [Compass](../../SKILL.md) §6 — Non-Functional Requirements (NFR).
+> §3.3 / DoR already require Auth / authz / PII test-first; this file handles the per-feature security review gate for "everything else."
 
 ---
 
-## ✅ 觸發條件：哪些功能必須過這道門
+## 🎯 Positioning
 
-| 功能特徵 | 必過審查門 |
+Test-first covers only three high-sensitivity modules (Auth / authz / PII), but **injection, SSRF, XSS, IDOR don't pick modules**—any feature that takes external input, makes external requests, concatenates strings, or returns data to a browser can get hit.
+
+This file provides a **per-feature security review gate**: for each feature you implement, run through an OWASP cross-reference table + STRIDE-lite, and decide in 30 seconds "does this need extra security work?" It's not writing a threat-model document—it's a quick screen before DoD.
+
+> Maps to Sentinel's "five security categories" thinking: #distrust-input, #authn-authz, #least-privilege, #sensitive-data, #secure-by-default. This file turns it into a checkable list.
+
+---
+
+## ✅ Trigger conditions: which features must pass this gate
+
+| Feature trait | Must pass gate |
 |---|---|
-| 吃 `req.body` / `query` / `params` / 上傳檔 / webhook | ✅ |
-| 拼 SQL / shell / 路徑 / 模板字串 | ✅ |
-| 把資料 render 進 HTML / 回傳前端 | ✅ |
-| 用使用者給的 URL / ID 發請求或抓資源 | ✅ |
-| 讀寫「屬於某使用者」的資源 | ✅ |
-| 碰金鑰 / token / 密碼 / 第三方憑證 | ✅ |
-| 純內部計算、不碰 I/O、不碰外部輸入 | ⛔ 跳過 |
+| Takes `req.body` / `query` / `params` / uploaded file / webhook | ✅ |
+| Concatenates SQL / shell / path / template string | ✅ |
+| Renders data into HTML / returns to frontend | ✅ |
+| Uses a user-supplied URL / ID to make a request or fetch a resource | ✅ |
+| Reads/writes a resource "belonging to some user" | ✅ |
+| Touches keys / tokens / passwords / third-party credentials | ✅ |
+| Pure internal computation, no I/O, no external input | ⛔ Skip |
 
-只要中一條 → 過下方 OWASP 對照 + STRIDE-lite。全不中 → 直接走 DoD。
-
----
-
-## 🔟 OWASP Top 10 快速對照（審查 checklist）
-
-逐項問「這塊功能有沒有這個面」，有就勾，勾了就要有對應防護。
-
-- [ ] **A01 權限失效 / IDOR** — 有用 URL/body 的 ID 取資源嗎？查的時候有沒有**同時驗 `resource.owner == current_user`**？只驗「有登入」不算。
-- [ ] **A02 加密失效** — 敏感資料落地有加密？傳輸走 HTTPS？密碼用 bcrypt/argon2 而非 MD5/SHA？
-- [ ] **A03 注入** — 拼 SQL / shell / LDAP / NoSQL query 了嗎？一律參數化 / ORM 綁定，**永不字串拼接**。
-- [ ] **A04 不安全設計** — 這功能本身的流程有沒有邏輯漏洞（如改價、重放、負數數量）？
-- [ ] **A05 安全設定錯誤** — debug mode、預設密碼、過寬 CORS、目錄列表、堆疊軌跡外洩？
-- [ ] **A06 過時/有漏洞元件** — 新加的依賴查過 CVE 嗎？版本鎖了嗎？
-- [ ] **A07 認證失效** — 有暴力破解防護？session 過期？token 會撤銷？
-- [ ] **A08 完整性失效** — 反序列化不信任資料？CI/CD 拉未驗證來源？
-- [ ] **A09 紀錄/監控失效** — 安全事件（登入失敗、權限拒絕）有 log？log 裡**沒有**密碼/token？
-- [ ] **A10 SSRF** — 用使用者給的 URL 發請求嗎？有沒有擋內網網段 / metadata endpoint（`169.254.169.254`）？
-
-> 不是每項都要做。是每項都要**問**——勾不到的記為「不適用」，勾到的進待辦。
+Match any one → run the OWASP cross-reference + STRIDE-lite below. Match none → go straight to DoD.
 
 ---
 
-## 🛡️ STRIDE-lite：逐功能威脅自問
+## 🔟 OWASP Top 10 quick cross-reference (review checklist)
 
-不需要畫完整威脅模型。每塊功能花 1 分鐘，對 6 個面各問一句：
+For each item, ask "does this feature have this surface?" If yes, check it; if checked, it needs corresponding protection.
 
-| 面向 | 一句話自問 | 沒答好的後果 |
+- [ ] **A01 Broken access control / IDOR** — Does it fetch a resource by an ID from URL/body? When querying, does it **also verify `resource.owner == current_user`**? Verifying "logged in" alone doesn't count.
+- [ ] **A02 Cryptographic failures** — Is sensitive data encrypted at rest? Transport over HTTPS? Passwords with bcrypt/argon2, not MD5/SHA?
+- [ ] **A03 Injection** — Concatenating SQL / shell / LDAP / NoSQL query? Always parameterize / ORM-bind, **never string concatenation**.
+- [ ] **A04 Insecure design** — Does the feature's own flow have logic holes (price tampering, replay, negative quantity)?
+- [ ] **A05 Security misconfiguration** — debug mode, default passwords, overly-broad CORS, directory listing, stack-trace leakage?
+- [ ] **A06 Vulnerable/outdated components** — Did you check the new dependency for CVEs? Is the version pinned?
+- [ ] **A07 Authentication failures** — Brute-force protection? Session expiry? Tokens revocable?
+- [ ] **A08 Integrity failures** — Deserializing untrusted data? CI/CD pulling unverified sources?
+- [ ] **A09 Logging/monitoring failures** — Are security events (failed login, access denied) logged? Do logs **not** contain passwords/tokens?
+- [ ] **A10 SSRF** — Making requests with a user-supplied URL? Do you block internal network ranges / metadata endpoints (`169.254.169.254`)?
+
+> Not every item needs to be done. Every item needs to be **asked**—record what doesn't apply as "N/A," and put what does into your to-dos.
+
+---
+
+## 🛡️ STRIDE-lite: per-feature threat self-questioning
+
+You don't need a full threat model. For each feature, spend 1 minute asking one question per surface across 6 axes:
+
+| Axis | One-line self-question | Consequence if unanswered |
 |---|---|---|
-| **S 欺騙 Spoofing** | 我怎麼確定請求方是他宣稱的人？ | 假冒身分 |
-| **T 竄改 Tampering** | 資料在傳輸/儲存中可被改嗎？改了我察覺得到嗎？ | 資料被動手腳 |
-| **R 否認 Repudiation** | 出事後查得到「誰、何時、做了什麼」嗎？ | 無法追責 |
-| **I 資訊洩漏 Information disclosure** | 這條路徑會不會回傳超過該看的資料 / 錯誤訊息洩底？ | 越權讀取 |
-| **D 阻斷 Denial of service** | 能用一個請求拖垮它嗎（無分頁、無限迴圈、巨檔）？ | 服務癱瘓 |
-| **E 提權 Elevation of privilege** | 一般使用者能不能摸到 admin 能力 / 別人的資源？ | 越權操作 |
+| **S Spoofing** | How do I confirm the requester is who they claim to be? | Identity impersonation |
+| **T Tampering** | Can data be altered in transit/storage? Would I detect it? | Data tampered with |
+| **R Repudiation** | After an incident, can I trace "who, when, did what"? | Cannot assign accountability |
+| **I Information disclosure** | Could this path return more data than it should / error messages that leak internals? | Unauthorized reads |
+| **D Denial of service** | Can one request take it down (no pagination, infinite loop, huge file)? | Service outage |
+| **E Elevation of privilege** | Can a regular user reach admin capabilities / someone else's resources? | Unauthorized operations |
 
-**判讀規則**：任一面向答不出來或答案是「會」→ 該面向進待辦，不能直接 DoD。
+**Decision rule**: if any axis can't be answered or the answer is "yes (it can)" → that axis goes into to-dos, no straight-to-DoD.
 
-### 範例（FastAPI，逐功能 STRIDE-lite 註解）
+### Example (FastAPI, per-feature STRIDE-lite annotations)
 
 ```python
 # Feature: GET /orders/{order_id}
-# S: 靠 JWT 驗身分 ✅
+# S: identity via JWT ✅
 # T: HTTPS only ✅
-# R: access log 記 user_id + order_id ✅
-# I: ⚠️ 回傳前未過濾——order 含 internal_cost 欄位 → 待辦：DTO 白名單
-# D: ⚠️ 無 rate limit → 待辦
-# E: ⚠️ 只驗登入沒驗 owner → 待辦（IDOR，最優先）
+# R: access log records user_id + order_id ✅
+# I: ⚠️ not filtered before return—order contains internal_cost field → to-do: DTO whitelist
+# D: ⚠️ no rate limit → to-do
+# E: ⚠️ only verifies login, not owner → to-do (IDOR, top priority)
 @router.get("/orders/{order_id}")
 async def get_order(order_id: int, user=Depends(current_user)):
     order = await repo.get(order_id)
-    if order.user_id != user.id:        # ← E 的修正：驗 owner
-        raise HTTPException(404)         # 用 404 不用 403，避免洩漏存在性
-    return OrderDTO.from_orm(order)      # ← I 的修正：白名單欄位
+    if order.user_id != user.id:        # ← E fix: verify owner
+        raise HTTPException(404)         # use 404 not 403 to avoid leaking existence
+    return OrderDTO.from_orm(order)      # ← I fix: whitelist fields
 ```
 
 ---
 
-## 🔑 機密處理（secrets handling）
+## 🔑 Secrets handling
 
-絕對紅線，違反即停手重做：
+Absolute red lines—violate one and stop, redo:
 
-- [ ] 金鑰 / 密碼 / token **不寫死在 code**、不進 git（含 commit 歷史）。
-- [ ] 一律從環境變數 / secret manager 注入；repo 只留 `.env.example`（無真值）。
-- [ ] `.env`、`*.pem`、`credentials.*` 已在 `.gitignore`。
-- [ ] **log / 錯誤訊息 / 回應 body 不印 secret**（含部分遮罩前的原值）。
-- [ ] token 有過期時間；不設「永不過期」。
-- [ ] 第三方 webhook / callback 驗簽章，不裸信來源。
+- [ ] Keys / passwords / tokens **not hardcoded in code**, not committed to git (including commit history).
+- [ ] Always injected from environment variables / secret manager; repo keeps only `.env.example` (no real values).
+- [ ] `.env`, `*.pem`, `credentials.*` are in `.gitignore`.
+- [ ] **Logs / error messages / response bodies don't print secrets** (including the raw value before partial masking).
+- [ ] Tokens have an expiry; never "never expires."
+- [ ] Third-party webhooks / callbacks verify the signature; don't blindly trust the source.
 
-> 若發現 secret 已進 git 歷史 → 不是「下次 commit 拿掉」就好：**輪換金鑰**（rotate），舊值視為已洩漏。
+> If a secret already made it into git history → "remove it next commit" isn't enough: **rotate the key**, treat the old value as leaked.
 
 ---
 
-## 🔒 預設安全（secure-by-default）
+## 🔒 Secure-by-default
 
-設計選擇在「方便」與「安全」衝突時，預設選安全：
+When a design choice pits "convenient" against "secure," default to secure:
 
-| 反模式（fail open） | 預設安全（fail closed） |
+| Anti-pattern (fail open) | Secure by default (fail closed) |
 |---|---|
-| `try { check() } catch { 放行 }` | catch → 拒絕 + 記錄 |
-| 找不到權限規則 → 允許 | 找不到規則 → 拒絕 |
-| 新欄位預設回傳給前端 | 預設不回傳，白名單才回 |
-| 給 admin / 全域權限圖方便 | 給剛好夠用的最小權限（#最小權限） |
-| 錯誤回傳完整堆疊 | 對外回通用訊息，細節只進內部 log |
-| CORS `*` | 明列允許來源 |
+| `try { check() } catch { allow }` | catch → deny + log |
+| No permission rule found → allow | No rule found → deny |
+| New field returned to frontend by default | Not returned by default, only on whitelist |
+| Grant admin / global permissions for convenience | Grant the minimum sufficient privilege (#least-privilege) |
+| Return full stack trace on error | Return generic message externally, details only to internal log |
+| CORS `*` | Explicitly list allowed origins |
 
 ---
 
-## 🚦 審查門結論（接到 DoD 之前）
+## 🚦 Review gate verdict (before reaching DoD)
 
-跑完這道門，產出三選一：
+After running this gate, produce one of three:
 
-1. 🟢 **全數不適用 / 已防護** → 記一行「安全審查：無新增風險」，進 [DoD](../04_quality_gates/01_dod.md)。
-2. 🟡 **有待辦但非阻斷** → 列入 tracking doc，本塊完成前修掉（Compass 不分階段 → 不留「之後再補安全」）。
-3. 🔴 **碰到 Auth / 權限 / PII** → 退回 [DoR](../02_definition_of_ready/01_dor_checklist.md) 的 test-first 要求，先寫測試再實作。
+1. 🟢 **All N/A or already protected** → record one line "security review: no new risk," proceed to [DoD](../04_quality_gates/01_dod.md).
+2. 🟡 **To-dos exist but non-blocking** → put into the tracking doc, fix before this slice is complete (Compass doesn't phase work → no "add security later").
+3. 🔴 **Touches Auth / authz / PII** → bounce back to [DoR](../02_definition_of_ready/01_dor_checklist.md)'s test-first requirement, write tests before implementing.
 
-> 安全待辦**不可批次累積到最後**。每塊功能的安全洞，在那塊 commit 前清掉——這是 §6.4 對 compare-fix loop 的延伸。
+> Security to-dos **must not be batched up to the end**. Each feature's security hole gets cleared before that slice's commit—this is §6.4's extension of the compare-fix loop.
 
 ---
 
 ## 🔗 Related Compass sections
 
-- [§6 NFR 模組總覽](./_index.md) — 安全在 NFR 中的定位
-- [§6.3 可觀測性](./03_observability.md) — STRIDE 的 R（否認）/ A09（紀錄）落地處
-- [§4.1 DoD](../04_quality_gates/01_dod.md) — 安全審查門接在 DoD 之前
-- [§2.1 DoR checklist](../02_definition_of_ready/01_dor_checklist.md) — Auth/authz/PII 的 test-first 要求源頭
+- [§6 NFR module overview](./_index.md) — security's place within NFR
+- [§6.3 Observability](./03_observability.md) — where STRIDE's R (repudiation) / A09 (logging) land
+- [§4.1 DoD](../04_quality_gates/01_dod.md) — security review gate sits before DoD
+- [§2.1 DoR checklist](../02_definition_of_ready/01_dor_checklist.md) — source of the test-first requirement for Auth/authz/PII
 
 ---
 

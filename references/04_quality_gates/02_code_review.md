@@ -1,173 +1,173 @@
-# §4.2 Code Review：self / peer / AI
+# §4.2 Code Review: self / peer / AI
 
-> Part of [Compass](../../SKILL.md) §4 — Quality Gates。
-> 三種審查模式各管什麼、誰審什麼、好的審查在找什麼，以及 AI 審查的信任邊界。
+> Part of [Compass](../../SKILL.md) §4 — Quality Gates.
+> What each of the three review modes covers, who reviews what, what a good review looks for, and the trust boundary on AI review.
 
-Code review 不是一道關，是三道**不同性質**的關。把它們混為一談——以為 AI 跑完就不用 peer、以為 self-review 只是「再看一眼」——是常見的偷懶。本檔拆開三者的分工，並給出可執行的檢查清單與信任校準規則。
+Code review isn't one gate, it's three gates of **different nature**. Conflating them — assuming peer review is unnecessary once AI has run, assuming self-review is just "another glance" — is a common shortcut. This doc splits the three roles apart and gives executable checklists plus trust-calibration rules.
 
 ---
 
-## 🧭 三種模式速覽
+## 🧭 The three modes at a glance
 
-| 模式 | 由誰做 | 時機 | 強項 | 弱項 |
+| Mode | Who does it | When | Strength | Weakness |
 |---|---|---|---|---|
-| **SELF** | 作者本人 | 每次提交前（DoD §4.1 強制） | 最懂改動意圖、抓得到 debug 殘留 | 當局者迷，看不見自己的盲點 |
-| **PEER** | 另一個人 | 高風險 / 設計決策 / 知識共享 | 抓「意圖、上下文、該不該做」 | 慢、佔人力，不適合每個小 diff |
-| **AI** | 模型 | 想要快速廣掃時 | 快、覆蓋廣、抓得到常見 bug/陷阱 | 對意圖與領域正確性信任度低、會幻覺問題 |
+| **SELF** | The author | Before every commit (DoD §4.1, mandatory) | Knows the change's intent best, catches debug residue | Too close to it, blind to own blind spots |
+| **PEER** | Another person | High-risk / design decisions / knowledge sharing | Catches "intent, context, should-this-even-be-done" | Slow, costs people, not for every small diff |
+| **AI** | A model | When you want a fast broad sweep | Fast, broad coverage, catches common bugs/traps | Low trust on intent and domain correctness, hallucinates problems |
 
-**核心觀念**：三者不是替代關係，是**互補**。AI 跑完不代表可以跳過 peer；peer 看過也不代表 self 可以省。
-
----
-
-## 1️⃣ SELF-review（每次都做，DoD 的一部分）
-
-最便宜、最常被跳過的一道。規則只有一條：**把自己的 diff 當成陌生人寫的來讀**。
-
-逐行 `git diff`，問自己：
-
-- [ ] 這行如果是別人寫的，我看得懂為什麼嗎？
-- [ ] 有沒有 debug 殘留？（`console.log` / `print` / 註解掉的舊 code / `TODO` / 寫死的測試值）
-- [ ] 命名對得上它做的事嗎？（`data`、`tmp`、`handleStuff` 這種要重命名）
-- [ ] 有沒有 **scope creep**？這個 diff 有沒有夾帶 PRD 沒要求的「順手改」？（→ §3.5 YAGNI）
-- [ ] 改動範圍跟 commit 訊息一致嗎？
-- [ ] 有沒有把不該進 git 的東西帶進來？（金鑰、`.env`、本機路徑、大檔）
-
-> **範例**：你修一個 null check，diff 裡卻多了三行把某函式改成 `async`。停——那不是這個 commit 的事。要嘛拆出去，要嘛刪掉。self-review 就是攔截這種「手滑」的最後一關。
-
-SELF-review 不是看「能不能跑」（那是測試的事），是看「**這份改動乾不乾淨、誠不誠實**」。
+**Core idea**: the three aren't substitutes, they're **complementary**. AI running doesn't mean you skip peer; peer reviewing doesn't mean self can be skipped.
 
 ---
 
-## 2️⃣ PEER review（人，為了風險 / 知識 / 設計）
+## 1️⃣ SELF-review (every time, part of DoD)
 
-PEER review 貴，所以**不是每個 diff 都需要**。它的價值在於抓**工具抓不到的東西**：
+The cheapest and most-often-skipped gate. One rule only: **read your own diff as if a stranger wrote it**.
 
-| 工具抓得到 | 只有人抓得到 |
+Go line by line through `git diff` and ask yourself:
+
+- [ ] If someone else wrote this line, would I understand why?
+- [ ] Any debug residue? (`console.log` / `print` / commented-out old code / `TODO` / hardcoded test values)
+- [ ] Do the names match what they do? (`data`, `tmp`, `handleStuff` need renaming)
+- [ ] Any **scope creep**? Does this diff smuggle in "while I'm here" changes the PRD never asked for? (→ §3.5 YAGNI)
+- [ ] Does the change scope match the commit message?
+- [ ] Did anything that shouldn't be in git get pulled in? (keys, `.env`, local paths, large files)
+
+> **Example**: you fix a null check, but the diff also has three lines turning some function `async`. Stop — that's not this commit's business. Either split it out or delete it. Self-review is the last gate that catches this kind of "slip of the hand".
+
+SELF-review isn't about "does it run" (that's testing's job), it's about "**is this change clean and honest**".
+
+---
+
+## 2️⃣ PEER review (human, for risk / knowledge / design)
+
+PEER review is expensive, so **not every diff needs it**. Its value is catching **what tools can't**:
+
+| Tools catch | Only humans catch |
 |---|---|
-| 語法錯、type 錯 | **意圖**：這段 code 想解決的問題是真問題嗎？ |
-| 風格不一致 | **上下文**：這跟三個月前那個決策衝突 |
-| 常見 bug pattern | **「該不該做」**：這功能 PRD 真的要嗎，還是過度設計？ |
-| 明顯的安全反模式 | **領域正確性**：折扣算法在退款情境下是錯的 |
+| Syntax errors, type errors | **Intent**: is the problem this code solves a real problem? |
+| Style inconsistency | **Context**: this conflicts with that decision three months ago |
+| Common bug patterns | **"Should this be done"**: does the PRD actually want this feature, or is it over-engineering? |
+| Obvious security anti-patterns | **Domain correctness**: the discount algorithm is wrong in the refund case |
 
-**什麼時候一定要 PEER review：**
+**When PEER review is mandatory:**
 
-- 🔴 安全 / 認證 / 權限 / PII 相關（→ §6.4）
-- 🔴 架構決策、跨模組改動、難回退的變更
-- 🔴 你自己沒把握、或卡關超過一次的地方
-- 🟡 新人的 code（知識傳遞）、或團隊只有你懂的模組（消除 bus factor）
+- 🔴 Security / auth / permissions / PII related (→ §6.4)
+- 🔴 Architecture decisions, cross-module changes, hard-to-roll-back changes
+- 🔴 Anywhere you're unsure, or got stuck more than once
+- 🟡 A newcomer's code (knowledge transfer), or a module only you understand (eliminate bus factor)
 
-**好的 PEER review 行為：**
+**Good PEER review behavior:**
 
-- 問「為什麼這樣做」而不是「照我的方式改」——審查意圖，不是強加風格
-- 把 blocking（必須改）和 nit（建議）**分清楚標示**，別讓作者猜
-- 不確定就問，不要假設作者蠢；多數「明顯的錯」其實有你不知道的上下文
-
----
-
-## 3️⃣ AI review（快、廣，但信任要打折）
-
-AI review 適合當**第一道廣掃**：在 self 之後、peer 之前，快速撈一輪常見問題，省下 peer 的眼力。
-
-**AI 擅長：**
-
-- 找 off-by-one、null/undefined、未處理的錯誤路徑
-- 指出沒覆蓋的邊界條件、缺的測試
-- 抓常見安全陷阱（注入、未驗證輸入）和風格不一致
-- 在大 diff 裡快速定位「值得人看一眼」的區塊
-
-**AI 不擅長（信任打折）：**
-
-- ⚠️ **意圖**：它不知道 PRD 要什麼，無法判斷「該不該做」
-- ⚠️ **領域正確性**：金融、計費、權限這類，它的「看起來對」不可信
-- ⚠️ **幻覺**：會煞有介事地報出**根本不存在**的問題，或引用不存在的 API
-
-> **範例**：AI 報「這裡有 race condition」聽起來很嚇人。在你能**具體指出兩條交錯路徑**之前，把它當「待查」不是「已確認」。AI review 的每一條非機械性發現，都需要人去證實——這正是 Sentinel 的證據強度原則：沒驗證過的，標 ⚠️推測。
+- Ask "why did you do it this way" rather than "change it to my way" — review intent, don't impose style
+- **Clearly label** blocking (must change) vs nit (suggestion), don't make the author guess
+- When unsure, ask; don't assume the author is dumb — most "obvious mistakes" have context you don't know
 
 ---
 
-## 🧮 誰審什麼：分工矩陣
+## 3️⃣ AI review (fast, broad, but discount the trust)
 
-| 審查項目 | SELF | AI | PEER |
+AI review works well as the **first broad sweep**: after self, before peer, quickly scoop up common issues and save the peer's eyeballs.
+
+**AI is good at:**
+
+- Finding off-by-one, null/undefined, unhandled error paths
+- Pointing out uncovered edge cases, missing tests
+- Catching common security traps (injection, unvalidated input) and style inconsistency
+- Quickly locating "worth a human glance" blocks in a large diff
+
+**AI is bad at (discount the trust):**
+
+- ⚠️ **Intent**: it doesn't know what the PRD wants, can't judge "should this be done"
+- ⚠️ **Domain correctness**: for finance, billing, permissions, its "looks right" can't be trusted
+- ⚠️ **Hallucination**: it will confidently report problems that **don't exist at all**, or cite nonexistent APIs
+
+> **Example**: AI reporting "there's a race condition here" sounds scary. Until you can **concretely point to the two interleaving paths**, treat it as "to investigate", not "confirmed". Every non-mechanical AI-review finding needs a human to verify — this is exactly Sentinel's evidence-grading principle: anything unverified gets marked ⚠️speculation.
+
+---
+
+## 🧮 Who reviews what: the division-of-labor matrix
+
+| Review item | SELF | AI | PEER |
 |---|:---:|:---:|:---:|
-| debug 殘留 / 命名 / scope creep | ✅ 主責 | ✅ | — |
-| 語法 / type / lint | linter 主責 | ✅ | ❌ 不該人看 |
-| 常見 bug pattern（null、邊界） | ✅ | ✅ 主責 | ✅ |
-| 測試是否充分 | ✅ | ✅ | ✅ |
-| **安全正確性**（→ §6.4） | ✅ | 廣掃 | ✅ **主責** |
-| **PRD 對齊**（→ §3.4） | ✅ | ❌ 不可信 | ✅ **主責** |
-| **簡潔 / YAGNI**（→ §3.5） | ✅ | 建議 | ✅ **主責** |
-| **領域 / 業務正確性** | ✅ | ❌ 不可信 | ✅ **主責** |
-| **架構 / 該不該做** | — | ❌ | ✅ **主責** |
+| debug residue / naming / scope creep | ✅ primary | ✅ | — |
+| syntax / type / lint | linter primary | ✅ | ❌ humans shouldn't |
+| common bug patterns (null, edges) | ✅ | ✅ primary | ✅ |
+| test sufficiency | ✅ | ✅ | ✅ |
+| **security correctness** (→ §6.4) | ✅ | broad sweep | ✅ **primary** |
+| **PRD alignment** (→ §3.4) | ✅ | ❌ untrustworthy | ✅ **primary** |
+| **simplicity / YAGNI** (→ §3.5) | ✅ | suggests | ✅ **primary** |
+| **domain / business correctness** | ✅ | ❌ untrustworthy | ✅ **primary** |
+| **architecture / should-this-be-done** | — | ❌ | ✅ **primary** |
 
-讀法：標 ❌ 的格子代表「該模式在這項上不可信，別依賴」。
+How to read: a ❌ cell means "this mode can't be trusted on this item, don't rely on it".
 
 ---
 
-## 🔍 好的審查在找什麼（不分模式都適用）
+## 🔍 What a good review looks for (applies to all modes)
 
-按優先序，**從高往低**看，別把時間花在低階 nit 上：
+In priority order, **from high to low**, don't spend time on low-level nits:
 
-1. **正確性** — 它真的做對了嗎？邊界、錯誤路徑、並發、資料一致性
-2. **安全** — 不信任輸入、認證授權、最小權限、敏感資料（→ §6.4）
-3. **PRD 對齊** — 做的跟合約要的一致嗎？少做？多做？（→ §3.4）
-4. **簡潔 / YAGNI** — 有沒有過度設計、沒人要的彈性、投機抽象（→ §3.5）
-5. **測試** — 改動有對應測試嗎？測的是行為還是實作細節？
+1. **Correctness** — does it actually do the right thing? edges, error paths, concurrency, data consistency
+2. **Security** — distrust input, authn/authz, least privilege, sensitive data (→ §6.4)
+3. **PRD alignment** — does what it does match what the contract wants? under-doing? over-doing? (→ §3.4)
+4. **Simplicity / YAGNI** — any over-engineering, flexibility nobody asked for, speculative abstraction? (→ §3.5)
+5. **Tests** — does the change have matching tests? do they test behavior or implementation detail?
 
 ```text
-審查順序心法：
-  先問「這做對了嗎、安全嗎、是 PRD 要的嗎」
-  再問「能不能更簡單」
-  最後才碰「命名/格式」——而且格式應該交給 linter，不該佔人腦
+Review-order mindset:
+  First ask "is this correct, secure, what the PRD wants"
+  Then ask "could it be simpler"
+  Only last touch "naming/formatting" — and formatting belongs to the linter, shouldn't occupy human brains
 ```
 
 ---
 
-## 🚫 審查 NOT 該做的事
+## 🚫 What review should NOT do
 
-- ❌ **挑 linter 該抓的格式 nit**：縮排、分號、引號、import 排序——這些配好工具自動化，人不該在 review 裡吵
-- ❌ **把風格偏好當 blocking**：「我會這樣寫」不是「你寫錯了」
-- ❌ **無方向地讚/嫌整份 code**：審查要落到具體行、具體理由
-- ❌ **AI 報什麼就改什麼**：見下方信任校準
+- ❌ **Nitpick formatting the linter should catch**: indentation, semicolons, quotes, import ordering — automate these with proper tooling, humans shouldn't argue them in review
+- ❌ **Treat style preference as blocking**: "I'd write it this way" isn't "you wrote it wrong"
+- ❌ **Praise/trash the whole code with no direction**: review must land on specific lines, specific reasons
+- ❌ **Change whatever the AI reports**: see trust calibration below
 
-> 如果你的 PEER review 留言一半是格式 nit，問題不在作者，在你的 lint/format 設定沒接好。先修工具。
+> If half your PEER review comments are formatting nits, the problem isn't the author, it's your lint/format setup not being wired up. Fix the tooling first.
 
 ---
 
-## ⚖️ 信任校準：AI 發現怎麼處理
+## ⚖️ Trust calibration: how to handle AI findings
 
-AI review 的發現**分機械性與非機械性**，信任度不同：
+AI-review findings **split into mechanical and non-mechanical**, with different trust levels:
 
-| 發現類型 | 例子 | 處理 |
+| Finding type | Example | Handling |
 |---|---|---|
-| **機械性** | 缺 null check、未 await、明顯 typo | 🟡 可較快採信，但仍自己看一眼 |
-| **非機械性** | 「有 race condition」「邏輯錯」「不安全」 | 🔴 必須人工證實，能複現/指出具體路徑才算數 |
-| **領域 / 業務** | 「這折扣算法錯」 | 🔴 AI 不可信，回 PRD / 找懂業務的人 |
+| **Mechanical** | missing null check, un-awaited, obvious typo | 🟡 can trust faster, but still glance yourself |
+| **Non-mechanical** | "there's a race condition", "logic error", "insecure" | 🔴 must be human-verified, only counts if reproducible / a concrete path can be pointed to |
+| **Domain / business** | "this discount algorithm is wrong" | 🔴 AI untrustworthy, go back to PRD / find someone who knows the business |
 
-鐵律：
+Iron rule:
 
-- **AI 說「沒問題」不等於沒問題**——它沒看見不代表不存在，安全/領域項仍要人或測試把關
-- **AI 說「有問題」不等於有問題**——可能是幻覺；在證實前標 ⚠️推測，別急著改 code 去迎合一個不存在的 bug
-- 任何 AI 發現要動安全 / 認證 / 計費 / 權限的 code，一律升級到 PEER（→ §6.4）
+- **AI saying "no problem" doesn't mean no problem** — what it didn't see doesn't mean it doesn't exist; security/domain items still need a human or tests as gatekeeper
+- **AI saying "there's a problem" doesn't mean there's a problem** — it may be hallucination; mark ⚠️speculation before verifying, don't rush to change code to appease a nonexistent bug
+- Any AI finding that touches security / auth / billing / permissions code escalates to PEER, no exceptions (→ §6.4)
 
 ---
 
-## ✅ 提交前最小檢查（接 DoD §4.1）
+## ✅ Minimum pre-commit check (continues from DoD §4.1)
 
-- [ ] SELF-review：diff 逐行讀過，無 debug 殘留 / 無 scope creep
-- [ ] linter / typecheck 綠（格式問題已交給工具，不留給人審）
-- [ ] AI 廣掃跑過，非機械性發現已人工分類（採信 / 待查 / 幻覺）
-- [ ] 觸及安全 / 架構 / 跨模組 → 已安排 PEER review
-- [ ] 審查意見已回應，blocking 全處理，nit 已決定收或不收
+- [ ] SELF-review: diff read line by line, no debug residue / no scope creep
+- [ ] linter / typecheck green (formatting issues handed to tooling, not left for humans)
+- [ ] AI broad sweep run, non-mechanical findings human-classified (trusted / to-investigate / hallucination)
+- [ ] Touches security / architecture / cross-module → PEER review arranged
+- [ ] Review comments responded to, all blocking handled, nits decided in or out
 
 ---
 
 ## 🔗 Related Compass sections
 
-- [§4.1 Definition of Done](./01_dod.md) — self-review 是 DoD 八項之一
-- [§3.4 比對修正迴圈](../03_implementation/04_compare_fix_loop.md) — PRD 對齊怎麼查
-- [§3.5 YAGNI](../03_implementation/05_yagni.md) — 審查時的簡潔判準
-- [§6.4 Security](../06_non_functional/04_security.md) — 安全審查由 peer 主責
-- [§9 Collaboration](../09_collaboration/_index.md) — peer review 屬協作面
+- [§4.1 Definition of Done](./01_dod.md) — self-review is one of the eight DoD items
+- [§3.4 Compare-Fix Loop](../03_implementation/04_compare_fix_loop.md) — how to check PRD alignment
+- [§3.5 YAGNI](../03_implementation/05_yagni.md) — the simplicity criterion in review
+- [§6.4 Security](../06_non_functional/04_security.md) — security review is peer's primary responsibility
+- [§9 Collaboration](../09_collaboration/_index.md) — peer review belongs to the collaboration side
 
 ## 📝 Status
 

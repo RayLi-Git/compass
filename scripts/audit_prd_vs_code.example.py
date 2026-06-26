@@ -1,43 +1,44 @@
 #!/usr/bin/env python3
 """
-audit_prd_vs_code.example.py — Compass M-008 反向稽核（reverse audit）
+audit_prd_vs_code.example.py — Compass M-008 reverse audit
 
-【做什麼 / WHAT】
-  比對「PRD 列出的項目」與「程式碼實際實作的項目」，找出三類差異：
-    ✅ aligned            — PRD 有、code 也有（對齊）
-    ❌ in PRD but not code — PRD 寫了但 code 沒實作（這是會讓 DoD 不過的缺口）
-    ⚠️ in code but not PRD — code 有但 PRD 沒寫（先過 §5.1.3 六道 gate；多數越界應砍，少數對齊原則的小補強才保留等裁決）
+[WHAT]
+  Compares "items listed in the PRD" against "items actually implemented in code", surfacing three categories of difference:
+    ✅ aligned            — in PRD and also in code (aligned)
+    ❌ in PRD but not code — written in PRD but not implemented in code (a gap that fails DoD)
+    ⚠️ in code but not PRD — present in code but not written in PRD (run the six §5.1.3 gates first; most out-of-scope additions should be cut, only small principle-aligned reinforcements are kept pending a ruling)
 
-【為什麼 / WHY — 對應哪條 M 規則】
-  M-008「反向稽核」：一般檢查只確認「PRD→code」（有沒有漏做），
-  反向稽核同時檢查「code→PRD」（有沒有偷加 PRD 沒授權的東西）。
-  前者守 DoD 完成度，後者守 YAGNI / §5.1.3 越界。
+[WHY — which M rule it maps to]
+  M-008 "reverse audit": ordinary checks only confirm "PRD→code" (whether anything was missed);
+  the reverse audit also checks "code→PRD" (whether anything not authorized by the PRD was sneaked in).
+  The former guards DoD completeness, the latter guards YAGNI / §5.1.3 out-of-scope.
 
-【如何設定 / HOW TO CONFIGURE】
-  本腳本「專案無關」(project-agnostic)：所有 regex、路徑、glob 都來自設定檔，
-  腳本本身不寫死任何特定專案的 PRD 結構。
-  設定檔名固定為 compass-audit.json（與本腳本同目錄或當前工作目錄），
-  也可用 --config 指定路徑。設定檔用 JSON（走 stdlib json，不依賴 pyyaml）。
-  Schema 範例見下方 CONFIG_EXAMPLE。
+[HOW TO CONFIGURE]
+  This script is project-agnostic: all regex, paths, and globs come from a config file,
+  the script itself hard-codes no PRD structure for any specific project.
+  The config file name is fixed as compass-audit.json (same directory as this script or the current working directory),
+  or you can specify the path with --config. The config file uses JSON (via stdlib json, no pyyaml dependency).
+  See CONFIG_EXAMPLE below for a schema example.
 
-【已知限制 / LIMITATION】
-  CONFIG_EXAMPLE 的 endpoint check 只 capture「path」，不分辨 HTTP method：
-  PRD 的 `GET /users` 與 code 的 `POST /users` 會被當成同一項 → method 不符
-  「不會」被抓成缺口（假陰性）。若你的 PRD 需要 method 敏感度，請讓
-  prd_regex / code_regex 各自把「method + path」capture 成同一組可比對字串
-  （注意 code 端 method 多為小寫如 @app.post，需正規化大小寫後再比）。
+[LIMITATION]
+  The endpoint check in CONFIG_EXAMPLE captures the PATH only and does not
+  distinguish the HTTP method: a PRD `GET /users` and a code `POST /users`
+  are treated as the same item, so a method mismatch is NOT flagged as a gap
+  (false negative). If your PRD needs method sensitivity, have prd_regex /
+  code_regex capture "method + path" as one comparable string (note the code
+  side is usually lowercase, e.g. @app.post, so normalize case before comparing).
 
-【如何執行 / HOW TO RUN】
-  python3 audit_prd_vs_code.example.py                 # 跑全部 checks
-  python3 audit_prd_vs_code.example.py --section=tables # 只跑名為 tables 的 check
+[HOW TO RUN]
+  python3 audit_prd_vs_code.example.py                 # run all checks
+  python3 audit_prd_vs_code.example.py --section=tables # run only the check named tables
   python3 audit_prd_vs_code.example.py --config path/to/compass-audit.json
 
-【離開碼 / EXIT CODES】
-  0 — 沒有「in PRD but not code」缺口（可能仍有 ⚠️ 警告，但不阻擋）
-  1 — 至少一個 check 出現「in PRD but not code」缺口（DoD 未達成）
-  2 — 設定檔缺失或無法解析（會印出說明 + 可直接複製的 JSON 範例）
+[EXIT CODES]
+  0 — no "in PRD but not code" gaps (there may still be ⚠️ warnings, but they don't block)
+  1 — at least one check has an "in PRD but not code" gap (DoD not met)
+  2 — config file missing or unparseable (prints an explanation + a copy-pasteable JSON example)
 
-僅依賴 Python 標準函式庫（argparse / json / re / pathlib / sys）。
+Depends only on the Python standard library (argparse / json / re / pathlib / sys).
 """
 
 import argparse
@@ -46,20 +47,20 @@ import re
 import sys
 from pathlib import Path
 
-# Windows console 預設編碼可能是 cp950 / cp1252，無法編碼結果中的 ✅ / ❌ 等字元。
-# 若不處理，print 那一行會丟 UnicodeEncodeError 讓腳本中途崩潰，使行程以 exit 1 退出——
-# 而 exit 1 在本腳本語意上代表「PRD 有缺口」，會把「完全對齊」的專案誤報成有缺口。
-# 故在此強制 stdout / stderr 走 UTF-8；reconfigure 失敗（非 TextIO 或舊版）則靜默略過。
+# The Windows console default encoding may be cp950 / cp1252, which cannot encode result characters like ✅ / ❌.
+# If unhandled, the print line throws UnicodeEncodeError and crashes the script mid-run, exiting with exit 1 —
+# and exit 1 in this script semantically means "the PRD has a gap", which would misreport a fully aligned project as having a gap.
+# So force stdout / stderr to UTF-8 here; if reconfigure fails (not a TextIO, or an old version) silently skip.
 for _stream in (sys.stdout, sys.stderr):
     try:
         _stream.reconfigure(encoding="utf-8")
     except (AttributeError, ValueError):
         pass
 
-# 設定檔預設檔名（固定）。找尋順序：--config > 當前工作目錄 > 腳本所在目錄。
+# Default config file name (fixed). Search order: --config > current working directory > script directory.
 DEFAULT_CONFIG_NAME = "compass-audit.json"
 
-# 缺設定檔時印給使用者直接複製的範例。
+# Example printed for the user to copy directly when the config file is missing.
 CONFIG_EXAMPLE = """{
   "prd_path": "PRD.md",
   "checks": [
@@ -71,7 +72,7 @@ CONFIG_EXAMPLE = """{
     },
     {
       "name": "tables",
-      "prd_regex": "(?:table|資料表)\\\\s+`(\\\\w+)`",
+      "prd_regex": "(?:table)\\\\s+`(\\\\w+)`",
       "code_glob": "migrations/**/*.sql",
       "code_regex": "CREATE\\\\s+TABLE\\\\s+(?:IF\\\\s+NOT\\\\s+EXISTS\\\\s+)?`?(\\\\w+)`?"
     }
@@ -80,23 +81,23 @@ CONFIG_EXAMPLE = """{
 
 
 def die_no_config(searched):
-    """設定檔缺失：印說明 + 範例，回傳 exit code 2。"""
-    print("❌ 找不到設定檔 compass-audit.json。", file=sys.stderr)
-    print("   已嘗試以下位置：", file=sys.stderr)
+    """Config file missing: print explanation + example, return exit code 2."""
+    print("❌ Could not find config file compass-audit.json.", file=sys.stderr)
+    print("   Tried the following locations:", file=sys.stderr)
     for p in searched:
         print(f"     - {p}", file=sys.stderr)
     print("", file=sys.stderr)
-    print("請在專案根目錄建立 compass-audit.json，內容範例（可直接複製修改）：",
+    print("Please create compass-audit.json in the project root; example content (copy and modify directly):",
           file=sys.stderr)
     print("", file=sys.stderr)
     print(CONFIG_EXAMPLE, file=sys.stderr)
     print("", file=sys.stderr)
-    print("提示：所有 regex / glob 由設定檔提供，本腳本與專案無關。", file=sys.stderr)
+    print("Hint: all regex / glob come from the config file; this script is project-agnostic.", file=sys.stderr)
     sys.exit(2)
 
 
 def find_config(explicit):
-    """依序尋找設定檔；找不到回傳 (None, 試過的清單)。"""
+    """Search for the config file in order; if not found return (None, list of locations tried)."""
     candidates = []
     if explicit:
         candidates.append(Path(explicit))
@@ -110,26 +111,26 @@ def find_config(explicit):
 
 
 def load_config(path):
-    """讀 JSON 設定。解析失敗一律走 exit 2。"""
+    """Read the JSON config. Any parse failure goes to exit 2."""
     try:
         text = path.read_text(encoding="utf-8")
         cfg = json.loads(text)
     except (OSError, json.JSONDecodeError) as e:
-        print(f"❌ 無法解析設定檔 {path}：{e}", file=sys.stderr)
+        print(f"❌ Could not parse config file {path}: {e}", file=sys.stderr)
         print("", file=sys.stderr)
-        print("正確格式範例：", file=sys.stderr)
+        print("Correct format example:", file=sys.stderr)
         print(CONFIG_EXAMPLE, file=sys.stderr)
         sys.exit(2)
     if not isinstance(cfg, dict) or "checks" not in cfg:
-        print("❌ 設定檔缺少必要欄位 'checks'（應為陣列）。", file=sys.stderr)
+        print("❌ Config file is missing the required field 'checks' (should be an array).", file=sys.stderr)
         print(CONFIG_EXAMPLE, file=sys.stderr)
         sys.exit(2)
     return cfg
 
 
 def extract_from_text(text, pattern):
-    """對單一文字套用 regex，回傳擷取項目的 set。
-    若 regex 有 capture group 取 group(1)，否則取整段 match。"""
+    """Apply the regex to a single text, returning the set of extracted items.
+    If the regex has a capture group take group(1), otherwise take the whole match."""
     found = set()
     for m in re.finditer(pattern, text):
         item = m.group(1) if m.groups() else m.group(0)
@@ -139,29 +140,29 @@ def extract_from_text(text, pattern):
 
 
 def extract_prd_items(prd_path, pattern):
-    """從 PRD 檔擷取項目集合。PRD 不存在則視為空集合並警告。"""
+    """Extract the set of items from the PRD file. If the PRD doesn't exist, treat it as an empty set and warn."""
     p = Path(prd_path)
     if not p.is_file():
-        print(f"⚠️ 找不到 PRD 檔 {prd_path}（視為空集合）", file=sys.stderr)
+        print(f"⚠️ Could not find PRD file {prd_path} (treated as empty set)", file=sys.stderr)
         return set()
     try:
         text = p.read_text(encoding="utf-8", errors="replace")
     except OSError as e:
-        print(f"⚠️ 讀取 PRD 檔失敗 {prd_path}：{e}", file=sys.stderr)
+        print(f"⚠️ Failed to read PRD file {prd_path}: {e}", file=sys.stderr)
         return set()
     return extract_from_text(text, pattern)
 
 
 def extract_code_items(code_glob, pattern):
-    """用 pathlib glob/rglob 遍歷符合的檔案，擷取 code 端項目集合。
-    支援 ** 遞迴（透過 rglob）。"""
+    """Walk matching files with pathlib glob/rglob and extract the set of code-side items.
+    Supports ** recursion (via rglob)."""
     found = set()
     base = Path(".")
-    # 含 ** 用 rglob 較自然；pathlib 的 glob 也支援 **，這裡直接交給 glob。
+    # With ** rglob is more natural; pathlib's glob also supports **, so we hand it to glob directly here.
     try:
         files = list(base.glob(code_glob))
     except (ValueError, re.error) as e:
-        print(f"⚠️ glob 模式無效 '{code_glob}'：{e}", file=sys.stderr)
+        print(f"⚠️ Invalid glob pattern '{code_glob}': {e}", file=sys.stderr)
         return found
     for f in files:
         if not f.is_file():
@@ -175,7 +176,7 @@ def extract_code_items(code_glob, pattern):
 
 
 def run_check(check, prd_path):
-    """執行單一 check，回傳是否有「in PRD but not code」缺口（bool）。"""
+    """Run a single check; return whether there is an "in PRD but not code" gap (bool)."""
     name = check.get("name", "<unnamed>")
     prd_regex = check.get("prd_regex")
     code_glob = check.get("code_glob")
@@ -185,41 +186,41 @@ def run_check(check, prd_path):
     missing_fields = [k for k in ("prd_regex", "code_glob", "code_regex")
                       if not check.get(k)]
     if missing_fields:
-        print(f"  ⚠️ 設定不完整，略過。缺少欄位：{', '.join(missing_fields)}")
+        print(f"  ⚠️ Incomplete config, skipping. Missing fields: {', '.join(missing_fields)}")
         return False
 
     prd_set = extract_prd_items(prd_path, prd_regex)
     code_set = extract_code_items(code_glob, code_regex)
 
     aligned = sorted(prd_set & code_set)
-    prd_only = sorted(prd_set - code_set)   # ❌ DoD 缺口
-    code_only = sorted(code_set - prd_set)  # ⚠️ 可能 §5.1.3 越界
+    prd_only = sorted(prd_set - code_set)   # ❌ DoD gap
+    code_only = sorted(code_set - prd_set)  # ⚠️ possible §5.1.3 out-of-scope
 
-    print(f"  PRD 列出 {len(prd_set)} 項；code 實作 {len(code_set)} 項。")
+    print(f"  PRD lists {len(prd_set)} items; code implements {len(code_set)} items.")
 
     if aligned:
         print(f"  ✅ aligned ({len(aligned)}): {', '.join(aligned)}")
     if prd_only:
         print(f"  ❌ in PRD but not code ({len(prd_only)}): "
               f"{', '.join(prd_only)}")
-        print("     → 這些 PRD 要求尚未實作，DoD 不過。")
+        print("     → These PRD requirements are not yet implemented; DoD not met.")
     if code_only:
         print(f"  ⚠️ in code but not PRD ({len(code_only)}): "
               f"{', '.join(code_only)}")
-        print("     → 先過 §5.1.3 六道 gate：多數越界（新 endpoint/表/欄位/依賴/改 API）應砍，少數對齊原則的小補強才保留等裁決。")
+        print("     → Run the six §5.1.3 gates first: most out-of-scope additions (new endpoint/table/field/dependency/API change) should be cut, only small principle-aligned reinforcements are kept pending a ruling.")
     if not (aligned or prd_only or code_only):
-        print("  （PRD 與 code 兩端皆無匹配項目，請檢查 regex 是否正確）")
+        print("  (No matching items on either the PRD or code side; please check whether the regex is correct)")
 
     return bool(prd_only)
 
 
 def main(argv=None):
     parser = argparse.ArgumentParser(
-        description="M-008 反向稽核：比對 PRD 列出 vs code 實作的項目。")
+        description="M-008 reverse audit: compare items listed in the PRD vs implemented in code.")
     parser.add_argument("--config", default=None,
-                        help="設定檔路徑（預設找 compass-audit.json）")
+                        help="config file path (defaults to looking for compass-audit.json)")
     parser.add_argument("--section", default=None,
-                        help="只執行指定名稱的單一 check")
+                        help="run only the single check with the given name")
     args = parser.parse_args(argv)
 
     config_path, searched = find_config(args.config)
@@ -233,11 +234,11 @@ def main(argv=None):
     if args.section:
         checks = [c for c in checks if c.get("name") == args.section]
         if not checks:
-            print(f"❌ 設定檔中找不到名為 '{args.section}' 的 check。",
+            print(f"❌ Could not find a check named '{args.section}' in the config file.",
                   file=sys.stderr)
             sys.exit(2)
 
-    print(f"Compass M-008 reverse audit — 設定檔: {config_path}")
+    print(f"Compass M-008 reverse audit — config file: {config_path}")
     print(f"PRD: {prd_path}")
 
     has_gap = False
@@ -247,9 +248,9 @@ def main(argv=None):
 
     print("\n" + "=" * 40)
     if has_gap:
-        print("結果：❌ 存在 PRD 缺口（in PRD but not code）— DoD 未達成。")
+        print("Result: ❌ PRD gap exists (in PRD but not code) — DoD not met.")
         sys.exit(1)
-    print("結果：✅ 無 PRD 缺口。")
+    print("Result: ✅ No PRD gap.")
     sys.exit(0)
 
 

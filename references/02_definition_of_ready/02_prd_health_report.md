@@ -1,133 +1,133 @@
-# §2.2 PRD 健檢報告與不合格處置
+# §2.2 PRD Health Report and Failure Handling
 
 > Part of [Compass](../../SKILL.md) §2 — Definition of Ready.
-> 跑完 DoR 檢查清單後，產出一份結構化健檢報告，並做出明確的 go / no-go 裁決。
+> After running the DoR checklist, produce a structured health report and make an explicit go / no-go ruling.
 
 ---
 
-## 1. 為什麼要有報告，而不是只打勾
+## 1. Why a report, not just checkboxes
 
-DoR 檢查清單本身只回答「哪幾項通過、哪幾項沒過」。但**沒過 ≠ 不能開工**——真實 PRD 幾乎沒有 100% 完美的。健檢報告的價值在於把「沒過的項目」分流成兩堆：
+The DoR checklist by itself only answers "which items passed, which didn't." But **not passing ≠ can't start**—almost no real PRD is 100% perfect. The value of the health report is sorting "failed items" into two piles:
 
-- 🔴 **blocker**：不補就會蓋在流沙上的洞（開工等於白做）
-- 🟡 **minor**：可以標假設先寫、邊寫邊補的小洞
+- 🔴 **blocker**: a hole that means you'll be building on quicksand (starting = wasted work)
+- 🟡 **minor**: a small hole you can mark with an assumption and fill in as you go
 
-**DoR 不是「擋下不完美的 PRD」，是「分辨哪些不完美會擋路、哪些不會」。** 把這兩者搞混，要嘛該擋的放行（蓋在流沙上），要嘛不該擋的硬擋（流程癱瘓）。報告就是強迫你做這個分類。
+**DoR is not "blocking imperfect PRDs," it's "distinguishing which imperfections will block your path and which won't."** Confusing the two means either letting through what should be blocked (building on quicksand), or hard-blocking what shouldn't be (process paralysis). The report forces you to make this classification.
 
 ---
 
-## 2. 健檢報告格式（Markdown 範本）
+## 2. Health report format (Markdown template)
 
-跑完 DoR 清單後，輸出以下結構：
+After running the DoR checklist, output the following structure:
 
 ```markdown
-## PRD 健檢報告 — <PRD 名稱 / §章節>
+## PRD Health Report — <PRD name / §section>
 
-**PRD 規模**：<S / M / L>（檔案數估計、模組數、是否含安全模組）
-**健檢通過率**：<X / Y 項通過>（XX%）
+**PRD size**: <S / M / L> (estimated file count, module count, contains security module?)
+**Health pass rate**: <X / Y items passed> (XX%)
 
-### 🔴 Blocker gaps（不補不開工）
-- [ ] <洞 1>：<為什麼是 blocker>
-- [ ] <洞 2>：…
+### 🔴 Blocker gaps (don't start without filling)
+- [ ] <hole 1>: <why it's a blocker>
+- [ ] <hole 2>: …
 
-### 🟡 Minor ambiguities（標假設可開工）
-- [ ] <模糊點 1>：<我打算採的假設>
-- [ ] <模糊點 2>：…
+### 🟡 Minor ambiguities (mark assumption, can start)
+- [ ] <ambiguity 1>: <the assumption I'll adopt>
+- [ ] <ambiguity 2>: …
 
-### 建議
-<🟢 開工 / 🟡 標假設開工 / 🔴 退回等補> — 一句話理由
+### Recommendation
+<🟢 start / 🟡 mark assumptions and start / 🔴 return and await fill> — one-line reason
 ```
 
-> blocker 區為空 = 沒有流沙。minor 區有東西很正常，不是失敗訊號。
+> Empty blocker section = no quicksand. Having items in the minor section is normal, not a failure signal.
 
 ---
 
-## 3. 不合格處置決策樹
+## 3. Failure handling decision tree
 
-報告產出後，依下表裁決。**注意：絕大多數真實 PRD 落在 🟡。**
+Once the report is produced, rule per the table below. **Note: the vast majority of real PRDs land at 🟡.**
 
-| 狀態 | 判準 | 動作 |
+| Status | Criterion | Action |
 |---|---|---|
-| 🟢 健康 | 通過率 > 90% 且 **無 blocker** | 直接開工 |
-| 🟡 有小洞 | 有 minor 模糊，但 **無 blocker** | **標假設開工**（見 §3.1）— 不要為小洞卡住 |
-| 🔴 有 blocker | 命中下方任一 blocker 條件 | **退回等補，不開工**（見 §3.2） |
+| 🟢 healthy | pass rate > 90% and **no blocker** | start directly |
+| 🟡 small holes | has minor ambiguities, but **no blocker** | **mark assumptions and start** (see §3.1) — don't get stuck on small holes |
+| 🔴 has blocker | hits any blocker condition below | **return and await fill, don't start** (see §3.2) |
 
-### 3.1 🟡 標假設開工
+### 3.1 🟡 Mark assumptions and start
 
-minor 模糊**不該阻塞開工**。處置方式：
+Minor ambiguities **should not block starting**. Handling:
 
-1. 在報告 🟡 區為每個模糊點寫下「我打算採的假設」（採較具體、較保守的一方）
-2. 把這些模糊點導向 [§5.1.1 PRD 模糊處理](../05_conflict_handling/01_vague_bug_gap.md)，照該流程標註後繼續寫
-3. 在 progress / development log 留下假設清單，供後續使用者裁決或修正
-4. 開工
+1. In the report's 🟡 section, write down "the assumption I'll adopt" for each ambiguity (take the more concrete, more conservative side)
+2. Route these ambiguities to [§5.1.1 PRD vague handling](../05_conflict_handling/01_vague_bug_gap.md), annotate per that process, then keep writing
+3. Leave the assumption list in progress / development log, for later user ruling or correction
+4. Start
 
-> 關鍵：minor 洞是「邊寫邊收斂」的，不是「先停下來開會」的。停下來開會的成本通常遠高於一個標註良好的假設。
+> Key: minor holes are "converge as you write," not "stop and hold a meeting." The cost of stopping to hold a meeting is usually far higher than a well-annotated assumption.
 
-### 3.2 🔴 退回等補
+### 3.2 🔴 Return and await fill
 
-命中以下任一條件即為 blocker，**停手、不開工**：
+Hitting any of the following is a blocker—**stop, don't start**:
 
-- 核心 endpoint / 主資料流 **無 schema**（request / response 形狀未定）
-- **認證或授權歸屬不明**：誰能呼叫、驗身分還是驗本人（IDOR）未定
-- PRD **自相矛盾**：兩處對同一行為給出衝突規格
-- 驗收標準（DoD / acceptance criteria）完全缺失，無法判斷「做完」
+- Core endpoint / main data flow has **no schema** (request / response shape undefined)
+- **Authentication or authorization ownership unclear**: who can call, verify identity vs verify it's the person (IDOR) undefined
+- PRD **self-contradiction**: two places give conflicting specs for the same behavior
+- Acceptance criteria (DoD / acceptance criteria) entirely missing, can't judge "done"
 
-處置：
+Handling:
 
-1. 在報告 🔴 區列出 blocker 並寫清楚「為什麼開工會出事」
-2. 退回給 PRD 作者 / 使用者補齊，按 [§5.1 衝突處理](../05_conflict_handling/01_vague_bug_gap.md) 對應分支記錄
-3. **不要自行腦補 blocker**——猜一個核心 schema 然後全程蓋在上面，是典型的蓋在流沙上
+1. In the report's 🔴 section, list the blockers and clearly write "why starting would blow up"
+2. Return to the PRD author / user to fill in, record per the matching branch in [§5.1 conflict handling](../05_conflict_handling/01_vague_bug_gap.md)
+3. **Don't fill in blockers from your own imagination**—guessing a core schema and then building on it all the way is the textbook case of building on quicksand
 
-> **在 blocker 上開工 = 蓋在流沙上。** 等補的幾分鐘，遠比補上去後整塊重寫的幾小時便宜。
+> **Starting on a blocker = building on quicksand.** The few minutes of awaiting a fill are far cheaper than the few hours of rewriting the whole block after the fill arrives.
 
 ---
 
-## 4. blocker vs minor 的判斷邊界
+## 4. The judgment boundary between blocker vs minor
 
-不確定一個洞算哪種？問一句話：
+Not sure which kind a hole is? Ask one question:
 
-> **「不補這個洞，我寫出來的東西有沒有可能要整塊打掉重做？」**
+> **"If I don't fill this hole, is there any chance what I write will have to be torn down and redone wholesale?"**
 
-- 會 → 🔴 blocker（schema、認證、自相矛盾都屬此類：補的時候會推翻你已寫的）
-- 不會，只是某個分支行為要猜 → 🟡 minor（標假設，最多改幾行）
+- Yes → 🔴 blocker (schema, auth, self-contradiction all fall here: filling them later overturns what you've written)
+- No, it's just guessing some branch behavior → 🟡 minor (mark assumption, a few lines changed at most)
 
-| 範例（語言中立） | 分類 |
+| Example (language-neutral) | Classification |
 |---|---|
-| 範例：`POST /orders` 的 request body 欄位完全沒列 | 🔴 blocker |
-| 範例：訂單金額為負時的行為 PRD 沒寫 | 🟡 minor（標假設：拒絕並回 400） |
-| 範例：PRD §3 說「只有本人可改」、§7 說「管理員也可改」 | 🔴 blocker（自相矛盾） |
-| 範例：列表預設排序 PRD 沒指定 | 🟡 minor（標假設：依建立時間 desc） |
-| 範例：「使用者資料」要不要驗本人沒寫清楚 | 🔴 blocker（認證歸屬不明） |
+| Example: `POST /orders` request body fields not listed at all | 🔴 blocker |
+| Example: behavior when order amount is negative not written in PRD | 🟡 minor (assumption: reject and return 400) |
+| Example: PRD §3 says "only the person can edit," §7 says "admins can also edit" | 🔴 blocker (self-contradiction) |
+| Example: list default sort order not specified in PRD | 🟡 minor (assumption: by creation time desc) |
+| Example: whether "user data" needs identity verification not written clearly | 🔴 blocker (auth ownership unclear) |
 
 ---
 
-## 5. 反模式：把 DoR 當官僚關卡
+## 5. Anti-pattern: treating DoR as a bureaucratic gate
 
-DoR 的目的是**省時間**，不是製造儀式。出現以下現象代表跑歪了：
+The purpose of DoR is to **save time**, not to manufacture ritual. The following symptoms mean it's gone off the rails:
 
-- ❌ 為一個 minor 模糊把整個任務停掉開會 → 該標假設開工
-- ❌ 中型任務的健檢跑了半小時、寫了三頁報告 → 過度工程
-- ❌ 報告通過率算到小數點後兩位、卻沒分 blocker / minor → 算錯重點
-- ❌ 把「PRD 不完美」直接當「PRD 不合格」退回 → 沒有 PRD 過得了這關
+- ❌ Stopping the whole task to hold a meeting over one minor ambiguity → should mark assumption and start
+- ❌ A medium task's health check ran half an hour and wrote a three-page report → over-engineering
+- ❌ Computing pass rate to two decimal places but not splitting blocker / minor → missing the point
+- ❌ Treating "PRD imperfect" directly as "PRD failed" and returning it → no PRD passes this gate
 
-> **力道隨任務份量縮放**（見 [§1.2 三級制](../01_foundations/02_three_tiers.md)）：一個中型任務的健檢應該是**幾分鐘**的事——掃一遍清單、列出 blocker、分類 minor、下裁決。L 級或含安全模組才值得寫完整報告。
+> **Scale effort with task weight** (see [§1.2 three-tier](../01_foundations/02_three_tiers.md)): a medium task's health check should be a **few-minutes** affair—scan the list, list blockers, classify minors, make the ruling. Only L-level or security-module tasks are worth a full report.
 
 ---
 
-## 6. 與其他 Gate 的關係
+## 6. Relationship to other gates
 
-- **DoR 是 DoD 的對偶**：DoR 守「開工前 PRD 夠不夠清楚」，[§4.1 DoD](../04_quality_gates/01_dod.md) 守「收工前實作夠不夠完整」。兩道閘一進一出，缺一邊都會漏。
-- **這裡找到的洞會餵給 §5**：minor 模糊走 [§5.1.1](../05_conflict_handling/01_vague_bug_gap.md)，blocker 退回也按 §5 記錄。健檢不是終點，是把洞分流進後續流程的起點。
-- **開工後若 PRD 又變**：那是 [§5.2 PRD 變更](../05_conflict_handling/02_prd_change.md) 的範疇，不在 DoR 一次性健檢內。
+- **DoR is the dual of DoD**: DoR guards "is the PRD clear enough before starting," [§4.1 DoD](../04_quality_gates/01_dod.md) guards "is the implementation complete enough before finishing." Two gates, one in one out—miss either side and things leak through.
+- **Holes found here feed §5**: minor ambiguities go to [§5.1.1](../05_conflict_handling/01_vague_bug_gap.md), blocker returns are also recorded per §5. The health check isn't the endpoint, it's the starting point that sorts holes into downstream flows.
+- **If the PRD changes again after starting**: that's the domain of [§5.2 PRD change](../05_conflict_handling/02_prd_change.md), not within the DoR one-time health check.
 
 ---
 
 ## 🔗 Related Compass sections
-- [§5.1 靜態三類衝突](../05_conflict_handling/01_vague_bug_gap.md) — 健檢找到的 minor 模糊 / blocker 在此分流處置
-- [§4.1 DoD](../04_quality_gates/01_dod.md) — DoR 的對偶閘：收工前的硬性驗收
-- [§1.2 三級制](../01_foundations/02_three_tiers.md) — 健檢力道隨任務份量縮放的依據
-- [§3.1 PRD Intake](../03_implementation/01_prd_intake.md) — 健檢前的 PRD 吸收步驟
-- [§2 Definition of Ready](./_index.md) — 本節所屬模組與 DoR 檢查清單入口
+- [§5.1 static three-track conflict](../05_conflict_handling/01_vague_bug_gap.md) — minor ambiguities / blockers found in the health check are sorted and handled here
+- [§4.1 DoD](../04_quality_gates/01_dod.md) — DoR's dual gate: hard acceptance before finishing
+- [§1.2 three-tier](../01_foundations/02_three_tiers.md) — the basis for scaling health-check effort with task weight
+- [§3.1 PRD Intake](../03_implementation/01_prd_intake.md) — the PRD absorption step before the health check
+- [§2 Definition of Ready](./_index.md) — the module this section belongs to and the DoR checklist entry point
 
 ## 📝 Status
 v0.5.0 (Phase 2: original content).

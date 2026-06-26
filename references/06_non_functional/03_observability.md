@@ -1,141 +1,141 @@
-# §6.3 觀測性：log / metrics / tracing
+# §6.3 Observability: log / metrics / tracing
 
 > Part of [Compass](../../SKILL.md) §6 — Non-Functional Requirements.
-> 一個沒有 log、沒有 metrics 的 production 服務不是「完成」，是「瞎了」——本章把觀測性釘進 DoD。
+> A production service with no logs and no metrics isn't "done" — it's blind. This chapter nails observability into the DoD.
 
 ---
 
-## 🔒 鐵律（Iron Rule）
+## 🔒 Iron Rule
 
-> **觀測性是 production 服務 DoD 的一部分。功能寫完但「出事時你看不到任何訊號」= 未完成。**
+> **Observability is part of the DoD for production services. Feature coded but "when it breaks you see no signal" = not done.**
 
-「先上線，監控之後再補」是謊言。事故發生在補之前，補之後永遠是下一次。每一塊進 production 的功能，收尾時必須能回答兩個問題：
+"Ship first, add monitoring later" is a lie. The incident happens before "later," and after "later" is always next time. Every feature that goes to production must, at wrap-up, answer two questions:
 
-1. 它正常運作時，我怎麼**看得到**它在動？（log / metric）
-2. 它壞掉時，我怎麼**第一時間知道**、並能**定位到哪一層**？（alert / trace）
+1. When it works, how do I **see** it running? (log / metric)
+2. When it breaks, how do I **know first** and **pin it to a layer**? (alert / trace)
 
-答不出來 = 這塊還沒 done。
+Can't answer = this slice isn't done.
 
 ---
 
-## 🪵 結構化 logging
+## 🪵 Structured logging
 
-純文字 `print("error happened")` 不是 log，是噪音。Production log 一律**結構化**（JSON 或 key=value），讓機器能 query。
+A plain-text `print("error happened")` isn't a log, it's noise. Production logs are always **structured** (JSON or key=value) so machines can query them.
 
-### 一條 log 最少帶什麼
+### Minimum fields per log line
 
-| 欄位 | 用途 |
+| Field | Purpose |
 |---|---|
-| `timestamp` | ISO 8601，UTC |
+| `timestamp` | ISO 8601, UTC |
 | `level` | DEBUG / INFO / WARN / ERROR |
-| `message` | 人讀的一句話，**不拼動態值進字串**（值放欄位） |
-| `trace_id` / `request_id` | 串起同一次請求的所有 log（見 tracing 段） |
-| `service` / `module` | 哪個服務、哪一層發的 |
-| 業務 key | `user_id`、`order_id` 等**識別碼**（非 PII） |
+| `message` | One human-readable sentence, **don't splice dynamic values into the string** (values go in fields) |
+| `trace_id` / `request_id` | Stitches together all logs for one request (see tracing section) |
+| `service` / `module` | Which service, which layer emitted it |
+| business key | `user_id`, `order_id`, etc. **identifiers** (not PII) |
 
-### log level 怎麼選（不要全打 INFO，也不要全打 ERROR）
+### Choosing log level (don't make everything INFO, nor everything ERROR)
 
-| Level | 何時用 | 會不會吵醒人 |
+| Level | When to use | Wakes someone up? |
 |---|---|---|
-| `ERROR` | 請求失敗、需要人介入的異常 | 進 alert 池 |
-| `WARN` | 降級成功、重試、逼近上限——**還沒壞但要盯** | 不 alert，看趨勢 |
-| `INFO` | 業務里程碑（下單成功、付款完成） | 否 |
-| `DEBUG` | 開發期細節，production 預設關 | 否 |
+| `ERROR` | Request failed, anomaly needing human intervention | Goes into alert pool |
+| `WARN` | Graceful degradation succeeded, retry, nearing a limit — **not broken yet but watch it** | No alert, watch the trend |
+| `INFO` | Business milestones (order placed, payment completed) | No |
+| `DEBUG` | Dev-time detail, off by default in production | No |
 
-> 把可預期的失敗（如 404、表單驗證錯）打成 ERROR = 自製狼來了，真 ERROR 被淹沒。
+> Logging expected failures (404, form validation error) as ERROR = crying wolf; real ERRORs get drowned out.
 
-### ❌ 永遠不准進 log（與 [§6.4 安全](./04_security.md) 同一條紅線）
+### ❌ Never allowed in logs (same red line as [§6.4 Security](./04_security.md))
 
-- 密碼、token、API key、session id、私鑰
-- 完整信用卡號、身分證字號、完整 email/手機（要記就 mask：`u***@x.com`）
-- 完整請求 body / header（裡面常夾帶上述）
-- 任何 PII 明文
+- Passwords, tokens, API keys, session ids, private keys
+- Full credit card numbers, national ID numbers, full email/phone (mask if you must: `u***@x.com`)
+- Full request body / header (often carries the above)
+- Any PII in plaintext
 
-> log 會被轉發、長期保存、被很多人看到、進備份。**寫進 log 的祕密 = 已外洩**。這是 Sentinel 資安紅旗之一：「金鑰／token 印進 log」。
+> Logs get forwarded, retained long-term, seen by many people, backed up. **A secret written to a log = already leaked.** This is one of Sentinel's security red flags: "key/token printed into a log."
 
-**範例（FastAPI / structlog，示意，非強制框架）**
+**Example (FastAPI / structlog, illustrative, framework not mandated)**
 
 ```python
 log.info("order.created", order_id=order.id, user_id=user.id, amount=order.total)
-# ❌ 不要這樣：
+# ❌ Don't do this:
 # log.info(f"user {user.email} paid with card {card.number}")
 ```
 
 ---
 
-## 📊 Metrics：命名規範 + 四大黃金訊號
+## 📊 Metrics: naming convention + four golden signals
 
-Log 回答「這一筆發生什麼」，metric 回答「整體現在健康嗎」。
+Logs answer "what happened for this one record," metrics answer "is the whole thing healthy right now."
 
-### 命名規範
+### Naming convention
 
-- 格式：`namespace.subsystem.unit`，全小寫，`_` 或 `.` 分隔，**一致**
-- 帶單位後綴：`_seconds`、`_bytes`、`_total`（counter）
-- 用 **label/tag** 切維度（`route`、`status`、`method`），**不要把值塞進 metric 名**
+- Format: `namespace.subsystem.unit`, all lowercase, `_` or `.` separated, **consistent**
+- Carry a unit suffix: `_seconds`, `_bytes`, `_total` (counter)
+- Use **label/tag** to slice dimensions (`route`, `status`, `method`), **don't stuff values into the metric name**
 
 ```
 ✅ http_request_duration_seconds{route="/orders", status="500"}
-❌ http_request_duration_orders_500          # 維度爆炸，無法聚合
+❌ http_request_duration_orders_500          # dimension explosion, can't aggregate
 ```
 
-> ⚠️ label 基數（cardinality）會殺掉你的 metrics 後端。**不要拿 user_id、order_id 當 label**——那是 log 的工作，不是 metric 的。
+> ⚠️ Label cardinality will kill your metrics backend. **Don't use user_id, order_id as labels** — that's the log's job, not the metric's.
 
-### 四大黃金訊號（Golden Signals）
+### The four golden signals
 
-每個對外服務至少量這四項，缺一就有盲區：
+Every outward-facing service measures at least these four; missing one is a blind spot:
 
-| 訊號 | 量什麼 | 典型 metric |
+| Signal | Measures | Typical metric |
 |---|---|---|
-| **Latency 延遲** | 請求耗時，**分 p50/p95/p99**，且**成功與失敗分開** | `*_duration_seconds` histogram |
-| **Traffic 流量** | 每秒請求數 / QPS | `*_requests_total` counter |
-| **Errors 錯誤** | 失敗率（5xx、例外、逾時） | `*_errors_total` / 由 status label 算 |
-| **Saturation 飽和** | 資源逼近上限（CPU、記憶體、連線池、queue 長度） | `*_pool_in_use`、`queue_depth` |
+| **Latency** | Request duration, **split p50/p95/p99**, and **success vs failure separated** | `*_duration_seconds` histogram |
+| **Traffic** | Requests per second / QPS | `*_requests_total` counter |
+| **Errors** | Failure rate (5xx, exceptions, timeouts) | `*_errors_total` / derived from status label |
+| **Saturation** | Resources nearing a limit (CPU, memory, connection pool, queue length) | `*_pool_in_use`, `queue_depth` |
 
-> 平均延遲會騙你——p99 才是使用者實際在罵的那條。失敗請求若混進延遲統計，會把「快速失敗」誤判成「健康」。**latency 一定要按 success/error 分開。**
-
----
-
-## 🔗 Tracing：跨服務追一條請求
-
-當一次請求穿過多個服務（API → service → DB → 第三方），單一服務的 log 拼不出全貌。Tracing 用一個 **trace_id** 把整條路徑串起來。
-
-最小要求：
-
-- 入口（gateway / 第一個服務）生成 `trace_id`，**全程透傳**（HTTP header 如 `traceparent`、MQ message attribute）
-- 每一層把 `trace_id` 寫進它的每一條 log
-- 跨服務呼叫一律帶上，**不要在中途斷掉**
-
-> 沒有 distributed tracing 之前的最低標：**至少讓 request_id 貫穿單一服務的所有 log**。連這個都沒有，事故時你只能逐檔猜。
-
-採 OpenTelemetry 之類的標準（廠商中立）優於自綁某家 APM——換後端不用重寫埋點。具體選型仍以你專案 PRD / 既有基礎設施為準。
+> Average latency lies — p99 is the one users are actually cursing about. If failed requests get mixed into latency stats, "fast failure" gets misread as "healthy." **Latency must be split by success/error.**
 
 ---
 
-## ✅ Per-feature 觀測性 checklist
+## 🔗 Tracing: follow one request across services
 
-每塊進 production 的功能，收尾時逐項對：
+When a request crosses multiple services (API → service → DB → third party), a single service's logs can't reconstruct the whole picture. Tracing uses one **trace_id** to stitch the entire path together.
 
-- [ ] **成功路徑有 INFO log**（含業務識別碼 + trace_id），說得出「它在動」的證據
-- [ ] **每個失敗分支有 ERROR/WARN log**，能定位是哪一層、哪個原因
-- [ ] **log 結構化**，動態值在欄位不在字串
-- [ ] **掃過一遍 log：零祕密、零 PII 明文**（對照 [§6.4](./04_security.md)）
-- [ ] **四大黃金訊號可量**：這個 endpoint 的 latency(p95/p99) / traffic / error rate / 關鍵資源 saturation 都有 metric
-- [ ] **latency 按 success/error 分開**，沒把失敗混進去
-- [ ] **metric 命名合規**、無高基數 label
-- [ ] **trace_id / request_id 貫穿**這塊涉及的所有 log 與下游呼叫
-- [ ] **關鍵失敗有 alert**（error rate / saturation 越線會通知人，不是被動等使用者回報）
-- [ ] **想得到：事故時靠這些訊號，幾分鐘能定位？** 答不出來就補到答得出來
+Minimum requirements:
 
-> 任一項打不了勾，這塊就不是 done。觀測性不是加分題，是 [§4 Definition of Done](../04_quality_gates/01_dod.md) 對 production 服務的硬要求。
+- The entry point (gateway / first service) generates a `trace_id` and **propagates it end-to-end** (HTTP header like `traceparent`, MQ message attribute)
+- Every layer writes `trace_id` into each of its log lines
+- Cross-service calls always carry it, **don't drop it midway**
+
+> Floor before you have distributed tracing: **at minimum let request_id run through all logs of a single service.** Without even that, in an incident you can only guess file by file.
+
+Adopting a standard like OpenTelemetry (vendor-neutral) beats binding to one APM vendor — swapping backends doesn't require rewriting instrumentation. Actual choice still follows your project's PRD / existing infrastructure.
+
+---
+
+## ✅ Per-feature observability checklist
+
+For each feature going to production, check item by item at wrap-up:
+
+- [ ] **Success path has an INFO log** (with business identifier + trace_id), can cite evidence "it's running"
+- [ ] **Every failure branch has an ERROR/WARN log**, can pin which layer, which cause
+- [ ] **Logs structured**, dynamic values in fields not in the string
+- [ ] **Scan the logs once: zero secrets, zero PII in plaintext** (cross-check [§6.4](./04_security.md))
+- [ ] **Four golden signals measurable**: this endpoint's latency(p95/p99) / traffic / error rate / key-resource saturation all have metrics
+- [ ] **Latency split by success/error**, failures not mixed in
+- [ ] **Metric naming compliant**, no high-cardinality labels
+- [ ] **trace_id / request_id runs through** all logs and downstream calls this slice touches
+- [ ] **Key failures have an alert** (error rate / saturation crossing a line notifies a human, not passively waiting for users to report)
+- [ ] **Imagine: in an incident, can these signals pin the cause in minutes?** If you can't answer, add until you can
+
+> If any item can't be checked, this slice isn't done. Observability isn't a bonus question, it's a hard requirement of [§4 Definition of Done](../04_quality_gates/01_dod.md) for production services.
 
 ---
 
 ## 🔗 Related Compass sections
 
 - [§6 NFR — Index](./_index.md)
-- [§6.2 效能](./02_performance.md) — latency / saturation 量到了，才談得上優化
-- [§6.4 安全](./04_security.md) — 「log 不准帶祕密/PII」是同一條紅線
-- [§4.1 Definition of Done](../04_quality_gates/01_dod.md) — 觀測性如何併入 DoD
+- [§6.2 Performance](./02_performance.md) — only once latency / saturation are measured can you talk optimization
+- [§6.4 Security](./04_security.md) — "no secrets/PII in logs" is the same red line
+- [§4.1 Definition of Done](../04_quality_gates/01_dod.md) — how observability folds into the DoD
 
 ---
 

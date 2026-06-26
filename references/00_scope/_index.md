@@ -1,17 +1,17 @@
-# §0 Scope｜開工前先確認範圍
+# §0 Scope｜Confirm the boundary before you start
 
-> 一個 skill 的價值不只在「它能做什麼」，更在「它清楚說自己不做什麼」。本章是 Compass 的觸發邊界：用對情境省下 80% 偏差成本，用錯情境會變成程序負擔。
+> A skill's value lies not only in "what it can do," but also in clearly stating "what it does not do." This is Compass's trigger boundary: used in the right situation it saves you 80% of drift cost; used in the wrong one it becomes process overhead.
 
-## 本章涵蓋
+## What this chapter covers
 
-- [01_scope_boundary.md](01_scope_boundary.md) — Compass ✅ 涵蓋 / ❌ 不涵蓋的情境清單、與 Sentinel 的職責分工表，以及「該不該用 Compass」的一句話判準。
+- [01_scope_boundary.md](01_scope_boundary.md) — the list of situations Compass ✅ covers / ❌ does not cover, the division-of-labor table with Sentinel, and a one-line "should I use Compass?" test.
 
-## 何時載入
+## When to load
 
-- 第一次接觸 Compass、不確定這個任務該不該用它時。
-- 任務看起來介於「探索」與「照規格實作」之間，需要判斷主用 Compass 還是 Sentinel 時。
-- 覺得 Compass 的紀律對當前任務「太重」，想確認是不是用錯情境時。
+- First time touching Compass, unsure whether this task should use it.
+- A task that sits between "exploration" and "build-to-spec," when you need to decide whether Compass or Sentinel is primary.
+- When Compass's discipline feels "too heavy" for the task and you want to confirm you're not using it in the wrong situation.
 
-## 🔗 相關
-- [§1 Foundations](../01_foundations/_index.md) — 確認在範圍內後，從這裡建立五階段心智模型
-- 完整的設計取捨與未來方向見 GitHub repo 的 [`docs/SCOPE.zh-TW.md`](https://github.com/RayLi-Git/compass/blob/main/docs/SCOPE.zh-TW.md)
+## 🔗 Related
+- [§1 Foundations](../01_foundations/_index.md) — once you've confirmed you're in scope, build the five-phase mental model here
+- Full design trade-offs and future directions: see the GitHub repo's [`docs/SCOPE.md`](https://github.com/RayLi-Git/compass/blob/main/docs/SCOPE.md)

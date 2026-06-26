@@ -1,23 +1,23 @@
-# §8 Brownfield｜既有 codebase 工作
+# §8 Brownfield｜Working in an existing codebase
 
-> SOP 把 brownfield / bug fix 列為「不適用」——但大部分真實工作就是 brownfield。Compass 補上這個缺口。核心：既有 code 是 PRD 之外的第二個事實來源，動它之前必須先逆向理解。
+> SOP lists brownfield / bug fix as "not applicable" — but most real work is brownfield. Compass fills this gap. Core: existing code is a second source of truth beyond the PRD, and you must reverse-understand it before touching it.
 
-## 本章涵蓋（v0.5.0 / Phase 2 已交付）
+## What this chapter covers (delivered in v0.5.0 / Phase 2)
 
-- [§8.1 Brownfield 總覽](01_overview.md) — 既有 code 是第二事實來源、風險不對稱、子流程地圖
-- [§8.2 Bug Fix Workflow](02_bug_fix.md) — 先重現、根因非症狀、characterization test、bug vs spec 不符
-- [§8.3 Refactor Workflow](03_refactor.md) — 改結構不改行為、前後綠燈、小步提交、refactor vs rewrite
-- [§8.4 加功能到既有 codebase](04_add_feature.md) — 先逆向理解、影響範圍分析、整合點與向後相容
-- [§8.5 無正式 PRD 時的最小紀律](05_no_prd.md) — 寫 3 行 mini-spec、何時堅持要 PRD
+- [§8.1 Brownfield overview](01_overview.md) — existing code as second source of truth, risk asymmetry, sub-workflow map
+- [§8.2 Bug Fix Workflow](02_bug_fix.md) — reproduce first, root cause not symptom, characterization test, bug vs spec mismatch
+- [§8.3 Refactor Workflow](03_refactor.md) — change structure not behavior, green before and after, small-step commits, refactor vs rewrite
+- [§8.4 Adding a feature to an existing codebase](04_add_feature.md) — reverse-understand first, blast radius analysis, integration points and backward compatibility
+- [§8.5 Minimum discipline when there's no formal PRD](05_no_prd.md) — write a 3-line mini-spec, when to insist on a PRD
 
-## 何時載入
+## When to load
 
-- 修 bug → §8.2
-- 重構既有 code → §8.3
-- 加功能到既有專案 → §8.4
-- 沒有正式 PRD 的零散需求 → §8.5
+- Fixing a bug → §8.2
+- Refactoring existing code → §8.3
+- Adding a feature to an existing project → §8.4
+- Scattered requirements with no formal PRD → §8.5
 
-## 🔗 相關
-- [§2 Definition of Ready](../02_definition_of_ready/_index.md) — brownfield 加功能仍要跑 DoR
-- [§5.3 跨文件衝突](../05_conflict_handling/03_cross_document.md) — 既有 code 與 PRD 衝突時當「文件」處置
-- 動手前協定、診斷、根因樹皆為 Sentinel 概念，brownfield 大量沿用
+## 🔗 Related
+- [§2 Definition of Ready](../02_definition_of_ready/_index.md) — brownfield feature-adds still run DoR
+- [§5.3 Cross-document conflict](../05_conflict_handling/03_cross_document.md) — when existing code and PRD conflict, handle it as a "document"
+- Pre-flight protocol, diagnosis, and root-cause trees are all Sentinel concepts, heavily reused in brownfield

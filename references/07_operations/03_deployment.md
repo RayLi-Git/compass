@@ -1,126 +1,126 @@
 # §7.3 Deployment Checklist
 > Part of [Compass](../../SKILL.md) §7 — Operations.
-> 上線前的一道閘門：逐項確認該過的都過了，再讓 code 進 production。
+> A gate before going live: confirm item by item that everything that should pass has passed, then let the code into production.
 
 ---
 
-這是一份**紀律檢查清單**，不是 CI/CD 教學。
-本文不教你怎麼設計 pipeline、選 GitHub Actions 還是 ArgoCD、寫 Dockerfile。
-它只回答一個問題：**「現在這版可以上嗎？」**
+This is a **discipline checklist**, not a CI/CD tutorial.
+It does not teach you how to design a pipeline, choose between GitHub Actions and ArgoCD, or write a Dockerfile.
+It answers exactly one question: **"Can this build ship right now?"**
 
-把它當成起飛前的 checklist——機師再資深，每次起飛還是逐項唸過。
+Treat it like a pre-flight checklist — no matter how senior the pilot, every takeoff still gets read item by item.
 
 ---
 
-## ✅ Pre-deploy gate（上線前閘門）
+## ✅ Pre-deploy gate
 
-下列每一項都要明確回答 **是 / 否 / 不適用**。任何一項是「否」→ **不上**。
+Every item below must get an explicit **yes / no / N/A**. Any "no" → **don't ship**.
 
-| # | 檢查項 | 通過標準 | 出處 |
+| # | Check | Pass criteria | Source |
 |---|---|---|---|
-| 1 | **DoD 全綠** | lint / typecheck / unit / smoke 全過，無 skip 掩蓋 | [§4.1](../04_quality_gates/01_dod.md) |
-| 2 | **Migration plan 就緒** | schema 變更有正反向腳本，演練過、可回退 | [§7.1](./01_migration.md) |
-| 3 | **Rollback plan 就緒** | 知道怎麼退、退到哪個版本、退要多久 | [§7.2](./02_rollback.md) |
-| 4 | **Observability 到位** | 新路徑有 log / metric / trace，告警有設 | [§6.3](../06_non_functional/03_observability.md) |
-| 5 | **Secrets 不寫死** | 金鑰/token 走環境變數或 secret store，不在 code、不在 log、不進 git | [§6.4](../06_non_functional/04_security.md) |
-| 6 | **Feature flag 設定確認** | 新功能預設值正確；灰度範圍明確 | 本文 |
-| 7 | **Staging smoke 通過** | 在類正式環境跑過關鍵路徑，不是只在本機過 | 本文 |
+| 1 | **DoD all green** | lint / typecheck / unit / smoke all pass, no skip masking | [§4.1](../04_quality_gates/01_dod.md) |
+| 2 | **Migration plan ready** | schema changes have forward/backward scripts, rehearsed, can roll back | [§7.1](./01_migration.md) |
+| 3 | **Rollback plan ready** | you know how to roll back, to which version, and how long it takes | [§7.2](./02_rollback.md) |
+| 4 | **Observability in place** | new paths have log / metric / trace, alerts configured | [§6.3](../06_non_functional/03_observability.md) |
+| 5 | **Secrets not hardcoded** | keys/tokens via env vars or secret store, not in code, not in log, not in git | [§6.4](../06_non_functional/04_security.md) |
+| 6 | **Feature flag config confirmed** | new feature default value correct; rollout scope clear | This doc |
+| 7 | **Staging smoke passed** | critical paths run in a prod-like env, not just locally | This doc |
 
-> 鐵律：**沒演練過的 rollback 不算 rollback**。第 3 項打勾前，問自己「我真的退過一次嗎？」
+> Iron rule: **an unrehearsed rollback is not a rollback**. Before ticking item 3, ask yourself: "Have I actually rolled back once?"
 
 ---
 
-## 🔍 各項展開
+## 🔍 Item details
 
 ### 1 · DoD green
-不是「我覺得寫完了」，是 [§4.1 DoD](../04_quality_gates/01_dod.md) 八項逐條對過。
-特別盯：有沒有為了讓 CI 過而 `skip` / `xfail` / 註解掉測試。那是把警報關掉，不是修好。
+Not "I think I'm done" — it's all eight items of [§4.1 DoD](../04_quality_gates/01_dod.md) checked one by one.
+Watch especially: did you `skip` / `xfail` / comment out a test just to make CI pass? That's silencing the alarm, not fixing it.
 
 ### 5 · Secrets configured, not hardcoded
-這是資安紅旗，獨立成關。上線前掃一遍：
+This is a security red flag, broken out as its own gate. Sweep once before shipping:
 
 ```bash
-# 範例：上線前粗篩（命中即停下人工確認，不是自動判生死）
+# Example: rough pre-deploy scan (a hit means stop and verify by hand, not auto life-or-death)
 git grep -nE "(api[_-]?key|secret|password|token)\s*=\s*['\"]" -- '*.py' '*.ts'
 ```
 
-命中不代表一定是洩漏，但**每一筆都要人看過**。詳見 [§6.4 Security](../06_non_functional/04_security.md)。
+A hit isn't necessarily a leak, but **every one must be eyeballed by a human**. See [§6.4 Security](../06_non_functional/04_security.md).
 
 ### 6 · Feature flags
-- 新功能上線時 flag **預設 off**，靠灰度逐步開——除非 PRD 明確要求全量。
-- flag 的「開」與「程式 deploy」**解耦**：先 deploy（flag off），確認穩，再開 flag。
-- 記下每個 flag 的「該移除日期」。長期殘留的 flag 是技術債。
+- When a new feature ships, the flag is **default off** and opened gradually via rollout — unless the PRD explicitly demands full rollout.
+- Decouple flag "on" from "code deploy": deploy first (flag off), confirm stable, then flip the flag.
+- Record a "remove-by date" for every flag. A flag that lingers long-term is technical debt.
 
 ### 7 · Staging smoke test
-在**盡量貼近正式**的環境跑關鍵路徑（登入 → 核心交易 → 登出之類）。
-本機過不算數——本機沒有正式的 DNS、憑證、網路延遲、資料量。
+Run critical paths in an environment **as close to production as possible** (login → core transaction → logout, etc.).
+Passing locally doesn't count — local has no real DNS, certs, network latency, or data volume.
 
 ```text
-# 範例 smoke 清單（按專案調整，非強制）
-[ ] 健康檢查 endpoint 回 200
-[ ] 一條核心 happy path 走得通
-[ ] 一條已知錯誤路徑回正確錯誤碼（不是 500）
-[ ] 對外依賴（DB / 第三方 API）連得上
+# Example smoke list (adjust per project, not mandatory)
+[ ] Health check endpoint returns 200
+[ ] One core happy path works end to end
+[ ] One known error path returns the correct error code (not 500)
+[ ] External dependencies (DB / third-party API) are reachable
 ```
 
 ---
 
-## 🚀 Deploy 當下
+## 🚀 At deploy time
 
-- 挑**低流量時段**上，不在尖峰、不在週五下班前。
-- 上線時**有人盯著**——不是按下 deploy 就走人。
-- Migration 與 code 的順序照 [§7.1](./01_migration.md) 走（通常 expand → deploy → contract）。
+- Ship during a **low-traffic window** — not at peak, not right before Friday close-of-business.
+- Have **someone watching** during the deploy — not hit deploy and walk away.
+- Order migration vs code per [§7.1](./01_migration.md) (usually expand → deploy → contract).
 
 ---
 
-## 📡 Post-deploy verification（上線後守觀）
+## 📡 Post-deploy verification
 
-Deploy 成功 ≠ 上線成功。盯住 **4 個黃金訊號**（golden signals）至少 **N 分鐘**
-（N 依流量定，建議 ≥15 分鐘或一個完整流量週期）：
+Deploy succeeded ≠ launch succeeded. Watch the **4 golden signals** for at least **N minutes**
+(N depends on traffic; recommend ≥15 minutes or one full traffic cycle):
 
-| 黃金訊號 | 看什麼 | 異常徵兆 |
+| Golden signal | What to watch | Anomaly sign |
 |---|---|---|
-| **Latency** 延遲 | p95 / p99 回應時間 | 比上線前明顯變慢 |
-| **Traffic** 流量 | QPS / RPS | 突然掉到接近 0（可能整個掛了） |
-| **Errors** 錯誤率 | 5xx / 例外比例 | 比基線高 |
-| **Saturation** 飽和度 | CPU / 記憶體 / 連線池 | 逼近上限 |
+| **Latency** | p95 / p99 response time | noticeably slower than before deploy |
+| **Traffic** | QPS / RPS | suddenly drops near 0 (whole thing may be down) |
+| **Errors** | 5xx / exception ratio | higher than baseline |
+| **Saturation** | CPU / memory / connection pool | approaching the limit |
 
-> 定義出處見 [§6.3 Observability](../06_non_functional/03_observability.md)。
-> **任一訊號惡化且無法快速止血 → 立刻啟動 [§7.2 Rollback](./02_rollback.md)，不戀戰。**
-> 別在錯誤上疊補丁救（Sentinel 的沉沒成本警戒）——先退，乾淨環境再查根因。
+> Definitions sourced from [§6.3 Observability](../06_non_functional/03_observability.md).
+> **Any signal worsens and can't be quickly stopped → immediately trigger [§7.2 Rollback](./02_rollback.md), don't fight it.**
+> Don't stack patches on the error to save it (Sentinel's sunk-cost guard) — roll back first, then find the root cause in a clean environment.
 
 ---
 
-## 📣 Who to notify（通知對象）
+## 📣 Who to notify
 
-| 時機 | 通知誰 | 內容 |
+| When | Notify whom | Content |
 |---|---|---|
-| Deploy 前 | 團隊頻道 | 「準備上線 X，預計 Y 分鐘」 |
-| Deploy 完 | 團隊頻道 | 版本號、變更摘要、監看中 |
-| 守觀通過 | 團隊頻道 | 「X 已穩定上線」 |
-| 異常 / rollback | 團隊頻道 + on-call + 受影響的下游 | 現象、影響範圍、已退版 |
+| Before deploy | team channel | "Preparing to ship X, ETA Y minutes" |
+| After deploy | team channel | version number, change summary, monitoring |
+| Watch passed | team channel | "X is stable in production" |
+| Anomaly / rollback | team channel + on-call + affected downstream | symptom, blast radius, rolled back |
 
-通知不是儀式——是讓**別人也知道現在系統處於什麼狀態**，出事時不用從零釐清。
+Notification isn't ritual — it's letting **others know what state the system is in**, so when something breaks they don't have to figure it out from scratch.
 
 ---
 
-## 🚩 不上線的紅旗
+## 🚩 Don't-ship red flags
 
-出現任一個 → 停，別上：
+Any one of these → stop, don't ship:
 
-- DoD 有項目靠 skip / any / 註解掉測試硬過。
-- Rollback「理論上可以」但**從沒退過一次**。
-- Secrets 掃描有命中還沒人確認。
-- 只有本機 smoke 過，staging 沒跑。
-- 「先上再說，有問題再修」——這句話本身就是紅旗。
+- DoD has items forced through via skip / any / commented-out tests.
+- Rollback "should work in theory" but **has never been rolled back once**.
+- Secrets scan has hits no one has confirmed.
+- Only local smoke passed, staging not run.
+- "Just ship it and fix later if there's a problem" — that sentence itself is a red flag.
 
 ---
 
 ## 🔗 Related Compass sections
-- [§7.1 Migration Plan](./01_migration.md) — schema 變更與正反向腳本
-- [§7.2 Rollback Plan](./02_rollback.md) — 退版的觸發、步驟與演練
-- [§6.3 Observability](../06_non_functional/03_observability.md) — 黃金訊號與告警
-- [§4.1 Definition of Done](../04_quality_gates/01_dod.md) — 上線前必過的完成定義
+- [§7.1 Migration Plan](./01_migration.md) — schema changes and forward/backward scripts
+- [§7.2 Rollback Plan](./02_rollback.md) — rollback triggers, steps, and rehearsal
+- [§6.3 Observability](../06_non_functional/03_observability.md) — golden signals and alerts
+- [§4.1 Definition of Done](../04_quality_gates/01_dod.md) — the done definition that must pass before shipping
 
 ## 📝 Status
 v0.5.0 (Phase 2: original content)

@@ -1,165 +1,165 @@
 # §8.3 Refactor Workflow
 
-> Part of [Compass](../../SKILL.md) §8 — Brownfield。
-> 重構是改結構不改行為；綠燈進、綠燈出，行為一字不差。
+> Part of [Compass](../../SKILL.md) §8 — Brownfield.
+> Refactoring changes structure, not behavior; green in, green out, behavior identical to the byte.
 
 ---
 
-## 🎯 重構的定義（先把線畫清楚）
+## 🎯 Defining refactor (draw the line first)
 
-> **Refactor = 改變內部結構，不改變外部可觀測行為。**
+> **Refactor = change internal structure, do not change externally observable behavior.**
 
-任何讓「同樣輸入 → 不同輸出」的改動，就**不是重構**，是改行為——必須走 PRD 流程或 §8.4 加功能。
+Any change that makes "same input → different output" is **not a refactor**; it's a behavior change — it must go through the PRD flow or §8.4 add-a-feature.
 
-| 你在做的事 | 屬於 | 走哪條路 |
+| What you're doing | Category | Which path |
 |---|---|---|
-| 抽函式、改名、拆檔、調順序、去重複 | ✅ 重構 | 本文件 |
-| 換實作但 I/O 不變（如換 JSON parser） | ✅ 重構 | 本文件 |
-| 改回傳格式、加欄位、改錯誤碼 | ❌ 改行為 | PRD / [§8.4](./04_add_feature.md) |
-| 「順便」修一個 bug | ❌ 改行為 | [§8.2](./02_bug_fix.md)（分開 commit） |
-| 整個模組打掉重寫 | ❌ Rewrite | 見下方「重構 vs 重寫」 |
+| Extract function, rename, split file, reorder, dedupe | ✅ Refactor | This document |
+| Swap implementation but I/O unchanged (e.g. swap JSON parser) | ✅ Refactor | This document |
+| Change return format, add field, change error code | ❌ Behavior change | PRD / [§8.4](./04_add_feature.md) |
+| "While I'm at it" fix a bug | ❌ Behavior change | [§8.2](./02_bug_fix.md) (separate commit) |
+| Rip out and rewrite a whole module | ❌ Rewrite | See "Refactor vs Rewrite" below |
 
-🚩 **紅旗**：重構途中冒出「啊這裡邏輯本來就錯」→ **停**。不要在重構 commit 裡偷修。記下來，重構綠燈後另開 bug-fix。混在一起會讓「行為是否被保留」無法驗證。
-
----
-
-## ⚖️ 鐵律：綠燈進、綠燈出
-
-```
-[測試全綠] → 重構一小步 → [測試全綠] → commit → 下一步
-     ↑                                              │
-     └──────────── 任一步紅燈 → 立刻 revert 該步 ────┘
-```
-
-- **進場前**：相關測試必須全綠。紅燈或無測試 → 先補（見下方 characterization）。
-- **每一小步後**：重跑測試。紅了就是這一步改錯了結構，**revert 這一步**，別往下疊。
-- **不可同時**改結構又改行為。一個 commit 只做一件事。
-
-> 為什麼這麼嚴？因為重構唯一的安全保證來自「行為沒變」，而「行為沒變」唯一的證據是**測試在改動前後都綠**。沒有這個證據，你只是在賭。
+🚩 **Red flag**: mid-refactor you notice "wait, this logic was wrong all along" → **stop**. Don't sneak a fix into the refactor commit. Note it down, and after the refactor is green open a separate bug-fix. Mixing them makes "was behavior preserved" impossible to verify.
 
 ---
 
-## 🧪 沒有測試就不能安全重構 → 先寫 Characterization Test
+## ⚖️ Iron rule: green in, green out
 
-覆蓋率太薄時，**不要直接動手**。先寫「特徵測試」把**現狀行為**釘住——不管現狀對不對，先讓它可驗證。
+```
+[all tests green] → one small refactor step → [all tests green] → commit → next step
+     ↑                                                                  │
+     └──────────── any step turns red → immediately revert that step ───┘
+```
 
-特徵測試 ≠ 規格測試：它不主張「應該是什麼」，只記錄「現在是什麼」。
+- **Before entering**: relevant tests must be all green. Red or no tests → backfill first (see characterization below).
+- **After each small step**: rerun tests. Red means this step broke the structure — **revert this step**, don't pile on.
+- **Never simultaneously** change structure and behavior. One commit does one thing.
 
-**寫法（金手套法）：**
+> Why so strict? Because the only safety guarantee in refactoring comes from "behavior didn't change," and the only evidence that "behavior didn't change" is **tests green before and after the change**. Without that evidence, you're just gambling.
 
-1. 找到要重構的單元，呼叫它，**故意斷言一個明顯錯的值**。
-2. 跑測試，讓它失敗，從失敗訊息抄回**真實輸出**。
-3. 把真實輸出填回斷言 → 綠燈。這就鎖住了現狀。
-4. 對關鍵分支重複，直到覆蓋你要動的那塊。
+---
 
-**範例（TypeScript / Vitest）：**
+## 🧪 No tests means you can't refactor safely → write a Characterization Test first
+
+When coverage is too thin, **don't dive in**. First write "characterization tests" to pin down **current behavior** — regardless of whether the current behavior is correct, first make it verifiable.
+
+Characterization test ≠ spec test: it doesn't assert "what it should be," it only records "what it is now."
+
+**How to write it (golden master method):**
+
+1. Find the unit you want to refactor, call it, and **deliberately assert an obviously wrong value**.
+2. Run the test, let it fail, and copy back the **actual output** from the failure message.
+3. Fill the actual output back into the assertion → green. This locks down the current state.
+4. Repeat for the key branches until you cover the part you're about to touch.
+
+**Example (TypeScript / Vitest):**
 
 ```ts
-// 還不知道 formatPrice 對負數回傳什麼，先逼它吐出來
+// Don't yet know what formatPrice returns for negatives, force it to spit it out
 it('characterizes formatPrice(-5)', () => {
-  expect(formatPrice(-5)).toBe('__FILL_ME__'); // 跑一次 → 得到 '-$5.00'
+  expect(formatPrice(-5)).toBe('__FILL_ME__'); // run once → get '-$5.00'
 });
-// 抄回真實值，鎖住現狀；之後重構若改了它，這條會紅
+// Copy back the real value, lock the current state; if a later refactor changes it, this line turns red
 ```
 
-✅ Characterization 完成的標準：**你要改的每個分支，都有一條測試會在行為變動時變紅。**
+✅ Characterization done means: **every branch you're going to change has a test that turns red when behavior changes.**
 
 ---
 
-## 🪜 小步 + 每步 commit
+## 🪜 Small steps + commit per step
 
-每一步都要小到「壞了能一眼看出是哪步」。一步一綠一 commit，呼應 [§3 每塊 commit](../03_implementation/02_tracking_docs.md)。
+Each step must be small enough that "if it breaks, you can spot which step at a glance." One step, one green, one commit, echoing [§3 commit per slice](../03_implementation/02_tracking_docs.md).
 
-| 重構動作 | 一步的粒度 |
+| Refactor action | Granularity of one step |
 |---|---|
-| 改名 | 一個符號改到底（靠 IDE/工具，不手改） |
-| 抽函式 | 抽一個，跑測試，commit |
-| 拆檔 | 搬一個單元 + 修 import，跑測試，commit |
-| 去重複 | 收斂一處重複，跑測試，commit |
+| Rename | One symbol renamed all the way through (use IDE/tooling, not by hand) |
+| Extract function | Extract one, run tests, commit |
+| Split file | Move one unit + fix imports, run tests, commit |
+| Dedupe | Collapse one duplication, run tests, commit |
 
-Commit 訊息建議：`refactor(<scope>): <做了什麼結構改動>`，並在 body 註明「行為不變，測試 X 全綠」。
+Suggested commit message: `refactor(<scope>): <what structural change>`, and note in the body "behavior unchanged, test X all green."
 
-🚩 **紅旗**：working tree 累積了 5 個沒 commit 的重構動作 → 停。一旦中間某步壞了，你會分不清是哪一步。回到上一個綠燈點。
+🚩 **Red flag**: the working tree has accumulated 5 uncommitted refactor actions → stop. Once some middle step breaks, you won't be able to tell which one. Go back to the last green point.
 
 ---
 
-## 🎯 重構要有「目標」——說清楚、框小、其餘 YAGNI
+## 🎯 A refactor needs a "goal" — state it, scope it small, YAGNI the rest
 
-漫無目的的「順手整理」是重構失控的頭號原因。動手前先答：
+Aimless "tidying while I'm here" is the number-one cause of refactors spiraling out of control. Before starting, answer:
 
 ```
-重構目標：______（可測性 / 可讀性 / 效能 / 去依賴，擇一主軸）
-範圍邊界：只動 ______，不動 ______
-完成定義：當 ______ 成立，就停手
+Refactor goal: ______ (testability / readability / performance / dependency removal, pick one main axis)
+Scope boundary: only touch ______, do not touch ______
+Definition of done: when ______ holds, stop
 ```
 
-| 目標 | 可量測的完成訊號 |
+| Goal | Measurable done signal |
 |---|---|
-| 可測性 | 目標單元能被獨立測試（依賴可注入/可 mock） |
-| 可讀性 | 函式長度/巢狀深度/重複降到設定線以下 |
-| 效能 | 有 benchmark 證明改善（先量再改，見 [§6.2](../06_non_functional/02_performance.md)） |
-| 去依賴 | 目標模組不再 import 某套件/某層 |
+| Testability | Target unit can be tested in isolation (dependencies injectable/mockable) |
+| Readability | Function length/nesting depth/duplication dropped below a set line |
+| Performance | A benchmark proves improvement (measure first, then change, see [§6.2](../06_non_functional/02_performance.md)) |
+| Dependency removal | Target module no longer imports some package/layer |
 
-**範圍一旦定了，路上看到的其他髒污一律 YAGNI**（[§3.5](../03_implementation/05_yagni.md)）：不在這次重構裡「順便」改別的模組、加抽象層、引新依賴。看到值得做的，記進 backlog，另開一次。
+**Once scope is set, any other grime you spot along the way is YAGNI** ([§3.5](../03_implementation/05_yagni.md)): don't "while I'm at it" change other modules, add abstraction layers, or pull in new dependencies in this refactor. See something worth doing, log it to the backlog, open a separate pass.
 
-> 效能重構特例：**沒有 before/after 量測就不准開始**。否則你無法證明「結構變了、而且真的更快」，只是換個寫法自我感覺良好。
-
----
-
-## 📜 沒有 PRD 時，「規格」就是「現有行為必須被保留」
-
-Brownfield 重構通常沒有 PRD。這不代表沒有合約——**合約是現狀本身**。
-
-- 合約來源 = 特徵測試 + 現有通過的測試。
-- 「PRD 是合約」在這裡變成：**現有可觀測行為是合約**，你不能單方面改它。
-- 真要改行為 → 升級成需求變更，走 PRD / [§5.2 PRD 變更](../05_conflict_handling/02_prd_change.md)，不在重構裡夾帶。
-
-完全沒 PRD 又要做較大改動時，先讀 [§8.5 No-PRD 流程](./05_no_prd.md)補一份最小合約。
+> Performance refactor exception: **no before/after measurement, no starting**. Otherwise you can't prove "the structure changed and it's actually faster," you're just rewording it and feeling good about yourself.
 
 ---
 
-## 🔀 重構 vs 重寫（別把重寫叫成重構）
+## 📜 With no PRD, the "spec" is "existing behavior must be preserved"
+
+Brownfield refactors usually have no PRD. That doesn't mean there's no contract — **the contract is the current state itself**.
+
+- Contract source = characterization tests + existing passing tests.
+- "PRD is the contract" becomes here: **existing observable behavior is the contract**, you can't unilaterally change it.
+- If you really must change behavior → escalate to a requirements change, go through PRD / [§5.2 PRD Change](../05_conflict_handling/02_prd_change.md), don't smuggle it into the refactor.
+
+When there's no PRD at all and you need a larger change, first read [§8.5 No-PRD Workflow](./05_no_prd.md) to backfill a minimal contract.
+
+---
+
+## 🔀 Refactor vs Rewrite (don't call a rewrite a refactor)
 
 | | Refactor | Rewrite |
 |---|---|---|
-| 行為 | 必須不變 | 可能改變/重新定義 |
-| 安全網 | 既有測試 + 特徵測試 | **需要 PRD**（新行為的合約） |
-| 步伐 | 小步、隨時可停、隨時綠燈 | 大塊、中途不可用 |
-| 風險 | 低（每步可回退） | 高（要 §7 遷移/回滾計畫） |
-| 觸發 | 結構爛但行為對 | 行為本身要重新設計 |
+| Behavior | Must stay unchanged | May change / be redefined |
+| Safety net | Existing tests + characterization tests | **Needs a PRD** (contract for the new behavior) |
+| Pace | Small steps, stoppable anytime, green anytime | Large chunks, unusable mid-way |
+| Risk | Low (each step revertible) | High (needs §7 migration/rollback plan) |
+| Trigger | Structure bad but behavior correct | Behavior itself needs redesign |
 
-🚩 當「重構」開始需要**暫時讓功能不可用**、或你發現自己在**重新決定行為**——那已是重寫。停下，去寫 PRD，並準備 [§7 遷移與回滾](../07_operations/_index.md)計畫。重寫不是放大版的重構，是另一種風險等級的工程。
+🚩 When a "refactor" starts needing to **temporarily make a feature unusable**, or you find yourself **redeciding behavior** — that's already a rewrite. Stop, go write a PRD, and prepare a [§7 Migration & Rollback](../07_operations/_index.md) plan. A rewrite is not a scaled-up refactor; it's engineering of a different risk class.
 
 ---
 
-## ✅ 重構動手前 / 收尾檢查清單
+## ✅ Refactor pre-flight / wrap-up checklist
 
-**動手前：**
-- [ ] git working tree 乾淨（撤退路線，見 Sentinel 的安全網）
-- [ ] 目標單元相關測試**全綠**；薄的地方已補特徵測試
-- [ ] 已寫下：目標 / 範圍邊界 / 完成訊號
-- [ ] 確認是重構不是改行為（過了上方那張表）
+**Pre-flight:**
+- [ ] git working tree clean (retreat route, see Sentinel's safety nets)
+- [ ] target unit's relevant tests **all green**; thin spots have characterization tests backfilled
+- [ ] written down: goal / scope boundary / done signal
+- [ ] confirmed it's a refactor not a behavior change (passed the table above)
 
-**每一步：**
-- [ ] 只改結構，沒碰行為
-- [ ] 測試全綠 → commit；紅了 → revert 這一步
+**Each step:**
+- [ ] only changed structure, didn't touch behavior
+- [ ] tests all green → commit; red → revert this step
 
-**收尾（對齊 [§4 DoD](../04_quality_gates/01_dod.md)）：**
-- [ ] lint / typecheck / 全測試綠
-- [ ] 沒有夾帶 bug 修復或新功能
-- [ ] 效能重構：附上 before/after 數據
-- [ ] 每步皆已 commit，working tree 乾淨
+**Wrap-up (aligned with [§4 DoD](../04_quality_gates/01_dod.md)):**
+- [ ] lint / typecheck / all tests green
+- [ ] no smuggled-in bug fixes or new features
+- [ ] performance refactor: before/after numbers attached
+- [ ] every step committed, working tree clean
 
-> 證據強度（Sentinel）：宣稱「重構完成、行為不變」前，必須是 🟢 已驗證——測試實際跑過且全綠。沒跑過就只能說 🟡 已檢視，並請使用者跑。
+> Evidence grading (Sentinel): before claiming "refactor done, behavior unchanged," it must be 🟢 verified — tests actually run and all green. Not run means you can only say 🟡 reviewed, and ask the user to run them.
 
 ---
 
 ## 🔗 Related Compass sections
 
-- [§8.2 Bug-Fix Workflow](./02_bug_fix.md) — 重構途中發現的 bug 另走這裡
-- [§8.4 Add-a-Feature Workflow](./04_add_feature.md) — 改行為/加功能不是重構
-- [§3.5 YAGNI](../03_implementation/05_yagni.md) — 框死重構範圍，不順手擴張
-- [§4.1 Definition of Done](../04_quality_gates/01_dod.md) — 重構也要過 DoD
+- [§8.2 Bug-Fix Workflow](./02_bug_fix.md) — a bug found mid-refactor goes here instead
+- [§8.4 Add-a-Feature Workflow](./04_add_feature.md) — changing behavior/adding features is not refactoring
+- [§3.5 YAGNI](../03_implementation/05_yagni.md) — pin the refactor scope, no opportunistic expansion
+- [§4.1 Definition of Done](../04_quality_gates/01_dod.md) — a refactor must pass DoD too
 
 ---
 

@@ -10,7 +10,7 @@
     },
     {
       "name": "tables",
-      "prd_regex": "(?:table|資料表)\\s+`(\\w+)`",
+      "prd_regex": "(?:table)\\s+`(\\w+)`",
       "code_glob": "migrations/**/*.sql",
       "code_regex": "CREATE\\s+TABLE\\s+(?:IF\\s+NOT\\s+EXISTS\\s+)?`?(\\w+)`?"
     }

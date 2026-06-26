@@ -1,110 +1,110 @@
-# §9.1 誰裁決什麼
+# §9.1 Who Decides What
 
 > Part of [Compass](../../SKILL.md) §9 — Collaboration.
-> §5 衝突處理一律說「等使用者裁決」——但「使用者」在真實組織裡會裂成多個角色。這份檔把衝突類型路由到對的裁決者。
+> §5 conflict handling always says "await the user's ruling" — but in a real org "the user" splits into multiple roles. This file routes conflict types to the right decision-maker.
 
-§5 系列檔案到處寫「停手、log、等使用者裁決」。問題是：**「使用者」不是一個人**。
-產品行為的衝突，工程主管裁不了；架構選型的衝突，PM 不該拍板；安全與合規的衝突，誰都不能蓋過 security 說的話。
-把所有衝突丟給同一個「使用者」，等於把裁決外包給「現場誰聲音大」。這份檔的職責是：**先決定誰有權裁，再去問**。
+The §5 files keep saying "stop, log, await the user's ruling." The problem: **"the user" is not one person.**
+An eng lead can't rule on a product-behavior conflict; a PM shouldn't call the shot on architecture selection; nobody overrides what security says on a security/compliance conflict.
+Throwing every conflict at the same "user" outsources the ruling to "whoever's loudest in the room." This file's job: **decide who has the authority to rule first, then go ask.**
 
 ---
 
-## 🧭 裁決路由表
+## 🧭 Ruling Routing Table
 
-| 衝突類型 | 誰是裁決者 | 為什麼是他 | 裁決前必須備齊的資訊 |
+| Conflict type | Who decides | Why them | Info you must have ready before asking |
 |---|---|---|---|
-| 產品行為 / scope（要不要做、做成什麼樣） | PM / product owner | 他對「使用者價值 / 優先序」負責 | 兩個選項各自的使用者影響、成本估、是否動到已承諾的 scope |
-| 架構 / 技術選型（用哪個方案、要不要引依賴） | Architect / tech lead | 他對「長期可維護性 / 一致性」負責 | 各方案的取捨表、對既有架構的相容性、回退成本 |
-| 安全 / 合規（PII、認證、權限、法規） | Security / legal | 他對「組織風險 / 法律責任」負責 | 資料分類、攻擊面、合規條文出處、最小權限方案 |
-| PRD 本身的 bug（規格自相矛盾 / 寫錯） | PRD author | 只有他知道「原意」是哪個 | 矛盾的兩處原文引用、你推測的兩種解讀、各自下游影響 |
-| 上線時機（什麼時候 ship、要不要 rollback） | Release manager | 他對「發布節奏 / 風險窗口」負責 | 變更風險等級、回退方案、相依的其他發布、監控就緒度 |
+| Product behavior / scope (whether to build it, what it looks like) | PM / product owner | Owns "user value / prioritization" | Each option's user impact, cost estimate, whether it touches already-committed scope |
+| Architecture / tech selection (which approach, whether to add a dependency) | Architect / tech lead | Owns "long-term maintainability / consistency" | Trade-off table per option, compatibility with existing architecture, rollback cost |
+| Security / compliance (PII, auth, permissions, regulation) | Security / legal | Owns "org risk / legal liability" | Data classification, attack surface, compliance clause citation, least-privilege option |
+| Bug in the PRD itself (spec self-contradicts / is wrong) | PRD author | Only they know which was the "intent" | Source quotes of both contradicting passages, your two guessed readings, downstream impact of each |
+| Release timing (when to ship, whether to roll back) | Release manager | Owns "release cadence / risk window" | Change risk level, rollback plan, other dependent releases, monitoring readiness |
 
-> **鐵律**：你只能「準備好資訊去問」，不能「替裁決者決定」。準備不足就去問，等於逼對方在資訊不全下拍板——他拍錯，鍋仍是你揹。
+> **Iron rule**: you can only "prepare the info and go ask," you cannot "decide for the decision-maker." Showing up underprepared forces them to call the shot on incomplete info — they call it wrong, the blame is still on you.
 
 ---
 
-## 🔀 怎麼把一個衝突路由到對的人
+## 🔀 How to Route a Conflict to the Right Person
 
 ```text
-拿到一個衝突 →
-  1. 它改變的是「使用者看到 / 體驗到的行為」嗎？      → 產品行為 → PM
-  2. 它改變的是「程式碼結構 / 技術依賴」嗎？           → 架構 → tech lead
-  3. 它碰到「使用者資料 / 認證 / 權限 / 法規」嗎？      → 安全 → security/legal（最高否決權）
-  4. 它的根因是「PRD 自己寫錯 / 矛盾」嗎？             → PRD bug → PRD author
-  5. 它是「何時 ship / 要不要退」嗎？                  → 上線時機 → release manager
+Got a conflict →
+  1. Does it change "behavior the user sees / experiences"?      → product behavior → PM
+  2. Does it change "code structure / tech dependencies"?         → architecture → tech lead
+  3. Does it touch "user data / auth / permissions / regulation"? → security → security/legal (highest veto)
+  4. Is the root cause "the PRD itself is wrong / contradicts"?   → PRD bug → PRD author
+  5. Is it "when to ship / whether to roll back"?                 → release timing → release manager
 ```
 
-**一個衝突可能命中多條**——例如「為了趕上線，把 PII 加密降級成明文存」同時是 #3 + #5。
-規則：**安全（#3）是 gate，不是 vote**。只要命中 #3，security 的否決優先於其他所有角色的「想要」。先過安全這關，再談時機。
+**One conflict can hit multiple branches** — e.g. "to make the ship date, downgrade PII encryption to plaintext storage" is both #3 and #5.
+Rule: **security (#3) is a gate, not a vote.** The moment #3 is hit, security's veto takes precedence over every other role's "want." Clear security first, then talk timing.
 
 ---
 
-## 🎩 Solo 模式：你一人戴所有帽子
+## 🎩 Solo Mode: You Wear Every Hat
 
-沒有組織、只有你和 Claude 時，上面五個角色全是你。
-**危險不在於你要扮多角，而在於你會讓「強勢的帽子」吃掉「弱勢的帽子」**——通常是「產品想趕快上」壓過「安全說先別」。
+With no org, just you and Claude, all five roles above are you.
+**The danger isn't that you play multiple roles — it's that you let the "strong hat" eat the "weak hat"** — usually "product wants to ship now" steamrolling "security says not yet."
 
-Solo 的紀律是**把帽子分開戴，分開記**：
+The solo discipline is to **wear the hats separately and record them separately:**
 
-- [ ] 裁決前，明寫「我現在戴哪頂帽子」——`[PM 視角]` / `[Security 視角]`，不要混在一段話裡
-- [ ] **安全帽子有否決權，且要單獨表態**——不能因為「我同時是 PM 很想上」就讓安全閉嘴
-- [ ] 帽子之間有衝突時，**寫下來再裁**，不要靠腦內「感覺一下就過了」
-- [ ] 把裁決結論記進 `.claude/progress.md`（決策不靠對話記憶——這是 Sentinel 的回錨原則）
+- [ ] Before ruling, explicitly write "which hat I'm wearing now" — `[PM view]` / `[Security view]`, don't blend them into one paragraph
+- [ ] **The security hat has veto power and must speak separately** — you can't silence security just because "I'm also the PM and really want to ship"
+- [ ] When hats conflict, **write it down, then rule** — don't "just feel it through" in your head
+- [ ] Record the ruling conclusion in `.claude/progress.md` (decisions don't rely on conversation memory — this is Sentinel's re-anchor principle)
 
-> **範例（solo，反例）**
-> 你在趕一個 demo，PRD 沒寫密碼要 hash。
-> ✗ 「我是使用者我說了算，先明文存，demo 完再改」——產品帽子吃掉了安全帽子。
-> ✓ `[Security 視角]` 密碼明文 = fail，這條不開放裁決，hash 是預設安全的底線；`[PM 視角]` demo 範圍可以砍別的功能來換時間。
-> 安全帽子在 solo 模式照樣有否決權——這正是 §5 說的「等裁決」，只是裁決者是「戴上 security 帽子的你」。
+> **Example (solo, anti-pattern)**
+> You're rushing a demo, the PRD doesn't say the password must be hashed.
+> ✗ "I'm the user, I call it — store plaintext for now, fix after the demo" — the product hat ate the security hat.
+> ✓ `[Security view]` plaintext password = fail, this isn't open to ruling, hashing is the secure-by-default floor; `[PM view]` the demo scope can drop other features to buy time.
+> The security hat keeps its veto in solo mode too — this is exactly the "await ruling" §5 talks about, just that the decision-maker is "you wearing the security hat."
 
 ---
 
-## ⬆️ 升級：當裁決者彼此不同意
+## ⬆️ Escalation: When Decision-Makers Disagree With Each Other
 
-兩個角色都在自己職權內、但結論相反時（典型：tech lead 要重寫、release manager 要照排程上），**不要自己選一邊讓另一邊吞**。
+When two roles are each within their own authority but reach opposite conclusions (classic: tech lead wants a rewrite, release manager wants to ship on schedule), **don't pick a side yourself and make the other swallow it.**
 
-升級流程：
+Escalation flow:
 
-| 步驟 | 動作 |
+| Step | Action |
 |---|---|
-| 1. 凍結 | 停手，不要先實作其中一方，避免製造既成事實 |
-| 2. 寫共同事實 | 列出雙方都同意的事實 + 各自的取捨，一頁攤平分歧點 |
-| 3. 找共同上級 | 升到兩人的共同上級（如 eng manager / 產品負責人）裁 |
-| 4. 記裁決 + 理由 | 結論與**理由**一起寫進 tracking doc，下次同類衝突可複用 |
+| 1. Freeze | Stop, don't implement either side first — avoid creating a fait accompli |
+| 2. Write shared facts | List the facts both sides agree on + each side's trade-offs, lay the disagreement flat on one page |
+| 3. Find common superior | Escalate to both parties' common superior (e.g. eng manager / product head) to rule |
+| 4. Record ruling + rationale | Write the conclusion **and its rationale** into the tracking doc, reusable for the next conflict of the same type |
 
-> Solo 模式的「升級」= 升級成 Sentinel 🔴 重級：載入 skill，把分歧當成一個需要證據強度標註的決策來跑，而不是靠直覺二選一。
-
----
-
-## 🔗 回扣 §5 衝突處理
-
-§5 那些「等使用者裁決」，現在可以解析成「等**對的**裁決者」：
-
-- [§5.1 模糊 / bug / 缺漏](../05_conflict_handling/01_vague_bug_gap.md) 裡的 **PRD bug（§5.1.2）** → 裁決者是 **PRD author**，不是隨便哪個 reviewer
-- [§5.2 PRD 變更](../05_conflict_handling/02_prd_change.md) 的 scope 變動 → 裁決者是 **PM / product owner**
-- [§5.3 跨文件衝突](../05_conflict_handling/03_cross_document.md) → 裁決者是該文件 / 領域的 **domain owner**（架構文件→tech lead、安全規範→security）
-- [§5.4 多 PRD 衝突](../05_conflict_handling/04_multi_prd.md) → 跨 PRD 的優先序 → 升級到共同上級
-
-**判準速記**：問「等裁決」時先問自己一句——「我現在要問的這個人，職權範圍蓋得住這個衝突嗎？」蓋不住，就是路由錯了。
+> Solo-mode "escalation" = escalate to Sentinel 🔴 heavy: load the skill, run the disagreement as a decision needing evidence grading, not an intuition coin-flip.
 
 ---
 
-## ✅ 收工前自檢
+## 🔗 Tying Back to §5 Conflict Handling
 
-- [ ] 每個被擱置的衝突，都標了「裁決者是誰」，不是只寫「等使用者」
-- [ ] 安全 / 合規類衝突，確認 security 的否決權沒被其他角色蓋過
-- [ ] solo 模式下，分歧的帽子有分開表態並寫進 progress.md
-- [ ] 裁決者彼此不同意的，已凍結 + 升級，沒有自己偷選一邊
-- [ ] 裁決結論連同理由記進 tracking doc，可被下次複用
+Those "await the user's ruling" in §5 can now resolve to "await the **right** decision-maker":
+
+- The **PRD bug (§5.1.2)** in [§5.1 vague / bug / gap](../05_conflict_handling/01_vague_bug_gap.md) → decision-maker is the **PRD author**, not just any reviewer
+- The scope change in [§5.2 PRD change](../05_conflict_handling/02_prd_change.md) → decision-maker is the **PM / product owner**
+- [§5.3 cross-document conflict](../05_conflict_handling/03_cross_document.md) → decision-maker is the **domain owner** of that document / domain (architecture doc → tech lead, security spec → security)
+- [§5.4 multi-PRD conflict](../05_conflict_handling/04_multi_prd.md) → cross-PRD prioritization → escalate to common superior
+
+**Judgment shortcut**: before saying "await ruling," ask yourself one thing — "does the person I'm about to ask have authority that covers this conflict?" If not, you've routed it wrong.
+
+---
+
+## ✅ Pre-Wrap Self-Check
+
+- [ ] Every parked conflict is tagged with "who the decision-maker is," not just "await the user"
+- [ ] For security / compliance conflicts, confirm security's veto wasn't overridden by another role
+- [ ] In solo mode, conflicting hats spoke separately and were written into progress.md
+- [ ] Where decision-makers disagree, it's frozen + escalated, no sneaking a side-pick
+- [ ] Ruling conclusion plus rationale recorded in the tracking doc, reusable next time
 
 ---
 
 ## 🔗 Related Compass sections
 
-- [§5.1 模糊 / bug / 缺漏](../05_conflict_handling/01_vague_bug_gap.md) — PRD bug（§5.1.2）的裁決者是 PRD author
-- [§5.3 跨文件衝突](../05_conflict_handling/03_cross_document.md) — 跨文件衝突由 domain owner 裁
-- [§3.2 Tracking Docs](../03_implementation/02_tracking_docs.md) — 裁決結論與理由記在哪
-- [§9 Collaboration 總覽](./_index.md) — 跨人 / 跨 AI 協作地圖
+- [§5.1 vague / bug / gap](../05_conflict_handling/01_vague_bug_gap.md) — the PRD bug (§5.1.2) decision-maker is the PRD author
+- [§5.3 cross-document conflict](../05_conflict_handling/03_cross_document.md) — cross-document conflicts are ruled by the domain owner
+- [§3.2 Tracking Docs](../03_implementation/02_tracking_docs.md) — where the ruling conclusion and rationale are recorded
+- [§9 Collaboration overview](./_index.md) — cross-person / cross-AI collaboration map
 
 ---
 

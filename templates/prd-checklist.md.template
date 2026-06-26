@@ -1,80 +1,80 @@
-# PRD 對齊追蹤表（prd-checklist.md）
+# PRD Alignment Tracking Table (prd-checklist.md)
 
-> Compass §3.2 / §11 M-007 — 防止「PRD 寫了但沒做」「做了但偏離」的逐項追蹤表。
-> <!-- 動手前由 PRD 拆出每一項；每完成一塊立即回填狀態（十二誡 §3 完成即比對）。 -->
-
----
-
-## 顆粒度鐵律：1 PRD item = 1 row（禁止聚合）
-
-PRD 裡每一個**可獨立驗證的最小單位**，都必須單獨佔一列，**不准合併、不准摘要**。
-
-- ❌ 錯誤（聚合）：`使用者 CRUD API` → 一列帶過
-- ✅ 正確（拆開）：`POST /users`、`GET /users/:id`、`PATCH /users/:id`、`DELETE /users/:id` 各一列
-
-**為什麼**：聚合會讓「4 個 endpoint 做了 3 個」看起來像「✅ 完成」，漏掉的那個永遠不會被發現。一列一項才能讓缺口無所遁形。
-
-**最小單位的判定**（依 PRD 章節型態）：
-- endpoint 顆粒度 → 一個 HTTP method + path = 一列
-- table 顆粒度 → 一張資料表 = 一列（欄位多時可再下鑽成 field 列）
-- field 顆粒度 → 一個欄位（含型別 / 必填 / 約束）= 一列
-- page 顆粒度 → 一個畫面 / 路由 = 一列
+> Compass §3.2 / §11 M-007 — item-by-item tracking table to prevent "in the PRD but not done" and "done but drifted".
+> <!-- Pre-flight: break out every item from the PRD; backfill status the moment a slice is done (Twelve Principles §3 done means compare). -->
 
 ---
 
-## 狀態圖例
+## Granularity iron rule: 1 PRD item = 1 row (no aggregation)
 
-| 記號 | 意義 |
+Every **smallest independently-verifiable unit** in the PRD must occupy its own row. **No merging, no summarizing.**
+
+- ❌ Wrong (aggregated): `User CRUD API` → glossed over in one row
+- ✅ Right (split out): `POST /users`, `GET /users/:id`, `PATCH /users/:id`, `DELETE /users/:id` each get a row
+
+**Why**: aggregation makes "3 of 4 endpoints done" look like "✅ done", and the missing one never gets found. One row per item leaves gaps nowhere to hide.
+
+**Deciding the smallest unit** (by PRD section type):
+- endpoint granularity → one HTTP method + path = one row
+- table granularity → one table = one row (drill down into field rows when there are many columns)
+- field granularity → one field (incl. type / required / constraints) = one row
+- page granularity → one screen / route = one row
+
+---
+
+## Status legend
+
+| Symbol | Meaning |
 |---|---|
-| ⬜ | 未開始 |
-| 🟡 | 進行中 / 部分完成 |
-| ✅ | 完成且已對齊 PRD |
+| ⬜ | Not started |
+| 🟡 | In progress / partially done |
+| ✅ | Done and aligned with PRD |
 
-> `verified-in-codebase?` 欄位：是否實際在 codebase 確認過（非靠記憶）。填 `是 (檔案:行)` / `否` / `⚠️推測`。
+> `verified-in-codebase?` column: whether actually confirmed in the codebase (not from memory). Fill in `yes (file:line)` / `no` / `⚠️speculation`.
 >
-> `優先級` 欄：P0 / P1 / P2…（承接 PRD 或 [Cartographer](https://github.com/RayLi-Git/cartographer) 交棒的優先級）。
-> `AC/驗收方式` 欄：這條的驗收標準 + 驗法（單元 / 整合 / 安全 / 手動）——對應 [§10](../references/10_testing_strategy/_index.md)「每條驗收要能指到測試」。
+> `Priority` column: P0 / P1 / P2… (carried over from the PRD or a [Cartographer](https://github.com/RayLi-Git/cartographer) handoff).
+> `AC / verify-by` column: this row's acceptance criteria + how to verify (unit / integration / security / manual) — maps to [§10](../references/10_testing_strategy/_index.md) "every acceptance criterion must point to a test".
 
 ---
 
-## 追蹤表（依 PRD 章節分組）
+## Tracking table (grouped by PRD section)
 
-### §<X.Y> <章節標題，例：使用者帳號 API>
-<!-- endpoint 顆粒度範例 -->
+### §<X.Y> <section title, e.g. User Account API>
+<!-- endpoint granularity example -->
 
-| 狀態 | PRD §ref | 項目（最小單位） | 優先級 | AC/驗收方式 | verified-in-codebase? |
+| Status | PRD §ref | Item (smallest unit) | Priority | AC / verify-by | verified-in-codebase? |
 |---|---|---|---|---|---|
-| ✅ | §<X.Y> | `POST /api/users` 建立帳號 | P0 | 回 201 含 id；整合測試 | 是 (routes/users.ts:42) |
-| 🟡 | §<X.Y> | `GET /api/users/:id` 查單筆 | P0 | 回 200/404；整合測試 | 否（route 有、權限檢查未做） |
-| ⬜ | §<X.Y> | `DELETE /api/users/:id` 軟刪除 | P1 | deleted_at 設值；整合測試 | 否 |
+| ✅ | §<X.Y> | `POST /api/users` create account | P0 | 201 with id; integration test | yes (routes/users.ts:42) |
+| 🟡 | §<X.Y> | `GET /api/users/:id` fetch single | P0 | 200/404; integration test | no (route exists, permission check not done) |
+| ⬜ | §<X.Y> | `DELETE /api/users/:id` soft delete | P1 | deleted_at set; integration test | no |
 
-### §<X.Z> <章節標題，例：資料模型>
-<!-- table / field 顆粒度範例 -->
+### §<X.Z> <section title, e.g. Data Model>
+<!-- table / field granularity example -->
 
-| 狀態 | PRD §ref | 項目（最小單位） | 優先級 | AC/驗收方式 | verified-in-codebase? |
+| Status | PRD §ref | Item (smallest unit) | Priority | AC / verify-by | verified-in-codebase? |
 |---|---|---|---|---|---|
-| ✅ | §<X.Z> | `users` 表存在 | P0 | migration 套用無誤；遷移測試 | 是 (migrations/001_users.sql) |
-| ✅ | §<X.Z> | `users.email` UNIQUE NOT NULL | P0 | 重複 email 插入失敗；單元測試 | 是 (migrations/001_users.sql:5) |
-| 🟡 | §<X.Z> | `users.deleted_at` 軟刪除欄位 | P1 | 欄位存在且可為 null；遷移測試 | ⚠️推測（migration 未確認） |
+| ✅ | §<X.Z> | `users` table exists | P0 | migration applies cleanly; migration test | yes (migrations/001_users.sql) |
+| ✅ | §<X.Z> | `users.email` UNIQUE NOT NULL | P0 | duplicate email insert fails; unit test | yes (migrations/001_users.sql:5) |
+| 🟡 | §<X.Z> | `users.deleted_at` soft-delete column | P1 | column exists and nullable; migration test | ⚠️speculation (migration not confirmed) |
 
-### §<X.W> <章節標題，例：前端畫面>
-<!-- page 顆粒度範例 -->
+### §<X.W> <section title, e.g. Frontend Screens>
+<!-- page granularity example -->
 
-| 狀態 | PRD §ref | 項目（最小單位） | 優先級 | AC/驗收方式 | verified-in-codebase? |
+| Status | PRD §ref | Item (smallest unit) | Priority | AC / verify-by | verified-in-codebase? |
 |---|---|---|---|---|---|
-| ⬜ | §<X.W> | `/login` 登入頁 | P0 | 表單可送出、錯誤顯示；手動 + e2e | 否 |
-| ⬜ | §<X.W> | `/settings/profile` 個人資料頁 | P2 | 顯示/儲存個資；手動 | 否 |
+| ⬜ | §<X.W> | `/login` login page | P0 | form submits, errors show; manual + e2e | no |
+| ⬜ | §<X.W> | `/settings/profile` profile page | P2 | shows/saves profile; manual | no |
 
 ---
 
-## 自動展開（選用）
+## Auto-expand (optional)
 
-逐項手動拆 PRD 很累且易漏。可用 `scripts/expand_checklist.example.py` 從 PRD 表格產出**一項一列的 checkbox 起點清單**（注意：它產的是 bullet 種子，不是本表的完整欄位）：
+Splitting the PRD item by item by hand is tedious and error-prone. Use `scripts/expand_checklist.example.py` to produce a **one-item-per-row checkbox seed list** from the PRD tables (note: it emits a bullet seed, NOT this table's full columns):
 
 ```bash
 python scripts/expand_checklist.example.py <path/to/PRD.md> > checklist-seed.md
 ```
 
-它會掃 PRD 表格、把每列攤成 `- [ ] <章節> | <最小單位>` 的 bullet（避免人手抄漏行）。接著把這些 bullet **排進上面的表格**，補上 `優先級` / `AC/驗收方式`（從 PRD 或 Cartographer 交棒取得），`狀態` 預設 ⬜、`verified-in-codebase?` 預設 `否`。自動拆分可能漏掉散落在敘述段落裡的需求，仍須人工複核。
+It scans the PRD tables and flattens each row into a `- [ ] <section> | <smallest unit>` bullet (so you don't hand-copy rows and miss some). Then arrange those bullets **into the table above**, filling in `Priority` / `AC / verify-by` (from the PRD or a Cartographer handoff); `Status` defaults to ⬜ and `verified-in-codebase?` to `no`. Auto-splitting may miss requirements scattered in prose paragraphs, so still review manually.
 
-<!-- 維護提醒：PRD 改版時重新展開並 diff，新增項補列、刪除項標註，勿直接覆蓋既有狀態。 -->
+<!-- Maintenance reminder: when the PRD is revised, re-expand and diff; add rows for new items, annotate deleted ones, don't overwrite existing status outright. -->

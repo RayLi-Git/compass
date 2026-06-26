@@ -1,113 +1,113 @@
-# §8.1 Brownfield 總覽：既有 codebase 的紀律
+# §8.1 Brownfield Overview: Discipline for Existing Codebases
 
-> Part of [Compass](../../SKILL.md) §8 — Brownfield。
-> 在你動既有 code 之前先看懂它：既有 code 與 PRD 並列為第二份真相來源。
-
----
-
-## 🧭 為什麼 §8 存在
-
-SOP §9 把 brownfield / bugfix 明確劃出範圍外（OUT of scope）。
-但現實是：**絕大多數工作都是 brownfield**——你不是在白紙上開新專案，而是在一坨已經跑在 prod 的 code 上動刀。SOP 的缺口剛好落在你 90% 的時間。
-
-Compass §8 補上這個缺口。它不是「綠地開發流程的折扣版」，而是一套**不同的紀律**：綠地的風險是「沒寫出來」，brownfield 的風險是「把已經能跑的東西弄壞」。
+> Part of [Compass](../../SKILL.md) §8 — Brownfield.
+> Understand it before you touch it: existing code stands alongside the PRD as a second source of truth.
 
 ---
 
-## 🎯 核心心態：既有 code 是第二份真相
+## 🧭 Why §8 Exists
 
-綠地專案只有一份合約——PRD。Brownfield 有兩份：
+SOP §9 explicitly puts brownfield / bugfix OUT of scope.
+But the reality is: **the vast majority of work is brownfield**—you're not starting a fresh project on a blank page, you're cutting into a pile of code already running in prod. The SOP gap lands exactly on 90% of your time.
 
-| 真相來源 | 是什麼 | 你能不能改 |
+Compass §8 fills that gap. It's not "a discount version of the greenfield flow," it's a **different discipline**: the greenfield risk is "not writing it," the brownfield risk is "breaking something that already works."
+
+---
+
+## 🎯 Core Mindset: Existing Code Is a Second Truth
+
+A greenfield project has one contract—the PRD. Brownfield has two:
+
+| Source of truth | What it is | Can you change it |
 |---|---|---|
-| **PRD / spec** | 你「應該」做什麼 | 不能，PRD 是合約（見 §3） |
-| **既有 code 的現況行為** | 系統「現在實際」做什麼 | 能，但必須先看懂為什麼 |
+| **PRD / spec** | What you "should" do | No, the PRD is a contract (see §3) |
+| **Existing code's current behavior** | What the system "actually does right now" | Yes, but you must understand why first |
 
-兩者衝突時不會自動以 PRD 為準——既有行為可能是某個沒寫進 PRD 的隱性需求、邊界補丁、或下游依賴。既有 code 既然是「第二份文件」，PRD 與它打架就是**跨文件衝突**，照 [§5.3 跨文件衝突](../05_conflict_handling/03_cross_document.md) 處理（先分領域，分不掉再停手等裁決）——不要直接覆寫。
+When the two conflict, the PRD does NOT automatically win—the existing behavior may be an implicit requirement never written into the PRD, an edge-case patch, or a downstream dependency. Since existing code is the "second source of truth," a PRD fighting with it is a **cross-document conflict**—handle it per [§5.3 Cross-Document Conflict](../05_conflict_handling/03_cross_document.md) (split by domain first; if you can't, stop and await ruling)—do not just overwrite.
 
-> **逆向理解先於修改**——這正是 Sentinel 的「動手前協定」：動既有 code 之前先向內問（這段為什麼這樣寫）+ 向外推影響範圍（誰依賴它）。Brownfield 把這條從「建議」升級為「鐵律」。
+> **Reverse-understand before you modify**—this is exactly Sentinel's pre-flight protocol: before touching existing code, ask inward (why is this written this way) + push outward on the blast radius (who depends on it). Brownfield upgrades this from "advice" to "iron rule."
 
-### 動手前協定（brownfield 版）
+### Pre-flight Protocol (brownfield edition)
 
-每次要改一段既有 code，先回答：
+Every time you're about to change a piece of existing code, first answer:
 
-- [ ] **這段現在在做什麼？** 用一句話複述它的實際行為（不是它「應該」做什麼）
-- [ ] **它為什麼這樣寫？** 找到 commit / PR / issue；看不到歷史就標 ⚠️推測
-- [ ] **誰依賴它？** 上游 caller、下游 consumer、測試、外部 API 契約
-- [ ] **改了會打到誰？** 列出爆炸半徑（blast radius）
-- [ ] **現有測試覆蓋它嗎？** 沒有就先補一條「鎖住現況」的測試再動手
+- [ ] **What does this do right now?** Restate its actual behavior in one sentence (not what it "should" do)
+- [ ] **Why is it written this way?** Find the commit / PR / issue; if you can't see the history, mark ⚠️speculation
+- [ ] **Who depends on it?** Upstream callers, downstream consumers, tests, external API contracts
+- [ ] **Who gets hit if you change it?** List the blast radius
+- [ ] **Do existing tests cover it?** If not, add a test that "locks in current behavior" before you touch anything
 
-任何一項答不出來 → 你還沒準備好改它，繼續逆向理解。
-
----
-
-## ⚖️ 風險不對稱：弄壞 > 漏做
-
-這是 brownfield 與綠地最關鍵的價值排序差異：
-
-```
-綠地：  漏做一個功能  ≈  弄壞一個（還不存在的）功能   → 對稱
-棕地：  弄壞既有行為  >>  漏做一個新功能              → 嚴重不對稱
-```
-
-**為什麼不對稱**：新功能漏了，使用者頂多「沒拿到新東西」；既有行為壞了，是「原本能用的東西現在炸了」——後者是退步（regression），會直接打到正在使用的人，且常常在你最沒預期的角落爆。
-
-實務推論：
-
-- **預設保守**：不確定一段 code 能不能刪 / 改，預設「不動」，標記後問。
-- **YAGNI 仍然成立但要小心**：PRD 沒寫的不加（[§3.5 YAGNI](../03_implementation/05_yagni.md)）；但「看起來沒用的既有 code」**不等於**「可以刪」——它可能是你還沒理解的依賴。刪除是修改的一種，照樣走動手前協定。
-- **改動要可回退**：動手前確保 git 乾淨；每塊小 commit（[§3.2 追蹤文件](../03_implementation/02_tracking_docs.md)）。這是 Sentinel 的「撤退路線」安全網。
-- **regression 測試是 DoD 的一部分**：宣稱完成前，既有測試全綠 + 你新增的「鎖現況」測試也綠（[§4.1 DoD](../04_quality_gates/01_dod.md)）。
+If you can't answer any one of these → you're not ready to change it, keep reverse-understanding.
 
 ---
 
-## 🗺️ §8 子檔地圖：選對流程
+## ⚖️ Asymmetric Risk: Breaking > Omitting
 
-Brownfield 不是單一流程。先判斷你手上是哪一種任務，再進對應子檔：
+This is the most critical difference in value ordering between brownfield and greenfield:
 
-| 子檔 | 任務型態 | 什麼時候用 |
+```
+Greenfield: omitting a feature   ≈  breaking a (not-yet-existing) feature   → symmetric
+Brownfield: breaking existing behavior  >>  omitting a new feature          → severely asymmetric
+```
+
+**Why asymmetric**: omit a new feature and the user at worst "didn't get the new thing"; break existing behavior and "something that used to work now blows up"—the latter is a regression, hits people actively using it, and often explodes in the corner you least expected.
+
+Practical implications:
+
+- **Default conservative**: if you're unsure whether a piece of code can be deleted / changed, default to "leave it," flag it, and ask.
+- **YAGNI still holds but tread carefully**: don't add what the PRD doesn't specify ([§3.5 YAGNI](../03_implementation/05_yagni.md)); but "existing code that looks unused" **does not equal** "safe to delete"—it may be a dependency you haven't understood yet. Deletion is a kind of modification, so it runs the pre-flight protocol too.
+- **Changes must be reversible**: ensure git is clean before you start; small commit per slice ([§3.2 Tracking Docs](../03_implementation/02_tracking_docs.md)). This is Sentinel's "retreat route" safety net.
+- **Regression tests are part of DoD**: before claiming done, all existing tests green + the "lock-in-behavior" tests you added are also green ([§4.1 DoD](../04_quality_gates/01_dod.md)).
+
+---
+
+## 🗺️ §8 Sub-file Map: Pick the Right Flow
+
+Brownfield isn't a single flow. First decide which kind of task you have, then go to the matching sub-file:
+
+| Sub-file | Task type | When to use |
 |---|---|---|
-| [§8.2 Bug fix](./02_bug_fix.md) | 修一個壞掉的既有行為 | 有人回報「原本會 X，現在變 Y」；行為偏離預期 |
-| [§8.3 Refactor](./03_refactor.md) | 改結構、**不改外部行為** | 想整理、改名、抽函式、拆模組；行為前後必須一致 |
-| [§8.4 Add feature](./04_add_feature.md) | 在既有系統上**加新行為** | 有 PRD，但要長在既有 code 上而非白紙 |
-| [§8.5 No PRD](./05_no_prd.md) | 沒有 PRD 的既有 code 工作 | 只有口頭需求 / 一張截圖 / 一句「幫我加個按鈕」 |
+| [§8.2 Bug fix](./02_bug_fix.md) | Fix a broken existing behavior | Someone reports "it used to do X, now it does Y"; behavior deviates from expectation |
+| [§8.3 Refactor](./03_refactor.md) | Change structure, **not external behavior** | Want to clean up, rename, extract functions, split modules; behavior must be identical before and after |
+| [§8.4 Add feature](./04_add_feature.md) | **Add new behavior** to an existing system | You have a PRD, but it must grow on existing code, not a blank page |
+| [§8.5 No PRD](./05_no_prd.md) | Existing-code work with no PRD | Only a verbal request / a screenshot / a "just add a button for me" |
 
-### 快速判斷
+### Quick Decision
 
 ```
-要不要改「外部可觀察行為」？
-├─ 不改行為，只改結構 ............ §8.3 Refactor
-└─ 要改 / 加行為
-    ├─ 是「修正」既有偏差 ......... §8.2 Bug fix
-    ├─ 是「新增」能力
-    │   ├─ 有 PRD ............... §8.4 Add feature
-    │   └─ 沒 PRD ............... §8.5 No PRD（先設法把需求釘成可驗收的）
+Do you need to change "externally observable behavior"?
+├─ No behavior change, structure only ......... §8.3 Refactor
+└─ Change / add behavior
+    ├─ "Fixing" an existing deviation ......... §8.2 Bug fix
+    ├─ "Adding" a capability
+    │   ├─ Have a PRD ....................... §8.4 Add feature
+    │   └─ No PRD ........................... §8.5 No PRD (first pin the requirement into something acceptance-testable)
 ```
 
-> **範例**：使用者說「結帳頁太慢，順便把那個折扣計算重寫一下」——這其實是**兩件事**：效能是 bug fix（§8.2）+ 重寫是 refactor（§8.3）。不要混在一個 commit 裡。混合任務先拆解，分別走流程、分別 commit、分別驗收。
+> **Example**: user says "the checkout page is too slow, and while you're at it rewrite that discount calc"—that's actually **two things**: performance is a bug fix (§8.2) + the rewrite is a refactor (§8.3). Don't mix them in one commit. Decompose mixed tasks first, run each through its own flow, commit separately, accept separately.
 
 ---
 
-## 🚩 Brownfield 專屬紅旗
+## 🚩 Brownfield-Specific Red Flags
 
-出現任一個 → 停手、退回逆向理解：
+Any one of these → stop, fall back to reverse-understanding:
 
-- 「這段 code 看起來沒用，我直接刪」——你確定理解它了嗎？刪除照樣走動手前協定。
-- 「現有測試擋路，我先註解掉它」——測試在保護某個你還沒理解的契約，**絕不為了讓 code 過而關測試**。
-- 「我把這個型別改成 any / 加個 `// @ts-ignore` 先過」——這是 Sentinel 紅旗，關警報不是滅火。
-- 「既有行為跟 PRD 不一樣，我直接照 PRD 改」——可能踩到隱性需求，先走跨文件衝突裁決（[§5.3](../05_conflict_handling/03_cross_document.md)）。
-- 「複製一段類似的既有 function 改一改」——複製即債務；先問能不能抽共用。
-- 改同一段第 3 次還沒對 → 升 🔴，進 Sentinel 診斷模式，往上游追根因。
+- "This code looks unused, I'll just delete it"—are you sure you understand it? Deletion runs the pre-flight protocol too.
+- "The existing test is in my way, I'll comment it out"—the test is protecting a contract you haven't understood yet. **Never turn off a test just to make code pass.**
+- "I'll change this type to any / slap a `// @ts-ignore` to get past it"—that's a Sentinel red flag, silencing the alarm isn't putting out the fire.
+- "Existing behavior differs from the PRD, I'll just change it to match the PRD"—you may be stepping on an implicit requirement, run the cross-document conflict ruling first ([§5.3](../05_conflict_handling/03_cross_document.md)).
+- "Copy a similar existing function and tweak it"—copying is debt; first ask whether you can extract a shared piece.
+- Changing the same piece a 3rd time and still not right → escalate to 🔴, enter Sentinel's diagnosis mode, chase the root cause upstream.
 
 ---
 
 ## 🔗 Related Compass sections
 
-- [§3.5 YAGNI](../03_implementation/05_yagni.md) — 既有 code 的「看起來沒用」≠「可以刪」
-- [§4.1 Definition of Done](../04_quality_gates/01_dod.md) — regression 測試全綠才算完成
-- [§5.3 跨文件衝突](../05_conflict_handling/03_cross_document.md) — 既有 code（第二份文件）與 PRD 衝突時的裁決
-- [§5.1 模糊 / bug / 缺漏處置](../05_conflict_handling/01_vague_bug_gap.md) — 規格本身的模糊/bug/缺漏
-- [§8 Brownfield 模組總覽](./_index.md) — 本章所有子檔
+- [§3.5 YAGNI](../03_implementation/05_yagni.md) — existing code that "looks unused" ≠ "safe to delete"
+- [§4.1 Definition of Done](../04_quality_gates/01_dod.md) — done only when regression tests are all green
+- [§5.3 Cross-Document Conflict](../05_conflict_handling/03_cross_document.md) — ruling when existing code (the second document) conflicts with the PRD
+- [§5.1 Vague / bug / gap handling](../05_conflict_handling/01_vague_bug_gap.md) — vagueness/bug/gap in the spec itself
+- [§8 Brownfield module overview](./_index.md) — all sub-files in this chapter
 
 ---
 

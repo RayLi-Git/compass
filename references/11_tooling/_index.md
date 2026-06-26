@@ -1,28 +1,28 @@
-# §11 Tooling｜工具強制 M-007 ~ M-010
+# §11 Tooling｜Tool Enforcement M-007 ~ M-010
 
-> 把「靠人記得」的紀律換成「靠 exit code / git hook / TodoWrite」的機械化強制。靠紀律有限，靠工具可靠。
+> Replace "rely on humans remembering" discipline with "rely on exit code / git hook / TodoWrite" mechanical enforcement. Discipline has limits; tools are reliable.
 
-## 本章涵蓋
+## This chapter covers
 
-- [§11.1 工具強制 4 條 (M-007 ~ M-010)](01_m007_to_m010.md) — 反聚合 checklist、反向稽核、TodoWrite、commit 禁主觀詞
+- [§11.1 The 4 tool enforcement rules (M-007 ~ M-010)](01_m007_to_m010.md) — anti-aggregation checklist, reverse audit, TodoWrite, commit subjective-word ban
 
-## 可執行腳本範例
+## Executable script examples
 
-§11.1 規則的參考實作，位於 [`/scripts/`](../../scripts/README.md)：
+Reference implementations of the §11.1 rules, in [`/scripts/`](../../scripts/README.md):
 
-| 腳本 | 規則 | 做什麼 |
+| Script | Rule | What it does |
 |---|---|---|
-| `audit_prd_vs_code.example.py` | M-008 | config-driven 反向稽核（讀 `compass-audit.json`），PRD 列的 vs code 實作的，exit code 表對齊 |
-| `expand_checklist.example.py` | M-007 | PRD 表格逐列展開成一行一 checkbox |
-| `commit-msg-lint.sh` | M-010 | git hook 擋下含主觀完成詞的 commit |
+| `audit_prd_vs_code.example.py` | M-008 | config-driven reverse audit (reads `compass-audit.json`); PRD-listed vs code-implemented, exit code signals alignment |
+| `expand_checklist.example.py` | M-007 | expands PRD table rows into one checkbox per line |
+| `commit-msg-lint.sh` | M-010 | git hook blocking commits containing subjective completion words |
 
-設定範例：[`/templates/audit-config.example.json`](../../templates/README.md)
+Config example: [`/templates/audit-config.example.json`](../../templates/README.md)
 
-## 何時載入
+## When to load
 
-- 想把某條紀律從「靠記得」升級成「工具擋住」
-- 建立反向稽核 / checklist 展開 / commit lint
+- Want to upgrade some discipline from "rely on remembering" to "tool blocks it"
+- Building a reverse audit / checklist expansion / commit lint
 
-## 🔗 相關
-- [§4.1 DoD](../04_quality_gates/01_dod.md) — 反向稽核 exit 0（建立 script 後升 Required）
-- [§3.2 追蹤文件](../03_implementation/02_tracking_docs.md) — checklist 顆粒度（M-007）
+## 🔗 Related
+- [§4.1 DoD](../04_quality_gates/01_dod.md) — reverse audit exit 0 (promote to Required once script exists)
+- [§3.2 Tracking docs](../03_implementation/02_tracking_docs.md) — checklist granularity (M-007)

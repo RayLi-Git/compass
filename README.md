@@ -1,100 +1,96 @@
-<!-- LANG SWITCH -->
-
-**English** | [繁體中文](./README.zh-TW.md)
+**English** | [繁體中文](./compass-zh/README.md)
 
 # Compass — The Compass of PRD Discipline
 
-> A Claude Code skill that acts as "the compass between PRD and implementation" — making sure you build to spec, don't drift, and don't drop items. Part of a four-skill toolchain with [Cartographer](https://github.com/RayLi-Git/cartographer), [Sentinel](https://github.com/RayLi-Git/sentinel), and [Lookout](https://github.com/RayLi-Git/lookout): **Cartographer draws the map → Compass builds to it → Sentinel stands guard → Lookout watches from the masthead.**
+> A Claude Code skill that keeps your implementation true to the spec — **build to the PRD, no drift, no dropped items, no half-finished work.** Part of a four-skill toolchain: **Cartographer draws the map → Compass walks it → Sentinel stands guard → Lookout watches from the mast.**
 
 ![status](https://img.shields.io/badge/status-active-success)
 ![license](https://img.shields.io/badge/license-MIT-blue)
-![companion](https://img.shields.io/badge/companion-Cartographer%20%2B%20Sentinel-purple)
-
-> §1–§11 all modules have content; bilingual (English + 繁體中文) ready. Coverage boundaries and future directions in [docs/SCOPE.md](./docs/SCOPE.md).
+![toolchain](https://img.shields.io/badge/toolchain-Cartographer·Compass·Sentinel·Lookout-purple)
 
 ---
 
 ## The problem it solves
 
-The three most common failure modes after you get a PRD:
+The three most common failure modes once you have a PRD and start building:
 
-1. **Drift** — halfway through you realize you've drifted from the PRD, but you've already written 3 days of code and can't get back
-2. **Dropped items** — the checklist says "auth, 12 endpoints ⬜", you finish 9 and check it off, the remaining 3 never get written and nobody notices
-3. **Half-finished** — you reach 70%, leave a TODO "circle back later," but "later" never comes
+1. **Drift** — halfway in you realize you've strayed from the PRD, but 3 days of code are already written and there's no easy way back.
+2. **Dropped items** — the checklist says "auth, 12 endpoints ⬜"; you finish 9, check it off, and the other 3 are never written — nobody notices.
+3. **Half-finished** — you reach 70%, leave a `TODO: circle back`, and "later" never comes.
 
-Compass blocks all three with **discipline + tool enforcement**.
+Compass blocks all three with **discipline + tool enforcement** (exit codes, not willpower).
 
-## Core beliefs
+## How it works
 
-1. **PRD is a contract, not a suggestion** — every deviation must be logged, aligned, ruled on
-2. **Done means done, no half-finished work** — you can ship in small slices, but no half-finished phasing
-3. **Rely on exit codes, not discipline** — mechanical checks beat stating rules, by a lot
-4. **Brownfield needs discipline too** — PRD discipline isn't only for greenfield projects
+**Four core beliefs:**
 
-## 11 topic modules
+1. **PRD is a contract, not a suggestion** — every deviation is logged, aligned, and ruled on.
+2. **Done means done** — ship in small slices if you like, but never half-finished phases.
+3. **Rely on exit codes, not discipline** — mechanical checks beat stated rules, by a lot.
+4. **Brownfield needs discipline too** — PRD discipline isn't only for greenfield.
+
+**11 topic modules** (loaded on demand from `references/`):
 
 ```
-§1 Foundations             — five phases + core principles
-§2 Definition of Ready     — pre-flight PRD health check
-§3 Implementation          — in-flight SOP
-§4 Quality Gates           — acceptance / self-review / tool enforcement
-§5 Conflict Handling       — PRD conflicts: static three-track (vague/bug/gap) + dynamic (mid-flight change/cross-document/multi-PRD), all shipped
-§6 Non-Functional (NFR)    — performance/observability/security/a11y/SLA
-§7 Operations              — Migration / Rollback / Deployment
-§8 Brownfield              — working in an existing codebase
-§9 Collaboration           — cross-person / cross-AI
-§10 Testing Strategy        — unit/integration/e2e split
-§11 Tooling                — M-007~M-010 tool enforcement + general scripts
+§1  Foundations          five phases + core principles
+§2  Definition of Ready  pre-flight PRD health check
+§3  Implementation       in-flight SOP
+§4  Quality Gates        acceptance / self-review / tool enforcement
+§5  Conflict Handling    vague / bug / gap + mid-flight change / cross-doc / multi-PRD
+§6  Non-Functional       performance / observability / security / a11y / SLA
+§7  Operations           migration / rollback / deployment
+§8  Brownfield           working inside an existing codebase
+§9  Collaboration        cross-person / cross-AI
+§10 Testing Strategy     unit / integration / e2e split
+§11 Tooling              M-007~M-010 tool enforcement + general scripts
 ```
 
-## Relationship to Sentinel
-
-Compass is part of a **four-skill toolchain** ([Cartographer](https://github.com/RayLi-Git/cartographer) creates the PRD → Compass builds to it → [Sentinel](https://github.com/RayLi-Git/sentinel) stands guard throughout → [Lookout](https://github.com/RayLi-Git/lookout) independently reviews at section completion). Compass vs. Sentinel:
-
-| Dimension | Sentinel | Compass |
-|---|---|---|
-| Watches | your thinking | your relationship to the PRD |
-| Trigger question | "Have I thought this through?" | "Am I following the PRD?" |
-| Applies to | any engineering task | implementation work with a spec |
-
-All three are often used together. Full split in [docs/SCOPE.md](./docs/SCOPE.md).
-
-## 🗺️ The full toolchain (three together)
-
-> **Cartographer draws the map (creates the PRD) → Compass builds to it (no drift) → Sentinel stands guard throughout (how to think, no security shortcuts).**
-
-| Skill | Role | One line |
-|---|---|---|
-| [Cartographer](https://github.com/RayLi-Git/cartographer) | the cartographer | forces a fuzzy idea into a solid software PRD, section by section |
-| **Compass** | the compass | build to spec, no drift, no dropped items |
-| [Sentinel](https://github.com/RayLi-Git/sentinel) | the sentinel | thinking & security guard across all five stages |
-
-Cartographer is Compass's **upstream companion**: it produces the very PRD that Compass then builds to (its `§14` handoff outputs a Compass-ready checklist).
-
-## Install
+## Quick start
 
 ```bash
 # Install as a user-level skill (applies to all projects)
 mkdir -p ~/.claude/skills/compass
-cp -r compass-en/SKILL.md compass-en/references ~/.claude/skills/compass/
+cp -r SKILL.md references scripts templates ~/.claude/skills/compass/
 
-# Verify structure
-ls ~/.claude/skills/compass   # → SKILL.md  references
+# Verify
+ls ~/.claude/skills/compass   # → SKILL.md  references  scripts  templates
 ```
 
-See [docs/INSTALL.md](./docs/INSTALL.md) for the full guide (skill + tool scripts + templates).
+Full guide (skill + tool scripts + templates) in **[docs/INSTALL.md](./docs/INSTALL.md)**.
 
-## Scope boundaries
+## The toolchain
 
-**Compass does not cover**: PRD writing (→ use [Cartographer](https://github.com/RayLi-Git/cartographer)) / product discovery / PM tooling / pure exploratory prototyping / pure copy edits.
-**Detailed covers and does-not-cover list**: see [docs/SCOPE.md](./docs/SCOPE.md)
+Compass is the **build-to-spec** stage of a four-skill toolchain — each watches a different thing:
 
-## Design philosophy
+| Skill | Role | Watches |
+|---|---|---|
+| [Cartographer](https://github.com/RayLi-Git/cartographer) | draws the map | turning a fuzzy idea into a solid PRD |
+| **Compass** | walks the map | are you following the PRD? (build to spec, no drift) |
+| [Sentinel](https://github.com/RayLi-Git/sentinel) | stands guard | how you think (shallow vs. deep, symptom vs. root cause) |
+| [Lookout](https://github.com/RayLi-Git/lookout) | watches from the mast | independent-context code review |
 
-Read the full set of design decisions and trade-offs in **[docs/DESIGN.md](./docs/DESIGN.md)**.
+**Cartographer draws the map → Compass walks it → Sentinel stands guard → Lookout watches.** Full division of labor in [docs/SCOPE.md](./docs/SCOPE.md).
+
+## Structure
+
+```
+compass/
+├── SKILL.md            skill entry (loaded by Claude Code)
+├── references/         11 modules, loaded on demand
+├── scripts/            tool-enforcement scripts (lint / audit)
+├── templates/          PRD checklist / progress / dev-log templates
+├── docs/               DESIGN · INSTALL · SCOPE
+└── compass-zh/         Traditional Chinese mirror
+```
+
+## Docs
+
+- **[DESIGN](./docs/DESIGN.md)** — design philosophy, key decisions & trade-offs
+- **[INSTALL](./docs/INSTALL.md)** — full install (skill + scripts + templates) & verification
+- **[SCOPE](./docs/SCOPE.md)** — what it covers, what it doesn't, and the toolchain split
 
 ## License
 
 [MIT](./LICENSE) © Ray_Li
 
-> This project is a portfolio piece exploring "how to encode the discipline of PRD-driven development into an AI coding partner." In the same toolchain, [Sentinel](https://github.com/RayLi-Git/sentinel) explores "encoding structured thinking into an AI partner" and [Cartographer](https://github.com/RayLi-Git/cartographer) explores "forcing fuzzy ideas into a verifiable PRD."
+> A portfolio piece exploring "how to encode the discipline of PRD-driven development into an AI coding partner." Its companion [Sentinel](https://github.com/RayLi-Git/sentinel) explores "how to encode structured thinking into an AI coding partner."

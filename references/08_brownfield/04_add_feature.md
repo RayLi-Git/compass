@@ -1,166 +1,166 @@
-# §8.4 加功能到既有 codebase
-> Part of [Compass](../../SKILL.md) §8 — Brownfield（既有專案）.
-> 在別人寫好的房子裡加一個房間：先讀懂承重牆，再決定門開哪。
+# §8.4 Adding a Feature to an Existing Codebase
+> Part of [Compass](../../SKILL.md) §8 — Brownfield (existing projects).
+> Adding a room to a house someone else built: read the load-bearing walls first, then decide where the door goes.
 
-加功能（add feature）不是寫新模組那麼乾淨——你要把新東西接進一個**已經在跑、已經有使用者、已經有約定俗成**的系統。最大的失敗不是新功能不會動，而是新功能會動、卻**把旁邊三個既有行為弄壞了**。本頁規範：動手前先逆向讀懂、DoR 加碼檢查衝突、爆炸半徑分析、整合點與向後相容、以及「測新功能 + 測沒弄壞鄰居」雙重驗收。
+Adding a feature isn't as clean as writing a new module — you're splicing something new into a system that's **already running, already has users, already has established conventions**. The worst failure isn't that the new feature doesn't work; it's that the new feature works, but **breaks three existing behaviors next to it**. This page specifies: reverse-understand the area before you touch it, a DoR add-on check for conflicts, blast-radius analysis, integration points and backward compat, and the double acceptance of "test the new feature + test you didn't break the neighbors."
 
 ---
 
-## 🧭 第一步：逆向讀懂你要碰的區域（reverse-understand）
+## 🧭 Step one: reverse-understand the area you're about to touch (reverse-understand)
 
-寫新功能前，先花時間把**你即將觸碰的那塊**逆向讀懂。目標不是讀整個 codebase，是讀**爆炸半徑內**的東西。對應 Sentinel 的動手前協定「向內問」。
+Before writing the new feature, spend time reverse-understanding **the patch you're about to touch**. The goal isn't to read the whole codebase — it's to read what's **inside the blast radius**. This maps to Sentinel's pre-flight protocol "ask inward."
 
-| 要逆向搞清楚的 | 怎麼看 | 為什麼 |
+| What to reverse-understand | How to look | Why |
 |---|---|---|
-| 既有 pattern / 慣例 | 同目錄 3-5 個鄰居檔怎麼寫 | 你的新 code 要長得像鄰居，不是像你 |
-| 資料流（data flow） | 從 request 進來到 DB / response 出去 | 知道新功能該插在哪一層 |
-| 命名 / 分層慣例 | service / repo / handler 怎麼切 | 不要自創一套新分層 |
-| 既有錯誤處理風格 | 拋例外？回 Result？回 error code？ | 新 code 跟著同一套 |
-| 既有測試風格 | fixture / mock / factory 怎麼用 | 你的測試要能跟著跑 |
+| Existing patterns / conventions | How 3-5 neighbor files in the same directory are written | Your new code should look like the neighbors, not like you |
+| Data flow | From request in to DB / response out | Know which layer the new feature plugs into |
+| Naming / layering conventions | How service / repo / handler are split | Don't invent your own new layering |
+| Existing error-handling style | Throw exceptions? Return Result? Return error codes? | New code follows the same scheme |
+| Existing test style | How fixtures / mocks / factories are used | Your tests must run alongside theirs |
 
-> **鐵律：match surrounding code, don't impose a new style.**
-> 你覺得既有寫法很醜，不是現在重寫它的時機 → 那是重構（見 [§8.3](./03_refactor.md)），跟加功能**分開做、分開 commit**。在加功能的 PR 裡順手改風格＝把爆炸半徑無限放大。
+> **Iron rule: match surrounding code, don't impose a new style.**
+> If you think the existing style is ugly, now is not the time to rewrite it → that's refactoring (see [§8.3](./03_refactor.md)), done **separately, committed separately** from adding the feature. Slipping a style change into a feature PR = blowing up the blast radius without limit.
 
-**逆向讀懂 checklist：**
+**Reverse-understand checklist:**
 
-- [ ] 找到至少 1 個「跟我要做的事最像」的既有功能，從頭讀到尾
-- [ ] 畫出（哪怕只在腦中）這塊的資料流：誰呼叫我要改的東西、我要改的東西呼叫誰
-- [ ] 確認既有的命名 / 分層 / 錯誤處理 / 測試慣例，記下來照抄
-- [ ] 找到新功能該插入的**接縫（seam）**——既有的擴充點，而不是硬切一刀
+- [ ] Found at least 1 existing feature that's "most like what I'm about to do" and read it end to end
+- [ ] Drew (even just in your head) the data flow for this patch: who calls the thing I'm changing, what the thing I'm changing calls
+- [ ] Confirmed existing naming / layering / error-handling / test conventions and noted them down to copy
+- [ ] Found the **seam** where the new feature should plug in — an existing extension point, not a hard cut
 
 ---
 
-## 📋 DoR 照常跑，但額外加一項：新功能 vs 既有行為衝突
+## 📋 Run DoR as usual, but add one item: new feature vs existing behavior conflict
 
-[§2 DoR](../02_definition_of_ready/01_dor_checklist.md) 全部照跑。但 brownfield 加功能多一條**致命檢查**：
+Run all of [§2 DoR](../02_definition_of_ready/01_dor_checklist.md) as usual. But brownfield feature-adding gets one more **fatal check**:
 
-> **PRD 描述的新功能，和既有已實作的行為有沒有衝突？**
+> **Does the new feature the PRD describes conflict with already-implemented existing behavior?**
 
-PRD 通常是「站在理想新世界」寫的，作者**未必知道既有 code 現在怎麼跑**。常見衝突：
+PRDs are usually written "standing in an ideal new world"; the author **may not know how the existing code actually runs today**. Common conflicts:
 
-- PRD 說「點這個按鈕匯出 CSV」，但既有同一個按鈕現在是匯出 Excel → 改掉會打到現有使用者
-- PRD 說「user 預設 role 是 viewer」，但既有 migration 預設是 editor → 兩個事實打架
-- PRD 說「新增欄位 X 必填」，但既有資料表已有百萬筆 X 為 null 的列 → 直接加 NOT NULL 會炸
+- PRD says "clicking this button exports CSV," but the existing same button currently exports Excel → changing it hits current users
+- PRD says "user default role is viewer," but an existing migration defaults to editor → two facts clash
+- PRD says "new field X is required," but the existing table already has a million rows where X is null → adding NOT NULL directly blows up
 
-**既有 code 本身就是一份「文件」。** 當 PRD 與既有 code 衝突，這是**跨文件衝突**，照 [§5.3 跨文件衝突](../05_conflict_handling/03_cross_document.md) 處理——不要自己猜哪個對。
+**The existing code is itself a "document."** When the PRD conflicts with existing code, this is a **cross-document conflict** — handle it per [§5.3 Cross-document conflict](../05_conflict_handling/03_cross_document.md). Don't guess which one is right.
 
 ```text
-偵測流程：
-  讀 PRD 的這條需求
-    → 既有 code 現在這塊是怎麼跑的？（逆向讀懂的成果）
-      → 一致？ → 繼續做
-      → 衝突？ → 這是 §5.3 跨文件衝突
-                  PRD 是一份文件、既有行為是另一份文件
-                  → 停手、記錄兩邊事實、等裁決（PRD 改？還是新功能蓋掉舊行為是刻意的？）
+Detection flow:
+  Read this requirement in the PRD
+    → How does the existing code run this patch today? (the fruit of reverse-understanding)
+      → Consistent? → keep going
+      → Conflict? → this is a §5.3 cross-document conflict
+                  The PRD is one document, the existing behavior is another
+                  → stop, record both sides' facts, await ruling (change the PRD? or is the new feature overwriting old behavior intentional?)
 ```
 
-> ⚠️ 「新功能蓋掉舊行為」可能是**刻意的**（PRD 就是要改掉它），也可能是 PRD 作者**沒注意到舊行為存在**。這兩者處置天差地別，所以不能自己決定——丟回去裁決。
+> ⚠️ "New feature overwrites old behavior" may be **intentional** (the PRD wants to change it), or the PRD author **didn't notice the old behavior exists**. The handling for these two is worlds apart, so you can't decide yourself — throw it back for a ruling.
 
 ---
 
-## 💥 爆炸半徑分析（blast-radius）
+## 💥 Blast-radius analysis (blast-radius)
 
-對應 Sentinel 的動手前協定「向外推影響範圍」。加功能要改既有 code 時，先問：**誰會被我這個改動波及？**
+This maps to Sentinel's pre-flight protocol "project the blast radius outward." When adding a feature requires changing existing code, first ask: **who gets hit by my change?**
 
-### 三圈爆炸半徑
+### Three rings of blast radius
 
-| 圈 | 範圍 | 要做的事 |
+| Ring | Scope | What to do |
 |---|---|---|
-| 🎯 直接圈 | 我直接改的函式 / 檔案 | 改它本身 + 它的單元測試 |
-| 🔗 呼叫圈 | 呼叫我改的東西的所有地方 | 全部找出來，逐一確認沒被我改的簽章 / 行為弄壞 |
-| 🌊 漣漪圈 | 共用 DB schema / 全域 state / event / cache 的消費者 | 確認資料形狀 / 事件契約沒變，或變了有相容處理 |
+| 🎯 Direct ring | The function / file I directly change | Change it itself + its unit tests |
+| 🔗 Caller ring | Everywhere that calls what I change | Find them all, confirm one by one that my signature / behavior change didn't break them |
+| 🌊 Ripple ring | Consumers of shared DB schema / global state / events / cache | Confirm the data shape / event contract didn't change, or if it did, there's compat handling |
 
-**怎麼找呼叫圈（具體動作，不是憑記憶）：**
+**How to find the caller ring (concrete actions, not from memory):**
 
-- [ ] 對你要改的**函式 / 方法 / endpoint** 做全文檢索（找所有 caller）
-- [ ] 對你要改的**資料表 / 欄位**做全文檢索（找所有讀寫它的地方）
-- [ ] 對你要改的**共用型別 / interface / DTO** 做全文檢索（找所有依賴它的地方）
-- [ ] 列出清單。**清單沒列完 = 爆炸半徑沒算完 = 不准動手**
+- [ ] Full-text search the **function / method / endpoint** you're changing (find all callers)
+- [ ] Full-text search the **table / column** you're changing (find everywhere that reads or writes it)
+- [ ] Full-text search the **shared type / interface / DTO** you're changing (find everything that depends on it)
+- [ ] List them out. **List not finished = blast radius not computed = not allowed to start**
 
-> 🚩 **紅旗**：你準備改一個被 20 個地方呼叫的函式、卻只想「應該還好」就動手 → 停。這是 Sentinel 重級觸發。要嘛改到所有 caller、要嘛新增一個並存的函式（見下方向後相容）。
+> 🚩 **Red flag**: you're about to change a function called from 20 places but just figure "it's probably fine" and start → stop. This triggers Sentinel heavy tier. Either change all callers, or add a coexisting new function (see backward compat below).
 
 ---
 
-## 🔌 整合點與向後相容（integration & backward compat）
+## 🔌 Integration points and backward compat (integration & backward compat)
 
-加功能最安全的姿勢：**加，而不是改**。能用「新增並存」就別「就地修改」。
+The safest posture for adding a feature: **add, don't change**. Where you can "add a coexisting one," don't "modify in place."
 
-### 修改既有契約時的相容策略
+### Compat strategies when changing an existing contract
 
-| 你想做 | 對既有消費者的風險 | 安全做法 |
+| What you want to do | Risk to existing consumers | Safe approach |
 |---|---|---|
-| 改函式簽章（加參數） | 所有 caller 編譯/呼叫失敗 | 新參數給**預設值**，舊 caller 不用改 |
-| 改 API response 形狀 | 既有前端 / 第三方解析失敗 | **只加欄位不刪欄位**；要刪走版本化 |
-| 改 API 行為 | 既有客戶端假設被打破 | 新行為走新 endpoint / feature flag |
-| 改 DB 欄位語意 | 既有資料 + 既有查詢全錯 | 加新欄位、雙寫過渡、見 [§7.1 遷移](../07_operations/01_migration.md) |
-| 改 enum / 狀態機 | 既有資料落在未知狀態 | 只加狀態不刪；刪除前先確認無資料引用 |
+| Change function signature (add a param) | All callers fail to compile/call | Give the new param a **default value**, old callers don't change |
+| Change API response shape | Existing frontend / third parties fail to parse | **Add fields only, never remove**; to remove, go versioned |
+| Change API behavior | Existing clients' assumptions broken | New behavior goes through a new endpoint / feature flag |
+| Change DB column semantics | Existing data + existing queries all wrong | Add a new column, dual-write transition, see [§7.1 Migration](../07_operations/01_migration.md) |
+| Change enum / state machine | Existing data lands in an unknown state | Add states only, never remove; before removing, confirm no data references it |
 
-> **範例（向後相容地擴充，非強制做法）**
+> **Example (extending backward-compatibly, not a mandated approach)**
 > ```python
-> # 既有：def create_order(items): ...  —— 被 12 個地方呼叫
-> # 加功能：支援折扣碼。不要改成 def create_order(items, coupon)
-> #         那會打到 12 個 caller。給預設值：
+> # Existing: def create_order(items): ...  —— called from 12 places
+> # Adding: support discount codes. Don't change it to def create_order(items, coupon)
+> #         that would hit all 12 callers. Give a default value:
 > def create_order(items, coupon: str | None = None):
->     ...  # coupon=None 時行為和以前一模一樣 → 12 個舊 caller 零改動
+>     ...  # when coupon=None behavior is identical to before → 12 old callers untouched
 > ```
 
-**整合點 checklist：**
+**Integration-point checklist:**
 
-- [ ] 新功能接進既有流程的**那個點**，我有沒有沿用既有的擴充機制（hook / event / middleware / DI）？
-- [ ] 我改的對外契約（函式簽章 / API / 事件 / DB），既有消費者**會不會無聲壞掉**？
-- [ ] 不可避免要破壞相容時，有沒有走版本化 / feature flag / 過渡期，而不是硬切？
-- [ ] feature flag 或開關，預設值是**安全的舊行為**（預設安全，對應 Sentinel 資安思維）？
+- [ ] At **the point** where the new feature plugs into the existing flow, did I reuse the existing extension mechanism (hook / event / middleware / DI)?
+- [ ] The outward contract I changed (function signature / API / event / DB) — will existing consumers **break silently**?
+- [ ] When breaking compat is unavoidable, did I go through versioning / feature flag / a transition period, instead of a hard cut?
+- [ ] Does the feature flag or toggle default to the **safe old behavior** (secure by default, maps to Sentinel security thinking)?
 
 ---
 
-## ✅ 雙重驗收：測新功能 + 測沒弄壞鄰居
+## ✅ Double acceptance: test the new feature + test you didn't break the neighbors
 
-[§4 DoD](../04_quality_gates/01_dod.md) 全套照跑。Brownfield 加功能的測試**一定是兩組**，缺一不算完成：
+Run the full [§4 DoD](../04_quality_gates/01_dod.md). Brownfield feature-adding tests are **always two sets**; missing either means not done:
 
-### A. 新功能本身會動
+### A. The new feature itself works
 
-- [ ] 新功能的 happy path 有測試且通過
-- [ ] 新功能的邊界 / 錯誤路徑有測試
-- [ ] 新功能符合 PRD 描述（[§3.4 比對修正迴圈](../03_implementation/04_compare_fix_loop.md)）
+- [ ] The new feature's happy path has tests and they pass
+- [ ] The new feature's boundary / error paths have tests
+- [ ] The new feature matches the PRD description ([§3.4 Compare-fix loop](../03_implementation/04_compare_fix_loop.md))
 
-### B. 你沒弄壞鄰居（迴歸）
+### B. You didn't break the neighbors (regression)
 
-- [ ] **爆炸半徑呼叫圈裡的既有測試，全部重跑且通過**（不是只跑你新寫的）
-- [ ] 你改了簽章 / 契約的，每個 caller 都驗過行為不變
-- [ ] 共用 DB / state / event 的既有消費者，行為不變
-- [ ] 若既有測試覆蓋不足、剛好沒守住你碰的那塊 → **補一條 characterization test** 釘住舊行為，再動手
+- [ ] **The existing tests inside the blast-radius caller ring all re-run and pass** (not just the ones you newly wrote)
+- [ ] For every signature / contract you changed, verified each caller's behavior is unchanged
+- [ ] For existing consumers of shared DB / state / event, behavior is unchanged
+- [ ] If existing test coverage is insufficient and happens not to guard the patch you touched → **add a characterization test** to pin down the old behavior, then start
 
-> 🔬 **證據強度（對應 Sentinel）**：宣稱「沒弄壞既有功能」前，必須**實際把相關既有測試跑過**。沒跑過就只能說「🟡 已檢視邏輯、建議你跑 full suite」，不准說「🟢 沒影響」。Brownfield 最常見的翻車就是這句話沒兌現。
+> 🔬 **Evidence grading (maps to Sentinel)**: before claiming "didn't break existing features," you must **actually run the relevant existing tests**. If you haven't run them, you can only say "🟡 reviewed the logic, suggest you run the full suite," never "🟢 no impact." The most common brownfield wreck is this sentence going uncashed.
 
-### 加功能完成定義（在 §4 DoD 之上）
+### Definition of done for feature-adding (on top of §4 DoD)
 
 ```text
-☐ 逆向讀懂該區域，新 code 風格 match 鄰居
-☐ DoR + 「新功能 vs 既有行為衝突」檢查通過（衝突走 §5.3）
-☐ 爆炸半徑三圈列完，呼叫圈逐一處理
-☐ 對外契約改動有向後相容策略（或已走版本化/flag）
-☐ A 組測試（新功能）通過
-☐ B 組測試（既有迴歸）通過 —— 實際跑過、附證據
-☐ 加功能與重構/風格調整分開 commit（YAGNI，見 §3.5）
+☐ Reverse-understood the area, new code style matches the neighbors
+☐ DoR + "new feature vs existing behavior conflict" check passes (conflicts go §5.3)
+☐ All three rings of blast radius listed, caller ring handled one by one
+☐ Outward contract changes have a backward-compat strategy (or already went versioned/flag)
+☐ Set A tests (new feature) pass
+☐ Set B tests (existing regression) pass — actually run, with evidence
+☐ Feature-add and refactor/style-tweak committed separately (YAGNI, see §3.5)
 ```
 
 ---
 
-## 🚩 加功能時的紅旗（任一亮起 → Sentinel 重級）
+## 🚩 Red flags when adding a feature (any one lit → Sentinel heavy tier)
 
-- 「順手把這塊風格也改一改」→ 爆炸半徑失控，拆出去
-- 改一個多 caller 的函式卻沒列 caller 清單 → 沒算爆炸半徑
-- PRD 跟既有行為打架、你自己選了一邊就繼續 → 應走 [§5.3](../05_conflict_handling/03_cross_document.md)
-- 只跑新測試、沒跑既有測試就說「好了」→ B 組驗收沒做
-- 為了塞新功能，把既有共用型別改成 `any` / 放寬契約讓它過 → 在關警報不是滅火
+- "While I'm at it, let me also tidy up this patch's style" → blast radius out of control, split it out
+- Changing a multi-caller function without listing the callers → blast radius not computed
+- PRD clashes with existing behavior and you picked a side and kept going → should go [§5.3](../05_conflict_handling/03_cross_document.md)
+- Ran only the new tests, not the existing ones, and said "done" → Set B acceptance not done
+- To cram the new feature in, changed an existing shared type to `any` / loosened the contract to make it pass → silencing the alarm, not putting out the fire
 
 ---
 
 ## 🔗 Related Compass sections
-- [§8 Brownfield 總覽](./01_overview.md) — 既有專案工作的共同心法
-- [§8.3 重構](./03_refactor.md) — 風格調整 / 結構改動屬於這裡，別混進加功能
-- [§5.3 跨文件衝突](../05_conflict_handling/03_cross_document.md) — PRD vs 既有行為打架時的裁決流程
-- [§4 DoD](../04_quality_gates/01_dod.md) — 雙重驗收掛在 DoD 之上
+- [§8 Brownfield overview](./01_overview.md) — the shared mindset for working in existing projects
+- [§8.3 Refactor](./03_refactor.md) — style tweaks / structural changes belong here, don't mix them into feature-adding
+- [§5.3 Cross-document conflict](../05_conflict_handling/03_cross_document.md) — the ruling process when PRD vs existing behavior clash
+- [§4 DoD](../04_quality_gates/01_dod.md) — double acceptance hangs on top of DoD
 
 ## 📝 Status
 v0.5.0 (Phase 2: original content).

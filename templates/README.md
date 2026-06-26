@@ -1,33 +1,33 @@
-# Templates — Compass 追蹤文件範本
+# Templates — Compass Tracking Doc Templates
 
-> Compass §3.2 依賴的追蹤文件範本，外加 §11 反向稽核的設定範例。複製到專案（`.claude/` 或專案根）後填入。
+> Tracking-doc templates that Compass §3.2 depends on, plus the config example for §11 reverse audit. Copy into your project (`.claude/` or project root), then fill in.
 
 ---
 
-## 檔案
+## Files
 
-| 檔案 | 對應 | 用途 |
+| File | Maps to | Purpose |
 |---|---|---|
-| `progress.md.template` | [§3.2](../references/03_implementation/02_tracking_docs.md) | 進度 + 待辦 + 進行中（§9.3 交接的恢復指標） |
-| `development-log.md.template` | [§3.2](../references/03_implementation/02_tracking_docs.md) / [§5](../references/05_conflict_handling/_index.md) | 決策 + PRD Ambiguity / Issues / Gaps 紀錄 |
-| `prd-checklist.md.template` | [§3.2](../references/03_implementation/02_tracking_docs.md) / [§11 M-007](../references/11_tooling/01_m007_to_m010.md) | PRD 章節 ↔ 實作對照（一行一條，禁聚合） |
-| `test-guide.md.template` | [§3.4 §3.3](../references/03_implementation/04_compare_fix_loop.md) | 使用者驗收 Gate 的測試指引（去專屬 + 手動測試 + 遮罩護欄） |
-| `selfcheck-fail.md.template` | [§3.4](../references/03_implementation/04_compare_fix_loop.md) | 自檢 3 輪失敗 / 中途卡死的裁決彙整（接 Sentinel 診斷模式） |
-| `audit-config.example.json` | [§11 M-008](../references/11_tooling/01_m007_to_m010.md) | 反向稽核腳本 `audit_prd_vs_code.example.py` 的設定範例 |
+| `progress.md.template` | [§3.2](../references/03_implementation/02_tracking_docs.md) | Progress + todo + in-progress (the §9.3 handoff recovery indicator) |
+| `development-log.md.template` | [§3.2](../references/03_implementation/02_tracking_docs.md) / [§5](../references/05_conflict_handling/_index.md) | Decisions + PRD Ambiguity / Issues / Gaps log |
+| `prd-checklist.md.template` | [§3.2](../references/03_implementation/02_tracking_docs.md) / [§11 M-007](../references/11_tooling/01_m007_to_m010.md) | PRD section ↔ implementation mapping (one line per item, no aggregation) |
+| `test-guide.md.template` | [§3.4 §3.3](../references/03_implementation/04_compare_fix_loop.md) | Test guide for the User Acceptance Gate (de-privatized + manual tests + masking guard) |
+| `selfcheck-fail.md.template` | [§3.4](../references/03_implementation/04_compare_fix_loop.md) | Ruling summary when 3 self-check rounds fail / blocked mid-way (links Sentinel diagnostic mode) |
+| `audit-config.example.json` | [§11 M-008](../references/11_tooling/01_m007_to_m010.md) | Config example for the reverse-audit script `audit_prd_vs_code.example.py` |
 
-> 📌 跨 session 永久記憶（auto memory）的範本尚未提供——目前請參考 [§3.2 追蹤文件](../references/03_implementation/02_tracking_docs.md) 末段的「跨 session 記憶」說明手動建立。
+> 📌 No template yet for cross-session permanent memory (auto memory) — for now, build it manually following the "cross-session memory" note at the end of [§3.2 Tracking Docs](../references/03_implementation/02_tracking_docs.md).
 
 ---
 
-## 用法
+## Usage
 
 ```bash
 cp templates/progress.md.template .claude/progress.md
 cp templates/development-log.md.template .claude/development-log.md
 cp templates/prd-checklist.md.template .claude/prd-checklist.md
-cp templates/test-guide.md.template .claude/test-guide.md          # 每個可驗收的塊填一份
-cp templates/selfcheck-fail.md.template .claude/selfcheck-fail.md   # 自檢失敗交裁決時用
-cp templates/audit-config.example.json compass-audit.json   # 改成你的 PRD/code 結構
+cp templates/test-guide.md.template .claude/test-guide.md          # fill one per acceptable block
+cp templates/selfcheck-fail.md.template .claude/selfcheck-fail.md   # use when self-check fails and needs ruling
+cp templates/audit-config.example.json compass-audit.json   # edit to match your PRD/code structure
 ```
 
-`prd-checklist.md` 可用 [`../scripts/expand_checklist.example.py`](../scripts/README.md) 從 PRD 表格自動展開，避免手抄漏行。
+`prd-checklist.md` can be auto-expanded from the PRD table with [`../scripts/expand_checklist.example.py`](../scripts/README.md), avoiding hand-copied missing lines.

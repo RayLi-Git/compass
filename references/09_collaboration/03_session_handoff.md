@@ -1,149 +1,149 @@
-# §9.3 跨 session / 跨 AI 交接
+# §9.3 Cross-session / cross-AI handoff
 
 > Part of [Compass](../../SKILL.md) §9 — Collaboration.
-> 一份 PRD 橫跨多個 Claude Code session / 多個 agent：交接零摩擦，下一棒不重新考古。
+> One PRD spans multiple Claude Code sessions / multiple agents: zero-friction handoff, the next in line doesn't re-excavate from scratch.
 
-長 PRD 不會在一個 session 內寫完。context 會滿、會跨日、會切 agent。
-交接做不好，下一棒得花半小時重建脈絡——而且常常重建錯，在已經改過的地方又改一次。
-這份流程的目的：**讓接手的 session 在 5 分鐘內知道「現在在哪、下一步動哪、別碰什麼」，靠檔案不靠記憶。**
+A long PRD won't get finished in one session. Context fills up, work spans days, agents get swapped.
+Botch the handoff and the next in line spends half an hour rebuilding context — and often rebuilds it wrong, re-editing something that was already changed.
+The goal of this flow: **let the incoming session know within 5 minutes "where we are, what to touch next, what not to touch" — from files, not memory.**
 
-交接不是一份新文件。它是把 [§3.2 追蹤文件三件套](../03_implementation/02_tracking_docs.md) 留在「可被冷讀」的狀態，外加一個 git 快照。
-
----
-
-## 🧠 核心原則：交接靠檔案，不靠對話
-
-接手的 session **沒有**上一棒的對話記憶。它只看得到：
-
-- 你 commit 進 git 的東西
-- 你寫進 `progress.md` / `development-log.md` / `prd-checklist.md` 的東西
-
-→ 任何「只活在對話裡」的決策、進度、半成品，對下一棒等於不存在。
-
-這就是 Sentinel 的回錨——但寫成純文字、留在檔案裡，不是丟在 chat history 等壓縮吃掉。
+A handoff is not a new document. It's leaving the [§3.2 three tracking docs](../03_implementation/02_tracking_docs.md) in a "cold-readable" state, plus a git snapshot.
 
 ---
 
-## 📤 交出方（OUTGOING）：離場前必留五樣
+## 🧠 Core principle: handoff via files, not conversation
 
-離場前，下一棒要能單靠這五樣冷啟動。缺一樣，交接就有洞。
+The incoming session has **no** memory of the previous turn's conversation. All it can see:
 
-| # | 留什麼 | 狀態要求 |
+- What you committed to git
+- What you wrote into `progress.md` / `development-log.md` / `prd-checklist.md`
+
+→ Any decision, progress, or half-finished work that "lives only in the conversation" doesn't exist for the next in line.
+
+This is Sentinel's re-anchor — but written as plain text, left in a file, not dropped in chat history waiting for compaction to eat it.
+
+---
+
+## 📤 OUTGOING: five things to leave before you exit
+
+Before exiting, the next in line must be able to cold-start from these five alone. Miss one and the handoff has a hole.
+
+| # | Leave what | State requirement |
 |---|---|---|
-| 1 | `progress.md` | 「進行中」指向當前那一塊 + **下一個動作一句話** |
-| 2 | `development-log.md` | 最後一筆是「我這段做了什麼決策 / 卡在哪」，附日期 + PRD 錨點 |
-| 3 | `prd-checklist.md` | 動到的條目狀態正確（⬜ / 🟡 / 🟢），沒有「做了但忘記改狀態」 |
-| 4 | **「從這裡接手」指針** | `progress.md` 頂端一行：下一棒第一個動作是什麼、在哪個檔案 |
-| 5 | **乾淨 git** | WIP 也要 commit；不留髒 working tree 給下一棒 |
+| 1 | `progress.md` | "In progress" points at the current slice + **next action in one sentence** |
+| 2 | `development-log.md` | Last entry says "what decision I made / where I'm stuck this stretch", with date + PRD anchor |
+| 3 | `prd-checklist.md` | Touched items have correct state (⬜ / 🟡 / 🟢), no "did it but forgot to update state" |
+| 4 | **"RESUME HERE" pointer** | One line at the top of `progress.md`: what the next in line's first action is, in which file |
+| 5 | **Clean git** | Commit WIP too; don't leave a dirty working tree for the next in line |
 
-### 「從這裡接手」指針（範例）
+### "RESUME HERE" pointer (example)
 
-放在 `progress.md` 最頂端，下一棒第一眼就看到：
+Put it at the very top of `progress.md` so the next in line sees it first:
 
 ```markdown
 ## ▶ RESUME HERE
-- 進行中：PRD §4.3 退款 webhook 簽章驗證（第 5 塊 / 共 9 塊）
-- 下一動作：在 src/webhooks/refund.py 補 timestamp 容忍窗（±5 分），red test 已寫好在
-  tests/test_refund_sig.py::test_stale_timestamp_rejected（現在紅）
-- 別碰：src/webhooks/charge.py 已驗收完成，勿順手重構
+- In progress: PRD §4.3 refund webhook signature verification (slice 5 / 9)
+- Next action: add timestamp tolerance window (±5 min) in src/webhooks/refund.py; red test
+  already written at tests/test_refund_sig.py::test_stale_timestamp_rejected (currently red)
+- Don't touch: src/webhooks/charge.py is already accepted, don't casually refactor
 ```
 
-> 指針要寫成**動作**（「補 X / 讓某測試轉綠」），不是狀態（「webhook 做到一半」）。
-> 狀態讓下一棒還得自己推下一步；動作直接可執行。
+> Write the pointer as an **action** ("add X / turn some test green"), not a state ("webhook half done").
+> A state forces the next in line to derive the next step themselves; an action is directly executable.
 
-### WIP commit 紀律
+### WIP commit discipline
 
-context 將滿、半塊沒寫完也要交接——這時 git 不可能乾淨。做法：
+When context is nearly full and you have to hand off mid-slice — git can't be clean. Do this:
 
 ```bash
 git add -A
-git commit -m "WIP [PRD §4.3] refund webhook：簽章驗證寫到一半，red test 已紅，見 progress.md RESUME HERE"
+git commit -m "WIP [PRD §4.3] refund webhook: signature verification half-done, red test is red, see progress.md RESUME HERE"
 ```
 
-- WIP commit 的訊息要點名「停在哪、紅在哪」，呼應 `progress.md` 的指針。
-- 別用 `git stash` 交接——stash 不會被下一棒主動看到，等於藏起來。
-- 下一棒接手後第一塊做完，可選擇 `git commit --amend` 或 squash 掉 WIP（見 §3.2 commit 紀律）。
+- The WIP commit message must name "where it stopped, what's red", echoing the `progress.md` pointer.
+- Don't use `git stash` to hand off — the next in line won't proactively see a stash, so it's effectively hidden.
+- After the next in line finishes the first slice, they can choose to `git commit --amend` or squash out the WIP (see §3.2 commit discipline).
 
 ---
 
-## 📥 接手方（INCOMING）：開工先讀，順序固定
+## 📥 INCOMING: read first, in fixed order
 
-接手的 session **第一件事不是寫 code，是冷讀**。按這個順序，由「我在哪」往「我能不能動手」收斂：
+The incoming session's **first job is not writing code, it's cold-reading**. Follow this order, converging from "where am I" to "can I start":
 
-| 序 | 讀什麼 | 回答的問題 |
+| Seq | Read what | Question answered |
 |---|---|---|
-| 1 | `progress.md` 的 **RESUME HERE + 進行中** | 現在在哪？下一動作是什麼？ |
-| 2 | `development-log.md` **最後 3 筆** | 上一棒為什麼這樣做？有沒有卡關/等裁決？ |
-| 3 | `prd-checklist.md` **下一條 ⬜/🟡** | 還剩什麼？這一塊的驗收條件是什麼？ |
-| 4 | `git log --oneline -10` + `git status` | 物理現狀對得上文件嗎？有沒有 WIP / 髒 tree？ |
-| 5 | 確認 **DoD 環境可跑**（lint / typecheck / test 指令能起來）| 我能不能驗證「修好了」？ |
+| 1 | `progress.md` **RESUME HERE + In progress** | Where are we? What's the next action? |
+| 2 | `development-log.md` **last 3 entries** | Why did the previous turn do it this way? Any blocker / awaiting ruling? |
+| 3 | `prd-checklist.md` **next ⬜/🟡 item** | What's left? What's the acceptance condition for this slice? |
+| 4 | `git log --oneline -10` + `git status` | Does physical state match the docs? Any WIP / dirty tree? |
+| 5 | Confirm **DoD environment runs** (lint / typecheck / test commands start up) | Can I verify "it's fixed"? |
 
-讀完 1–4，輸出一段**回錨**確認自己對齊了（純文字，給使用者過目）：
+After reading 1–4, output a **re-anchor** confirming you're aligned (plain text, for the user to review):
 
 ```text
-📍回錨（接手 PRD §4.3）
-- 最初目標：退款 webhook 全鏈路，含簽章驗證（§4 共 9 塊）
-- 進度：8 塊已 commit，第 5 塊簽章驗證進行中
-- 待辦：補 timestamp 容忍窗 → 讓 test_stale_timestamp_rejected 轉綠
-- 偏離檢查：dev-log 無等裁決項；charge.py 標記勿動，遵守
+📍Re-anchor (taking over PRD §4.3)
+- Original goal: full refund webhook chain, incl. signature verification (§4, 9 slices)
+- Progress: 8 slices committed, slice 5 signature verification in progress
+- Todo: add timestamp tolerance window → turn test_stale_timestamp_rejected green
+- Drift check: dev-log has no awaiting-ruling items; charge.py marked do-not-touch, respected
 ```
 
-> 第 5 步常被跳過——然後接手方改完才發現測試根本跑不起來，分不清是自己改壞還是環境本來就壞。
-> **先確認環境綠，再動 production code。** 對不上時先查 git 與文件的落差，別假設文件是對的。
+> Step 5 often gets skipped — then the incoming party finishes editing and discovers the tests won't even run, with no way to tell whether they broke it or it was already broken.
+> **Confirm the environment is green before touching production code.** When things don't match, first check the gap between git and the docs; don't assume the docs are right.
 
-### 文件與 git 對不上時
+### When docs and git don't match
 
-冷讀第 4 步若發現矛盾（例如 `progress.md` 說某塊已完成，但 git 沒有對應 commit）：
+If cold-read step 4 finds a contradiction (e.g. `progress.md` says a slice is done, but git has no matching commit):
 
-| 矛盾 | 處置 |
+| Contradiction | Handling |
 |---|---|
-| 文件說做了、git 沒有 | 以 **git（寫下來的物理快照）為準**，文件可能在 commit 前就斷了 |
-| git 有 commit、checklist 沒勾 | 補勾 + 填證據欄，別重做那一塊 |
-| 兩邊都對不上、搞不清狀態 | **停**，回錨列出落差問使用者，不要猜著往下寫 |
+| Doc says done, git doesn't have it | Treat **git (the physical snapshot written down) as the source of truth**; the doc may have been cut off before the commit |
+| git has the commit, checklist not ticked | Tick it + fill the evidence column, don't redo that slice |
+| Neither side matches, state unclear | **Stop**, re-anchor listing the gaps and ask the user; don't guess your way forward |
 
 ---
 
-## ⏳ 主動交接的觸發點：別等 context 爆掉
+## ⏳ Proactive handoff triggers: don't wait for context to blow up
 
-交接最常壞在「拖到最後一刻」——context 滿到模型開始忘事，才匆忙留檔，於是 `progress.md` 也寫得語焉不詳。
+Handoffs most often break from "dragging it to the last second" — context fills until the model starts forgetting, then you scramble to leave records, so `progress.md` ends up vague.
 
-**主動交接觸發條件（出現任一 → 立刻進交接流程，不要再開新一塊）：**
+**Proactive handoff trigger conditions (any one → enter the handoff flow immediately, don't open a new slice):**
 
-- context 用量接近上限（感覺開始記不住前面的決策）
-- 一塊剛 commit 完、正要開下一塊之際（天然的乾淨切點）
-- 要切換 agent / 換人接手
-- 使用者說「先停這 / 下次再繼續」
+- Context usage near the limit (it feels like you're starting to lose earlier decisions)
+- A slice just committed, right as you're about to open the next one (a natural clean cut point)
+- About to switch agent / hand off to another person
+- The user says "stop here for now / continue next time"
 
-> 黃金切點是**「一塊剛 commit、下一塊還沒開」**：git 乾淨、checklist 狀態剛對齊、指針好寫。
-> 在一塊寫到一半時被迫交接，成本最高（要寫 WIP commit + 解釋紅在哪）——能撐到塊邊界就撐。
+> The golden cut point is **"a slice just committed, next slice not yet opened"**: git is clean, checklist state just aligned, the pointer is easy to write.
+> Being forced to hand off mid-slice is the costliest case (you have to write a WIP commit + explain what's red) — hold out for a slice boundary if you can.
 
 ---
 
-## ✅ 交接 checklist（離場前逐項確認）
+## ✅ Handoff checklist (confirm each item before exiting)
 
 ```text
-OUTGOING（交出方）
-[ ] progress.md「進行中」指向當前塊，頂端有 RESUME HERE（下一動作=可執行）
-[ ] development-log.md 最後一筆說清「做了什麼決策 / 卡在哪」+ 日期 + PRD 錨點
-[ ] prd-checklist.md 動到的條目狀態正確（⬜/🟡/🟢），沒有做了忘改的
-[ ] git 已 commit（WIP 也 commit，訊息點名停在哪/紅在哪），working tree 乾淨
-[ ] 等裁決 / blocker 已在 dev-log 標記（[SKIPPED-PRD] 等），下一棒看得到
+OUTGOING
+[ ] progress.md "In progress" points at the current slice, top has RESUME HERE (next action = executable)
+[ ] development-log.md last entry clearly states "what decision / where stuck" + date + PRD anchor
+[ ] prd-checklist.md touched items have correct state (⬜/🟡/🟢), none done-but-forgotten
+[ ] git committed (commit WIP too, message names where it stopped / what's red), working tree clean
+[ ] awaiting-ruling / blocker marked in dev-log ([SKIPPED-PRD] etc.), visible to next in line
 
-INCOMING（接手方）
-[ ] 已讀 progress RESUME HERE → dev-log 最後 3 筆 → checklist 下一條 → git log/status
-[ ] 已確認 DoD 環境能跑（lint / typecheck / test 起得來）
-[ ] 已輸出回錨，與使用者確認對齊，且文件 vs git 無未解矛盾
-[ ] 才開始動 production code
+INCOMING
+[ ] Read progress RESUME HERE → dev-log last 3 entries → checklist next item → git log/status
+[ ] Confirmed DoD environment runs (lint / typecheck / test start up)
+[ ] Output re-anchor, confirmed alignment with the user, no unresolved doc-vs-git contradiction
+[ ] Only then start touching production code
 ```
 
 ---
 
 ## 🔗 Related Compass sections
 
-- [§3.2 追蹤文件三件套](../03_implementation/02_tracking_docs.md) — 交接的物理載體，這裡只是把它留在可冷讀狀態
-- [§4.1 Definition of Done](../04_quality_gates/01_dod.md) — 接手第 5 步要確認的 DoD 環境
-- [§9.1 誰來拍板](./01_who_decides.md) — 跨棒遇到等裁決項時的責任歸屬
-- [§9 Collaboration index](./_index.md) — 多人 / 多 agent 協作地圖
+- [§3.2 three tracking docs](../03_implementation/02_tracking_docs.md) — the physical carrier of the handoff; here it's just kept cold-readable
+- [§4.1 Definition of Done](../04_quality_gates/01_dod.md) — the DoD environment to confirm at incoming step 5
+- [§9.1 Who decides](./01_who_decides.md) — responsibility ownership when an awaiting-ruling item crosses turns
+- [§9 Collaboration index](./_index.md) — multi-person / multi-agent collaboration map
 
 ---
 

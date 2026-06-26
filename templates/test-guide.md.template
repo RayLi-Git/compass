@@ -1,71 +1,71 @@
-# 測試指引：<塊名稱>
+# Test Guide: <block name>
 
-<!-- Compass §3.4 使用者驗收 Gate 的可貼上範本。每完成一個「有可驗收行為的塊」就填一份給使用者。 -->
-<!-- 撰寫 4 規範見 §3.4 §3.3；本檔只是填空殼，規則不在此複述。 -->
+<!-- Pasteable template for Compass §3.4 User Acceptance Gate. Fill one per "block with acceptable behavior" and hand to the user. -->
+<!-- The 4 writing norms are in §3.4 §3.3; this is just a fill-in shell, rules are not repeated here. -->
 
-> ⚖️ **份量隨塊縮放**：小塊 1-2 個 Test 即可；大塊才完整展開。
-> 純文件 / typo / 已被後續驗證涵蓋的中間重構 → 走 §3.4 §3.2 跳過例外，**不必填本檔**。
+> ⚖️ **Scale to the block**: a small block needs only 1-2 Tests; only a large block expands fully.
+> Pure docs / typo / intermediate refactors covered by later verification → take the §3.4 §3.2 skip exception, **no need to fill this**.
 
 ---
 
-## 本塊完成項目
+## Items completed in this block
 
-| 檔案 / 模組 | 對應 PRD | 對應 checklist 條目 |
+| File / module | PRD ref | prd-checklist item |
 |---|---|---|
-| <檔案 A> | §X.Y | <prd-checklist 第 N 條> |
+| <file A> | §X.Y | <prd-checklist item N> |
 
 ---
 
-## 環境準備
+## Environment setup
 
-> 列出跑測試前必須先就緒的狀態（執行環境、必要設定 / 環境變數、前置資料）。中立寫，不綁特定語言。
+> List the state that must be ready before running tests (runtime, required config / env vars, seed data). Write neutrally, no language lock-in.
 
-1. <進入專案 / 啟動執行環境的指令>
-2. <確認必要環境變數已載入（不要在此貼真值）>
-
----
-
-## 自動化測試步驟
-
-> 每個 Test 可獨立執行、指令可直接貼上、預期結果具體、失敗判定明確（4 規範見 §3.4 §3.3）。
-
-#### Test 1：<測試名稱>　→ 對應 checklist 第 N 條
-- **指令**：`<完整可貼上的指令>`
-- **預期結果**：<具體到可肉眼判斷，例：回傳碼 200 + 內容含 X 欄位；無 ERROR>
-- **失敗判定**：<若出現 Y → 表示 Z>
-
-#### Test 2：…
+1. <command to enter project / start runtime>
+2. <confirm required env vars are loaded (do NOT paste real values here)>
 
 ---
 
-## 人工 / 視覺測試（需人類判斷者）
+## Automated test steps
 
-> UI 體驗、版面、互動感等自動化測不出的，列在這請使用者目視確認。
+> Each Test is independently runnable, the command is directly pasteable, the expected result is concrete, the failure criterion is clear (4 norms in §3.4 §3.3).
 
-- <步驟 + 該看到什麼>
+#### Test 1: <test name>　→ prd-checklist item N
+- **Command**: `<full pasteable command>`
+- **Expected**: <concrete enough to eyeball, e.g. returns 200 + body contains field X; no ERROR>
+- **Failure criterion**: <if Y appears → it means Z>
 
----
-
-## 邊界 / 異常測試
-
-- <空輸入 → 預期…>
-- <未授權 / 缺必填 → 預期…>
+#### Test 2: …
 
 ---
 
-## 回報格式
+## Manual / visual tests (need human judgment)
 
-> ⚠️ 回報前**遮罩** token / 密碼 / 個資，再貼輸出或截圖。
+> UI experience, layout, interaction feel — anything automation can't test, list here for the user to eyeball.
 
-- ✅ 全過：「<塊名> OK」+（可選）觀察到的小問題
-- 🟡 部分過：「Test M 過、Test K 卡」+ 卡住的實際輸出
-- ❌ 失敗：「Test M 失敗」+ 實際輸出（已遮罩）
+- <step + what should be seen>
+
+---
+
+## Boundary / exception tests
+
+- <empty input → expected…>
+- <unauthorized / missing required field → expected…>
+
+---
+
+## Reporting format
+
+> ⚠️ **Mask** tokens / passwords / PII before pasting output or screenshots.
+
+- ✅ All pass: "<block> OK" + (optional) minor observations
+- 🟡 Partial: "Test M passed, Test K stuck" + the stuck actual output
+- ❌ Fail: "Test M failed" + actual output (masked)
 
 ---
 
 ## 🔗 Related Compass sections
-- [§3.4 完成-比對-修正循環](../references/03_implementation/04_compare_fix_loop.md) — 本範本所屬的驗收 Gate 與 4 條撰寫規範
-- [§4.1 DoD](../references/04_quality_gates/01_dod.md) — 填本範本前該過的硬性 Gate
+- [§3.4 Compare-Fix Loop](../references/03_implementation/04_compare_fix_loop.md) — the Acceptance Gate this template belongs to, and the 4 writing norms
+- [§4.1 DoD](../references/04_quality_gates/01_dod.md) — the hard gate to pass before filling this template
 
 ## 📝 Status
-v0.3.0 (ported from prior SOP T5, de-privatized + 手動測試 / checklist 追蹤 / 遮罩護欄 added).
+v0.3.0 (ported from prior SOP T5, de-privatized + manual tests / checklist tracing / masking guard added).

@@ -1,137 +1,137 @@
-# §10.2 test-first 的真正邊界 + coverage 目標
+# §10.2 The Real Boundary of test-first + coverage Targets
 
 > Part of [Compass](../../SKILL.md) §10 — Testing Strategy.
-> test-first 在哪裡真的回本、哪裡只是儀式；coverage 是地板偵測器，不是品質證明。
+> Where test-first actually pays off vs. where it's just ritual; coverage is a floor detector, not a proof of quality.
 
-[§4.1 DoD](../04_quality_gates/01_dod.md) 與 DoR 對 Auth / 權限 / PII **強制** test-first。
-這份檔處理剩下的灰色地帶：除了安全模組，**還有哪裡該 test-first**，哪裡 test-first 純粹是 overhead，以及 coverage 數字到底證明了什麼、沒證明什麼。
+[§4.1 DoD](../04_quality_gates/01_dod.md) and DoR **mandate** test-first for Auth / permissions / PII.
+This file handles the rest of the gray zone: beyond security modules, **where else should you test-first**, where is test-first pure overhead, and what the coverage number actually proves vs. doesn't.
 
-兩個常見的反向錯誤：
-- 把「強制 test-first」誤讀成「所有東西都 test-first」→ 在丟棄式原型上寫測試，浪費。
-- 把「coverage 80%」當成過關證書 → 數字漂亮但一個 assert 都沒有，等於沒測。
+Two common inverse mistakes:
+- Misreading "mandatory test-first" as "test-first everything" → writing tests on throwaway prototypes, wasted effort.
+- Treating "80% coverage" as a pass certificate → pretty number but not a single assert, equals no test.
 
 ---
 
-## 1️⃣ test-first 在哪裡回本（安全模組之外）
+## 1️⃣ Where test-first pays off (beyond security modules)
 
-test-first 的價值不是「測試」，是**逼你先把行為講清楚再寫**。值不值得，看「行為定義的難度」高不高。
+The value of test-first isn't "tests" — it's that it **forces you to spell out behavior before you write**. Worth it or not depends on how hard the behavior is to define.
 
-| 場景 | test-first？ | 為什麼 |
+| Scenario | test-first? | Why |
 |---|---|---|
-| Auth / 權限 / PII | ✅ 強制（[§4.1](../04_quality_gates/01_dod.md)） | 出錯成本最高、靠肉眼看不出漏洞 |
-| 複雜業務邏輯（計費、折扣、稅務、排程） | ✅ 強烈建議 | 規則多、邊界多、改一處連動多處 |
-| 有刁鑽 edge case（off-by-one、時區、空集合、溢位） | ✅ 強烈建議 | 邊界正是 bug 溫床，先寫 case 才不會漏 |
-| 修 bug | ✅ red test 先行 | 見 [§8.2](../08_brownfield/02_bug_fix.md)，red test 證明你真的重現了 |
-| 演算法 / 純函式（輸入→輸出明確） | ✅ 划算 | 無副作用、好斷言，test-first 幾乎零摩擦 |
+| Auth / permissions / PII | ✅ Mandatory ([§4.1](../04_quality_gates/01_dod.md)) | Highest cost of error; holes invisible to the naked eye |
+| Complex business logic (billing, discounts, tax, scheduling) | ✅ Strongly recommended | Many rules, many boundaries, one change ripples to many |
+| Tricky edge cases (off-by-one, time zones, empty sets, overflow) | ✅ Strongly recommended | Boundaries are bug breeding grounds; write the case first or you'll miss it |
+| Bug fixes | ✅ red test first | See [§8.2](../08_brownfield/02_bug_fix.md); a red test proves you actually reproduced it |
+| Algorithms / pure functions (input→output well-defined) | ✅ Worth it | No side effects, easy to assert, test-first has near-zero friction |
 
-> **判準一句話**：如果你**寫之前說不清楚「正確」長什麼樣**，就 test-first——寫測試會逼你想清楚。
+> **One-line criterion**: if you **can't articulate what "correct" looks like before writing it**, test-first — writing the test forces you to think it through.
 
 ---
 
-## 2️⃣ test-first 在哪裡是 overhead
+## 2️⃣ Where test-first is overhead
 
-不是偷懶，是這些場景「行為定義」便宜到測試先寫反而拖慢，或測試本身沒有保護力。
+Not laziness — these are scenarios where "behavior definition" is so cheap that writing the test first slows you down, or the test itself offers no protection.
 
-| 場景 | test-first？ | 改用 |
+| Scenario | test-first? | Use instead |
 |---|---|---|
-| 丟棄式原型 / spike | ❌ | 跑通就好，驗證完即丟（見 [§3.5 YAGNI](../03_implementation/05_yagni.md)） |
-| 純 glue（把 A 的輸出接到 B、轉個格式） | ❌ | 一條 integration / smoke 測串接點即可 |
-| 平凡 CRUD（無業務規則、框架直出） | ⚠️ 低優先 | 測「接線對不對」，別測 ORM 本身 |
-| 配置 / 常數 / DTO 宣告 | ❌ | 沒邏輯就沒東西可斷言 |
-| 第三方函式庫的行為 | ❌ | 那是它的測試，不是你的 |
+| Throwaway prototype / spike | ❌ | Just make it run, discard once validated (see [§3.5 YAGNI](../03_implementation/05_yagni.md)) |
+| Pure glue (wire A's output into B, reformat) | ❌ | One integration / smoke test on the wiring point is enough |
+| Trivial CRUD (no business rules, framework passthrough) | ⚠️ Low priority | Test "is the wiring right," don't test the ORM itself |
+| Config / constants / DTO declarations | ❌ | No logic means nothing to assert |
+| Behavior of a third-party library | ❌ | That's its test, not yours |
 
-⚠️ 紅旗：你發現自己在寫「測試 framework 有沒有照它文件運作」的測試——停。那不是你的職責邊界。
+⚠️ Red flag: you find yourself writing a test for "does the framework behave per its docs" — stop. That's not your responsibility boundary.
 
-> 原型例外**不適用** Auth/PII：原型一旦碰真實使用者憑證或 PII，立刻升回強制 test-first，不再是丟棄式。
+> The prototype exception **does not apply** to Auth/PII: the moment a prototype touches real user credentials or PII, it escalates back to mandatory test-first and is no longer throwaway.
 
 ---
 
-## 3️⃣ coverage 目標：80% 是啟發式，不是法律
+## 3️⃣ Coverage targets: 80% is a heuristic, not law
 
-「全專案 80% coverage」是一個**方便的預設**，不是每個檔案都該達到的硬線。逐區間調：
+"80% coverage across the project" is a **convenient default**, not a hard line every file must hit. Tune it per zone:
 
-| 區域 | 合理目標 | 理由 |
+| Zone | Reasonable target | Rationale |
 |---|---|---|
-| 付款 / 金額 / 權限判斷 | 趨近 100%（含分支） | 錯一條分支就是真金白銀或越權 |
-| 核心業務邏輯 | 85–95% | 連動廣，回歸成本高 |
-| 一般應用層 | 70–80% | 80% 啟發式的來源區間 |
-| 生成碼 / boilerplate / DTO | 低或排除 | 測它＝測產生器，無資訊量 |
-| UI 膠水 / 框架樣板 | 低 | 投報率差，靠 smoke 兜底 |
+| Payments / amounts / permission decisions | Near 100% (incl. branches) | One wrong branch is real money or privilege escalation |
+| Core business logic | 85–95% | Wide ripple, high regression cost |
+| General application layer | 70–80% | The source range of the 80% heuristic |
+| Generated code / boilerplate / DTO | Low or excluded | Testing it = testing the generator, zero information |
+| UI glue / framework scaffolding | Low | Poor ROI, smoke tests cover the floor |
 
-**反模式**：為了把全域數字從 78% 推到 80%，去替 getter/DTO 補一堆無斷言測試。數字達標了，付款邏輯那條沒測的分支還在。**你優化了指標，沒優化安全。**
+**Anti-pattern**: to push the global number from 78% to 80%, you backfill a pile of assertion-free tests for getters/DTOs. The number hits target, the untested branch in payment logic is still there. **You optimized the metric, not safety.**
 
 ---
 
-## 4️⃣ 為什麼 coverage 高 ≠ 安全
+## 4️⃣ Why high coverage ≠ safe
 
-line/branch coverage 量的是「這行**被執行過**」，不是「這行的結果**被斷言過**」。兩者差很遠。
+line/branch coverage measures "this line **was executed**," not "this line's result **was asserted**." Those are very different things.
 
 ```text
-範例：100% 行覆蓋，零保護力
+Example: 100% line coverage, zero protection
 
 def apply_discount(price, code):
-    rate = lookup_rate(code)      # 被執行 ✓
-    return price * (1 - rate)     # 被執行 ✓
+    rate = lookup_rate(code)      # executed ✓
+    return price * (1 - rate)     # executed ✓
 
-# 測試：
+# Test:
 def test_discount():
-    apply_discount(100, "SAVE10")   # 沒有 assert！
+    apply_discount(100, "SAVE10")   # no assert!
 ```
 
-`apply_discount` 兩行都「covered」，coverage 工具回報 100%。但這測試**沒斷言任何結果**——把 `rate` 算錯成兩倍它也照樣綠。
+Both lines of `apply_discount` are "covered," and the coverage tool reports 100%. But this test **asserts nothing** — it stays green even if `rate` is computed as double.
 
-> coverage 只告訴你「**哪裡完全沒被碰過**」（地板偵測器）。它**不**告訴你「碰過的地方是否正確」。高覆蓋率＋弱斷言＝假的安全感。
+> Coverage only tells you "**where nothing was ever touched**" (floor detector). It does **not** tell you "is the touched code correct." High coverage + weak asserts = false sense of safety.
 
-地板偵測的正確用法：
+Correct use of the floor detector:
 
-- [ ] 看 coverage report 找 **0% / 紅色**的區塊——那是「連執行都沒有」的盲區，先補。
-- [ ] 對高風險檔案看**分支**覆蓋，不只看行覆蓋（error 分支常是 0）。
-- [ ] **不要**把全域百分比當品質 KPI 追；它升高最廉價的方式就是灌水。
-
----
-
-## 5️⃣ mutation testing：較真的訊號（簡述）
-
-想知道「測試是否真的會抓到錯」，coverage 答不了，mutation testing 可以。
-
-機制：工具自動竄改 production code（把 `>` 改成 `>=`、`+` 改成 `-`、刪掉一行……）製造「變異體」，重跑你的測試。
-
-- 測試**紅了** → 變異被「殺死」，代表測試真的在守這段邏輯。
-- 測試仍**綠** → 變異「存活」，代表這段就算寫錯，你的測試也察覺不到——assert 缺失或太弱。
-
-§4 開頭那個無 assert 的 `apply_discount` 測試，會讓幾乎所有變異存活：mutation score 趨近 0，即使 coverage 100%。這正是 coverage 看不見的破洞。
-
-> 用法務實：別全專案跑（慢）。對**付款 / 權限 / 核心業務**這幾個高風險模組跑一次，看哪些變異存活，回頭補斷言。當作收尾體檢，不是日常門檻。
+- [ ] Read the coverage report for **0% / red** blocks — those are "not even executed" blind spots; backfill them first.
+- [ ] For high-risk files look at **branch** coverage, not just line coverage (error branches are often 0%).
+- [ ] Do **not** chase the global percentage as a quality KPI; the cheapest way to raise it is padding.
 
 ---
 
-## ✅ 決策速查
+## 5️⃣ mutation testing: the harder signal (brief)
+
+To know "will the tests actually catch a mistake," coverage can't answer; mutation testing can.
+
+Mechanism: the tool automatically mutates production code (change `>` to `>=`, `+` to `-`, delete a line…) to create "mutants," then reruns your tests.
+
+- Test goes **red** → the mutant is "killed," meaning the test really guards that logic.
+- Test stays **green** → the mutant "survives," meaning even if this code were wrong, your tests wouldn't notice — missing or too-weak assert.
+
+That assert-free `apply_discount` test from the start of §4 lets almost every mutant survive: mutation score near 0, even with 100% coverage. This is exactly the hole coverage can't see.
+
+> Pragmatic use: don't run it project-wide (slow). Run it once over the high-risk modules — **payments / permissions / core business** — see which mutants survive, and backfill asserts. Treat it as a closing health check, not a daily gate.
+
+---
+
+## ✅ Decision cheat sheet
 
 ```text
-要不要 test-first？
-  碰 Auth/權限/PII ............ 一律 YES（強制，§4.1）
-  說不清「正確」長怎樣 ......... YES（測試逼你想清楚）
-  複雜業務 / 刁鑽 edge case .... YES
-  修 bug ...................... red test 先行（§8.2）
-  丟棄原型 / 純 glue / 平凡CRUD  NO（或一條 smoke 兜底）
+Should I test-first?
+  Touches Auth/permissions/PII ... always YES (mandatory, §4.1)
+  Can't articulate "correct" ...... YES (the test forces you to think it through)
+  Complex business / tricky edge .. YES
+  Bug fix ......................... red test first (§8.2)
+  Throwaway prototype / pure glue / trivial CRUD  NO (or one smoke test as floor)
 
-coverage 怎麼用？
-  當地板偵測器 → 找 0%/紅色盲區，優先補
-  不當品質證書 → 別追全域百分比，別灌無 assert 測試
-  高風險檔看分支覆蓋，不只行覆蓋
-  想驗測試真有效 → 對高風險模組跑 mutation testing
+How to use coverage?
+  As a floor detector → find 0%/red blind spots, backfill first
+  Not a quality certificate → don't chase the global percentage, don't pad assert-free tests
+  For high-risk files look at branch coverage, not just line coverage
+  Want to verify tests really work → run mutation testing on high-risk modules
 ```
 
-何時**不**寫測試：原型、純配置/常數、第三方行為、生成碼、以及「為了把數字推過門檻」——後者尤其要警惕，那是優化指標不是優化安全。
+When **not** to write tests: prototypes, pure config/constants, third-party behavior, generated code, and "to push the number past the threshold" — beware of the last one especially, that's optimizing the metric, not safety.
 
 ---
 
 ## 🔗 Related Compass sections
 
-- [§10.1 測試金字塔](./01_test_pyramid.md) — 該寫哪一層的測試（單元/整合/E2E 比例）
-- [§4.1 Definition of Done](../04_quality_gates/01_dod.md) — Auth/PII 強制 test-first 的來源與收工門檻
-- [§8.2 Bug Fix Workflow](../08_brownfield/02_bug_fix.md) — 修 bug 的 red test / characterization test 順序
-- [§3.5 YAGNI](../03_implementation/05_yagni.md) — 原型與不該寫的東西的邊界
+- [§10.1 Test Pyramid](./01_test_pyramid.md) — which layer of test to write (unit/integration/E2E ratios)
+- [§4.1 Definition of Done](../04_quality_gates/01_dod.md) — source of mandatory test-first for Auth/PII and the wrap-up gate
+- [§8.2 Bug Fix Workflow](../08_brownfield/02_bug_fix.md) — red test / characterization test ordering for bug fixes
+- [§3.5 YAGNI](../03_implementation/05_yagni.md) — the boundary of prototypes and things you shouldn't write
 
 ---
 
